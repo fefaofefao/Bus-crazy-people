@@ -91,9 +91,15 @@ São só medalhas, sem moeda nem vantagem paga.
 - **Teto de crueldade:** um jogador "ingênuo", que só segue a cor da frente, vence pelo menos 15% das vezes nas fases normais e 5% nos Desafios.
 - **Vagas:** o padrão é 5. Quando uma fase não consegue armadilhas com 5 vagas (comum no começo, com poucos ônibus), ela usa 4. Os Desafios têm 4 vagas desde a fase 30.
 - **Prioritários:** a folga dos passageiros com pressa cai de 3 para 1 jogada.
+- **Desafios (10, 20, 30…, 300) = a fase mais difícil da dezena**, garantido pelo teste:
+  - pontuação acima da fase normal mais difícil da dezena (+8);
+  - o dobro de armadilhas (mínimo 3);
+  - o jogador "ingênuo" vence no máximo 45% → 30% das vezes (e no mínimo 5%);
+  - tamanho de fase ~120 níveis à frente e 1 vaga a menos.
+  A fase 10 é o primeiro Desafio (feita à mão, 3 vagas, sem mãozinha de dica). Para refazer só os Desafios: `node scripts/generate-levels.js --only-challenges` (~3 min).
 
 **Vidas (3):**
-- Cada **derrota gasta 1 vida**. Vencer nunca gasta, e as fases 1–10 (tutorial) não gastam.
+- Cada **derrota gasta 1 vida**. Vencer nunca gasta, e as fases 1–10 (tutorial e 1º Desafio) não gastam.
 - Se o jogador se recupera na própria tela de derrota (desfazer ou vaga extra), a vida é **devolvida**.
 - **Sem vidas:** esperar a recarga (**1 vida a cada 20 min**, contada pelo relógio, mesmo com o app fechado) ou **assistir a um anúncio** que enche as 3. Quando uma vida volta, a tela "Sem vidas" libera o jogo sozinha.
 - As vidas aparecem no menu e na lista de fases, com a contagem até a próxima.
@@ -129,7 +135,7 @@ A dica nunca cobra anúncio quando não há saída: nesse caso, ela avisa para d
   - vitória de um jogador "guloso" (que segue a cor da frente);
   - **jogadas erradas possíveis** (toques que levam a um beco sem saída, provados pelo solver);
   - prioritários e vagas.
-- `scripts/generate-levels.js` + `scripts/generator-config.js`: geram as fases 11–300 com semente fixa. Cada fase é a candidata mais próxima de uma meta de dificuldade crescente, com suavização em janelas para evitar picos. **A cada 10 fases (20, 30, …, 300) há um Desafio**: mais difícil, marcado em laranja e **opcional**, porque a fase seguinte já fica liberada e dá para pular.
+- `scripts/generate-levels.js` + `scripts/generator-config.js`: geram as fases 11–300 com semente fixa. Cada fase é a candidata mais próxima de uma meta de dificuldade crescente, com suavização em janelas para evitar picos. **A cada 10 fases (10, 20, …, 300) há um Desafio**: a fase mais difícil da dezena, marcado em laranja e **opcional**, porque a fase seguinte já fica liberada e dá para pular.
 - O pacote é **igual para todos** os jogadores. Se as fases mudarem depois de publicadas, aumente `PACK_VERSION` em `scripts/generate-levels.js`.
 - O formato JSON está documentado em `docs/LEVEL_FORMAT.md` e já tem `mechanics: []` para as mecânicas futuras (`docs/ROADMAP.md`).
 

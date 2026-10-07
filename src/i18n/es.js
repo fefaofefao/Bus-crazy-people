@@ -55,7 +55,7 @@ export default {
     t7: '¡Solo 2 plazas! Si se llenan sin coincidir con la fila, pierdes.',
     t8: 'La fila mezcla colores: varios buses se llenan poco a poco.',
     t9: 'El pasajero con reloj tiene prisa: súbelo antes de que su paciencia llegue a cero.',
-    t10: '¡Todo junto! Si te equivocas, usa Deshacer.',
+    t10: '¡Desafío! Los niveles 10, 20, 30… son los más difíciles. Planea antes de tocar.',
   },
   win: {
     retry3: 'Ir por 3 estrellas',

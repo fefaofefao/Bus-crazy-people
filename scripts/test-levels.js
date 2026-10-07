@@ -56,7 +56,7 @@ levels.forEach((lv, i) => {
   // 4. tutorial / desafio
   const tutorial = id <= 10;
   if (tutorial !== !!lv.tutorial) fail(`fase ${id}: marcação de tutorial errada`);
-  const challenge = id >= 20 && id % 10 === 0;
+  const challenge = id >= 10 && id % 10 === 0;
   if (challenge !== !!lv.challenge) fail(`fase ${id}: marcação de Desafio errada`);
 });
 
@@ -78,6 +78,15 @@ for (const l of levels.slice(10)) {
   if (l.meta.greedyWin < floor) fail(`fase ${l.id}: dura demais (jogador ingênuo vence ${l.meta.greedyWin})`);
 }
 
+// 4d. cada Desafio (10, 20, 30…) é a fase mais difícil da sua dezena, com mais armadilhas
+for (const l of levels.filter((x) => x.challenge)) {
+  const decade = levels.slice(l.id - 10, l.id - 1);
+  const top = decade.reduce((a, b) => (b.meta.score > a.meta.score ? b : a));
+  if (l.meta.score <= top.meta.score) fail(`Desafio ${l.id}: score ${l.meta.score} não supera a fase ${top.id} (${top.meta.score})`);
+  const maxTraps = Math.max(...decade.map((x) => x.meta.traps));
+  if (l.id > 10 && l.meta.traps < Math.min(maxTraps, GEN.challenge.minTraps)) fail(`Desafio ${l.id}: poucas armadilhas (${l.meta.traps})`);
+}
+
 // 5. curva sem picos (só fases normais depois do tutorial)
 const normal = levels.filter((l) => l.id > 10 && !l.challenge);
 const MAX_JUMP = 9; // pontos de score acima do maior entre as 5 anteriores
@@ -86,7 +95,7 @@ for (let i = 5; i < normal.length; i++) {
   if (normal[i].meta.score > prevMax + MAX_JUMP) fail(`pico de dificuldade na fase ${normal[i].id}: ${normal[i].meta.score} > ${prevMax} + ${MAX_JUMP}`);
 }
 // a 1ª fase depois do tutorial não pode ser bem mais difícil que o tutorial
-const tutMax = Math.max(...levels.slice(0, 10).map((l) => l.meta.score));
+const tutMax = Math.max(...levels.slice(0, 10).filter((l) => !l.challenge).map((l) => l.meta.score));
 if (normal[0].meta.score > tutMax + MAX_JUMP) fail(`pico logo após o tutorial: fase ${normal[0].id}`);
 // média por blocos de 50 deve crescer
 const avg = (a) => a.reduce((s, l) => s + l.meta.score, 0) / a.length;

@@ -56,7 +56,7 @@ export default {
     t7: 'Só 2 vagas! Se todas lotarem sem combinar com a fila, você perde.',
     t8: 'A fila mistura cores: vários ônibus vão enchendo aos poucos.',
     t9: 'Passageiro com relógio tem pressa: embarque-o antes de a paciência zerar.',
-    t10: 'Juntando tudo! Se errar, use Desfazer.',
+    t10: 'Desafio! As fases 10, 20, 30… são as mais difíceis. Planeje antes de tocar.',
   },
   win: {
     retry3: 'Tentar 3 estrelas',

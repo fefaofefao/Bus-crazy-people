@@ -962,7 +962,7 @@ export class GameScene extends Phaser.Scene {
   // Dicas (tutorial automático e booster)
   // ===========================================================================
   autoHint() {
-    if (!this.tutorial || this.state.status !== 'playing' || this.modalOpen) return;
+    if (!this.tutorial || this.level.tutorial.hint === false || this.state.status !== 'playing' || this.modalOpen) return;
     const id = nextMove(this.level, this.state);
     if (id != null) this.showHint(id);
   }

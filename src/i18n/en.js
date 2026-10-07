@@ -55,7 +55,7 @@ export default {
     t7: 'Only 2 spots! If they all fill up without matching the line, you lose.',
     t8: 'The line mixes colors: several buses fill up little by little.',
     t9: 'A passenger with a clock is in a hurry: board them before their patience hits zero.',
-    t10: 'Putting it all together! Made a mistake? Use Undo.',
+    t10: 'Challenge! Levels 10, 20, 30… are the toughest. Plan before you tap.',
   },
   win: {
     retry3: 'Go for 3 stars',

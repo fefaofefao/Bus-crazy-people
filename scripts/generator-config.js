@@ -6,8 +6,8 @@
 export const GEN = {
   total: 300,
   firstGenerated: 11, // 1–10 = tutorial feito à mão (levels/tutorial.json)
-  challengeEvery: 10, // 20, 30, ..., 300 são fases Desafio (opcionais)
-  firstChallenge: 20,
+  challengeEvery: 10, // 10, 20, 30, ..., 300 são fases Desafio (opcionais) – as mais difíceis da dezena
+  firstChallenge: 10, // a 10 é feita à mão (levels/tutorial.json); as outras são geradas
   candidatesPerLevel: 12, // fases válidas sorteadas por número; fica a mais próxima da meta
   maxAttemptsPerLevel: 400,
   baseSeed: 20261007,
@@ -39,11 +39,20 @@ export const GEN = {
     slack: [3, 1], // folga de jogadas além da ordem pretendida
   },
 
-  // Fases Desafio: parâmetros como se estivessem `ahead` fases à frente, e vagas - 1 depois da 100
+  // Fases Desafio (10, 20, 30…): SEMPRE a mais difícil da sua dezena.
+  //  - parâmetros como se estivessem `ahead` fases à frente e 1 vaga a menos a partir de slotsMinusFrom;
+  //  - pontuação acima da fase normal mais difícil da dezena (+ aboveDecade);
+  //  - o dobro de armadilhas (minTrapsMult) e teto de vitória do jogador ingênuo (maxGreedyWin, rampa):
+  //    quem joga no automático perde; quem planeja vence.
   challenge: {
-    ahead: 70,
+    ahead: 120,
     slotsMinusFrom: 30,
-    scoreBonus: 12,
+    scoreBonus: 28,
+    aboveDecade: 8,
+    minTrapsMult: 2,
+    minTraps: 3,
+    maxGreedyWin: [0.45, 0.3],
+    attempts: 900,
   },
 
   // Mecânicas (ver src/core/engine.js). Cada uma estreia numa fase fixa (`intro`,

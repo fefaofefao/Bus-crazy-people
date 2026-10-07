@@ -84,17 +84,18 @@
       "priority": [{ "index": 4, "patience": 4 }]
     },
     {
-      "id": 10, "cols": 5, "rows": 6, "slots": 3, "tutorial": { "text": "t10" },
+      "id": 10, "cols": 5, "rows": 6, "slots": 3, "tutorial": { "text": "t10", "hint": false },
       "buses": [
-        { "x": 0, "y": 2, "dir": "up", "type": "medium", "color": 0 },
-        { "x": 1, "y": 1, "dir": "left", "type": "small", "color": 1 },
-        { "x": 2, "y": 3, "dir": "up", "type": "small", "color": 2 },
-        { "x": 2, "y": 5, "dir": "left", "type": "medium", "color": 3 },
-        { "x": 4, "y": 2, "dir": "up", "type": "small", "color": 0 },
-        { "x": 3, "y": 1, "dir": "up", "type": "small", "color": 1 }
+        { "x": 3, "y": 4, "dir": "up", "type": "small", "color": 0 },
+        { "x": 0, "y": 1, "dir": "down", "type": "small", "color": 1 },
+        { "x": 3, "y": 3, "dir": "left", "type": "small", "color": 0 },
+        { "x": 2, "y": 2, "dir": "up", "type": "small", "color": 1 },
+        { "x": 1, "y": 4, "dir": "up", "type": "small", "color": 2 },
+        { "x": 1, "y": 1, "dir": "up", "type": "small", "color": 1 },
+        { "x": 3, "y": 0, "dir": "up", "type": "medium", "color": 0 }
       ],
-      "queue": [1, 1, 1, 1, 2, 2, 2, 2, 0, 0, 0, 3, 3, 3, 0, 0, 0, 1, 1, 1, 1, 3, 3, 3, 0, 0, 0, 0],
-      "priority": [{ "index": 4, "patience": 3 }]
+      "queue": [0, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 2, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 2, 2],
+      "priority": [{ "index": 10, "patience": 6 }]
     }
   ]
 }

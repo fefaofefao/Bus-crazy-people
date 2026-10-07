@@ -3,6 +3,8 @@
 // Uso:
 //   npm run levels:generate            -> 300 fases
 //   node scripts/generate-levels.js --count 10   -> só o tutorial (útil para testes)
+//   node scripts/generate-levels.js --only-challenges -> refaz só os Desafios (10, 20, 30…)
+//     sobre o levels.json atual (as fases normais não dependem dos Desafios)
 //
 // Determinístico: mesma configuração => mesmo arquivo (sem datas nem Math.random).
 
@@ -13,11 +15,12 @@ import { solve } from '../src/core/solver.js';
 import { LEVEL_FORMAT, validateLevel } from '../src/core/engine.js';
 import { hashInts } from '../src/core/prng.js';
 
-export const PACK_VERSION = 3;
+export const PACK_VERSION = 4;
 
 const args = process.argv.slice(2);
 const countArg = args.indexOf('--count');
 const total = countArg >= 0 ? Number(args[countArg + 1]) : GEN.total;
+const onlyChallenges = args.includes('--only-challenges');
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const R = GEN.ramp;
@@ -69,11 +72,15 @@ function paramsFor(n) {
         ? GEN.slots - 1
         : GEN.slots
       : !intro && n >= GEN.fourSlots.from && (hashInts(GEN.baseSeed, n, 55) % 1000) / 1000 < lerp(GEN.fourSlots.chance[0], GEN.fourSlots.chance[1], (n - GEN.fourSlots.from) / (GEN.total - GEN.fourSlots.from))
-        ? GEN.slots - 1
-        : GEN.slots,
+      ? GEN.slots - 1
+      : GEN.slots,
     pStop: lerp(R.pStop[0], R.pStop[1], t),
     fifoBias: lerp(R.fifoBias[0], R.fifoBias[1], t),
-    typeWeights: { small: 1, medium: lerp(R.medium[0], R.medium[1], t), large: lerp(R.large[0], R.large[1], t) },
+    typeWeights: {
+      small: 1,
+      medium: lerp(R.medium[0], R.medium[1], t),
+      large: lerp(R.large[0], R.large[1], t),
+    },
     scoreBlock: 1,
     scoreDepth: 0.5,
     priority: intro ? 0 : priCount,
@@ -92,9 +99,16 @@ function loadTutorial() {
       cols: l.cols,
       rows: l.rows,
       slots: l.slots,
-      challenge: false,
+      challenge: isChallengeId(i + 1),
       tutorial: l.tutorial ?? null,
-      buses: l.buses.map((b, id) => ({ id, x: b.x, y: b.y, dir: b.dir, type: b.type, color: b.color })),
+      buses: l.buses.map((b, id) => ({
+        id,
+        x: b.x,
+        y: b.y,
+        dir: b.dir,
+        type: b.type,
+        color: b.color,
+      })),
       queue: l.queue,
       priority: l.priority ?? [],
       mechanics: [],
@@ -146,33 +160,107 @@ function generate(n) {
   return best;
 }
 
+/**
+ * Desafio n (20, 30…): a fase mais difícil da dezena. `decadeMax` = maior pontuação
+ * entre as fases normais n-9..n-1. Filtros: pontuação acima dela, o dobro de
+ * armadilhas e teto de vitória do jogador ingênuo (sem deixar de ser justo: o piso
+ * minGreedyWinChallenge continua valendo). Se nada passar, afrouxa aos poucos.
+ */
+function generateChallenge(n, decadeMax) {
+  const C = GEN.challenge;
+  const p = paramsFor(n);
+  const t = tOf(n);
+  const traps = Math.max(C.minTraps, p.minTraps * C.minTrapsMult);
+  const maxGreedy = lerp(C.maxGreedyWin[0], C.maxGreedyWin[1], t);
+  const floor = decadeMax + C.aboveDecade;
+  const target = Math.max(p.target, floor + 6);
+  const tries = [
+    { traps, maxGreedy, floor, slots: p.slots },
+    { traps, maxGreedy, floor, slots: p.slots - 1 },
+    {
+      traps: Math.ceil(traps / 2),
+      maxGreedy: maxGreedy + 0.15,
+      floor: decadeMax + 1,
+      slots: p.slots,
+    },
+    { traps: 1, maxGreedy: 1, floor: decadeMax + 1, slots: p.slots },
+  ];
+  for (const [k, f] of tries.entries()) {
+    const pp = { ...p, slots: Math.max(3, f.slots) };
+    const cands = [];
+    for (let a = 0; a < C.attempts && cands.length < GEN.candidatesPerLevel; a++) {
+      const lv = generateLevel(n, pp, hashInts(GEN.baseSeed, n, 5000 + k * C.attempts + a));
+      if (!lv) continue;
+      const m = lv.meta;
+      if (m.traps < f.traps || m.greedyWin > f.maxGreedy || m.greedyWin < GEN.minGreedyWinChallenge || m.score <= f.floor) continue;
+      cands.push(lv);
+    }
+    if (!cands.length) {
+      console.warn(`  desafio ${n}: nada com ${JSON.stringify(f)}; afrouxando`);
+      continue;
+    }
+    cands.sort((x, y) => Math.abs(x.meta.score - target) - Math.abs(y.meta.score - target) || x.meta.seed - y.meta.seed);
+    const best = cands[0];
+    best.meta.target = Math.round(target * 100) / 100;
+    best.meta.decadeMax = decadeMax;
+    return best;
+  }
+  throw new Error(`desafio ${n}: nenhuma tentativa válida`);
+}
+
+function fillChallenges(levels) {
+  for (let i = 0; i < levels.length; i++) {
+    const n = i + 1;
+    if (n <= 10 || !isChallengeId(n)) continue;
+    const decadeMax = Math.max(...levels.slice(n - 10, n - 1).map((l) => l.meta.score));
+    levels[i] = generateChallenge(n, decadeMax);
+    levels[i].id = n;
+  }
+}
+
 const t0 = Date.now();
-const levels = loadTutorial().slice(0, Math.min(10, total));
-for (let n = GEN.firstGenerated; n <= total; n++) {
-  levels.push(generate(n));
-  if (n % 25 === 0) process.stdout.write(`  ${n}/${total} (${((Date.now() - t0) / 1000).toFixed(1)} s)\n`);
+let levels;
+if (onlyChallenges) {
+  // as fases normais não dependem dos Desafios: mantém o arquivo e refaz só 10, 20, 30…
+  levels = JSON.parse(readFileSync(new URL('../levels/levels.json', import.meta.url), 'utf8')).levels;
+  levels.splice(0, 10, ...loadTutorial());
+} else {
+  levels = loadTutorial().slice(0, Math.min(10, total));
+  for (let n = GEN.firstGenerated; n <= total; n++) {
+    // Desafio: lugar reservado; é gerado depois da suavização (precisa conhecer a dezena)
+    levels.push(isChallengeId(n) ? { challenge: true, meta: { score: 0 } } : generate(n));
+    if (n % 25 === 0) process.stdout.write(`  ${n}/${total} (${((Date.now() - t0) / 1000).toFixed(1)} s)\n`);
+  }
 }
 
-// Suavização: reordena as fases normais (não tutorial, não Desafio) por pontuação
-// dentro de janelas, preservando as posições dos Desafios.
-const introIds = new Set([...Object.values(GEN.mechanics).map((m) => m.intro), ...GEN.minTraps.map(([from]) => from)]);
-const mechIntro = new Set(Object.values(GEN.mechanics).map((m) => m.intro));
-const normalIdx = levels.map((l, i) => i).filter((i) => i >= 10 && !levels[i].challenge && !mechIntro.has(i + 1));
-// janelas nunca atravessam a estreia de uma mecânica (senão ela apareceria antes)
-const segments = [[]];
-for (const i of normalIdx) {
-  if ([...introIds].some((id) => id - 1 <= i && segments.at(-1).some((j) => j < id - 1))) segments.push([]);
-  segments.at(-1).push(i);
+if (!onlyChallenges) {
+  // Suavização: reordena as fases normais (não tutorial, não Desafio) por pontuação
+  // dentro de janelas, preservando as posições dos Desafios.
+  const introIds = new Set([...Object.values(GEN.mechanics).map((m) => m.intro), ...GEN.minTraps.map(([from]) => from)]);
+  const mechIntro = new Set(Object.values(GEN.mechanics).map((m) => m.intro));
+  const normalIdx = levels.map((l, i) => i).filter((i) => i >= 10 && !levels[i].challenge && !mechIntro.has(i + 1));
+  // janelas nunca atravessam a estreia de uma mecânica (senão ela apareceria antes)
+  const segments = [[]];
+  for (const i of normalIdx) {
+    if ([...introIds].some((id) => id - 1 <= i && segments.at(-1).some((j) => j < id - 1))) segments.push([]);
+    segments.at(-1).push(i);
+  }
+  const windows = segments.flatMap((seg) => Array.from({ length: Math.ceil(seg.length / GEN.smoothWindow) }, (_, k) => seg.slice(k * GEN.smoothWindow, (k + 1) * GEN.smoothWindow)));
+  for (const idx of windows) {
+    const sorted = idx.map((i) => levels[i]).sort((a, b) => a.meta.score - b.meta.score);
+    idx.forEach((i, k) => (levels[i] = sorted[k]));
+  }
+  // Ids finais = posição. A solução continua válida (não depende do id).
+  levels.forEach((l, i) => (l.id = i + 1));
 }
-const windows = segments.flatMap((seg) => Array.from({ length: Math.ceil(seg.length / GEN.smoothWindow) }, (_, k) => seg.slice(k * GEN.smoothWindow, (k + 1) * GEN.smoothWindow)));
-for (const idx of windows) {
-  const sorted = idx.map((i) => levels[i]).sort((a, b) => a.meta.score - b.meta.score);
-  idx.forEach((i, k) => (levels[i] = sorted[k]));
-}
-// Ids finais = posição. A solução continua válida (não depende do id).
-levels.forEach((l, i) => (l.id = i + 1));
+fillChallenges(levels);
 
-const pack = { format: LEVEL_FORMAT, version: PACK_VERSION, count: levels.length, levels };
+const pack = {
+  format: LEVEL_FORMAT,
+  version: PACK_VERSION,
+  count: levels.length,
+  levels,
+};
 writeFileSync(new URL('../levels/levels.json', import.meta.url), JSON.stringify(pack) + '\n');
 
 // Resumo
@@ -184,7 +272,10 @@ for (let i = 0; i < levels.length; i += 10) {
   const ch = g.find((l) => l.challenge);
   rows.push(
     `${String(i + 1).padStart(3)}–${String(i + g.length).padStart(3)}  ônibus ${avg((l) => l.buses.length).padStart(4)}  cores ${avg((l) => new Set(l.buses.map((b) => b.color)).size)}  ` +
-      `score ${avg((l) => l.meta.score).padStart(5)}  guloso ${avg((l) => l.meta.greedyWin)}  prior ${norm.filter((l) => l.priority.length).length}  mec ${norm.map((l) => l.mechanics.map((m) => m[0]).join('')).filter(Boolean).join(',')}` +
+      `score ${avg((l) => l.meta.score).padStart(5)}  guloso ${avg((l) => l.meta.greedyWin)}  prior ${norm.filter((l) => l.priority.length).length}  mec ${norm
+        .map((l) => l.mechanics.map((m) => m[0]).join(''))
+        .filter(Boolean)
+        .join(',')}` +
       (ch ? `  | desafio ${ch.id}: score ${ch.meta.score}, vagas ${ch.slots}` : ''),
   );
 }
