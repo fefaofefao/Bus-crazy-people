@@ -1,0 +1,6 @@
+# app-ads.txt do Bus Crazy People (AdMob)
+# 1. Confira o seu ID de editor em AdMob > Configurações > Informações da conta.
+#    Abaixo está o da conta usada no Life Direction (FSamp Labs); troque se for outra conta.
+# 2. Publique este arquivo na RAIZ do site informado na ficha da Play Store
+#    (ex.: https://fefaofefao.github.io/app-ads.txt). As linhas com # podem ser apagadas.
+google.com, pub-7483085200976329, DIRECT, f08c47fec0942fa0
