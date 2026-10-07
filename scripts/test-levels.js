@@ -3,7 +3,8 @@
 // Para CADA fase confere:
 //   1. estrutura válida (grade, ônibus dentro e sem sobreposição, cores,
 //      passageiros por cor = lugares por cor, prioritários);
-//   2. a solução gravada vence a fase SEM boosters (replay no motor real);
+//   2. a solução gravada vence a fase SEM boosters (replay no motor real), sem
+//      batidas e com TODAS as filas felizes (3 estrelas sempre possíveis);
 //   3. o solver encontra solução sozinho, sem boosters e sem estourar o limite;
 //   4. regras do pacote: 300 fases, 1–10 tutorial, Desafio a cada 10 (20..300),
 //      máximo de 8 cores, ids em ordem;
@@ -12,7 +13,7 @@
 // Uso: npm run test:levels
 
 import { readFileSync } from 'node:fs';
-import { validateLevel, replay, initialState, tap } from '../src/core/engine.js';
+import { validateLevel, replay, initialState, tap, happyLines, linesOf } from '../src/core/engine.js';
 import { solve } from '../src/core/solver.js';
 import { COLORS } from '../src/core/rules.js';
 
@@ -33,6 +34,10 @@ levels.forEach((lv, i) => {
   // 2. solução gravada
   const s = replay(lv, lv.solution || []);
   if (s.status !== 'won') fail(`fase ${id}: solução gravada não vence (status ${s.status}${s.reason ? ', ' + s.reason : ''})`);
+  else if (happyLines(s) !== linesOf(lv).length) fail(`fase ${id}: a solução gravada não deixa todas as filas felizes`);
+  // filas: tutorial 1–3 com 1 fila, depois 2 e 3; todas as fases geradas com 3; paciência definida
+  if (!Array.isArray(lv.lines) || !Number.isInteger(lv.calm)) fail(`fase ${id}: sem filas/paciência (lines, calm)`);
+  else if (id > 6 && lv.lines.length !== 3) fail(`fase ${id}: esperado 3 filas, tem ${lv.lines.length}`);
   // 2b. a solução gravada não tem nenhuma batida => 3 estrelas (0 erros) são sempre possíveis
   {
     let st = initialState(lv);
@@ -73,7 +78,8 @@ for (const [k, cfg] of Object.entries(GEN.mechanics)) {
 for (const l of levels.slice(10)) {
   const min = GEN.minTraps.reduce((m, [from, k]) => (l.id >= from ? k : m), 0);
   const isIntro = Object.values(GEN.mechanics).some((m) => m.intro === l.id);
-  if (l.meta.traps < (isIntro ? 0 : min)) fail(`fase ${l.id}: só ${l.meta.traps} armadilha(s) (mínimo ${min})`);
+  const traps = l.meta.traps + (l.meta.starTraps ?? 0);
+  if (traps < (isIntro ? 0 : min)) fail(`fase ${l.id}: só ${traps} armadilha(s) (mínimo ${min})`);
   const floor = l.challenge ? GEN.minGreedyWinChallenge : GEN.minGreedyWin;
   if (l.meta.greedyWin < floor) fail(`fase ${l.id}: dura demais (jogador ingênuo vence ${l.meta.greedyWin})`);
 }
@@ -83,8 +89,9 @@ for (const l of levels.filter((x) => x.challenge)) {
   const decade = levels.slice(l.id - 10, l.id - 1);
   const top = decade.reduce((a, b) => (b.meta.score > a.meta.score ? b : a));
   if (l.meta.score <= top.meta.score) fail(`Desafio ${l.id}: score ${l.meta.score} não supera a fase ${top.id} (${top.meta.score})`);
-  const maxTraps = Math.max(...decade.map((x) => x.meta.traps));
-  if (l.id > 10 && l.meta.traps < Math.min(maxTraps, GEN.challenge.minTraps)) fail(`Desafio ${l.id}: poucas armadilhas (${l.meta.traps})`);
+  const trapsOf = (m) => m.traps + (m.starTraps ?? 0);
+  const maxTraps = Math.max(...decade.map((x) => trapsOf(x.meta)));
+  if (l.id > 10 && trapsOf(l.meta) < Math.min(maxTraps, GEN.challenge.minTraps)) fail(`Desafio ${l.id}: poucas armadilhas (${trapsOf(l.meta)})`);
 }
 
 // 5. curva sem picos (só fases normais depois do tutorial)

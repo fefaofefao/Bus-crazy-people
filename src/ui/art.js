@@ -186,7 +186,57 @@ export function pruneBusTextures(scene, keep) {
  * Passageiro (visto de frente, estilizado) dentro de um Container já criado.
  * s = altura total. skin = índice do tom de pele.
  */
-export function drawPassenger(g, { color, s, skin = 0, symbol, hair = 0 }) {
+/** Cores do humor das filas (índice = humor: 0 nervosa, 1 impaciente, 2 feliz). */
+export const MOOD_COLORS = [0xe5484d, 0xffc72c, 0x23b26d];
+
+/**
+ * Olhos, boca e detalhes do rosto conforme o humor (2 feliz, 1 impaciente, 0 nervosa).
+ * (cx, cy) = centro da cabeça; r = raio da cabeça.
+ */
+export function drawFace(g, cx, cy, r, mood = 2) {
+  const ink = CONFIG.colors.ink;
+  const lw = Math.max(1, r * 0.13);
+  g.fillStyle(ink, 1);
+  g.fillCircle(cx - r * 0.35, cy + r * 0.02, r * 0.13);
+  g.fillCircle(cx + r * 0.35, cy + r * 0.02, r * 0.13);
+  g.lineStyle(lw, ink, 1);
+  if (mood >= 2) {
+    g.beginPath();
+    g.arc(cx, cy + r * 0.22, r * 0.34, Math.PI * 0.2, Math.PI * 0.8, false);
+    g.strokePath();
+  } else if (mood === 1) {
+    g.lineBetween(cx - r * 0.25, cy + r * 0.52, cx + r * 0.25, cy + r * 0.48);
+    // gota de suor
+    g.fillStyle(0x5fd3ff, 1);
+    g.fillCircle(cx + r * 0.78, cy - r * 0.12, r * 0.15);
+    g.fillTriangle(cx + r * 0.64, cy - r * 0.16, cx + r * 0.92, cy - r * 0.16, cx + r * 0.78, cy - r * 0.45);
+  } else {
+    g.beginPath();
+    g.arc(cx, cy + r * 0.78, r * 0.34, Math.PI * 1.2, Math.PI * 1.8, false);
+    g.strokePath();
+    // sobrancelhas bravas
+    g.lineBetween(cx - r * 0.6, cy - r * 0.42, cx - r * 0.15, cy - r * 0.2);
+    g.lineBetween(cx + r * 0.6, cy - r * 0.42, cx + r * 0.15, cy - r * 0.2);
+    // bochechas vermelhas
+    g.fillStyle(0xff4f6d, 0.55);
+    g.fillCircle(cx - r * 0.62, cy + r * 0.35, r * 0.16);
+    g.fillCircle(cx + r * 0.62, cy + r * 0.35, r * 0.16);
+  }
+}
+
+/** Selo do humor de uma fila: carinha redonda verde / amarela / vermelha. */
+export function drawMoodFace(g, x, y, r, mood = 2) {
+  const ink = CONFIG.colors.ink;
+  g.fillStyle(ink, 1);
+  g.fillCircle(x, y, r + Math.max(1.5, r * 0.14));
+  g.fillStyle(MOOD_COLORS[Math.max(0, Math.min(2, mood))], 1);
+  g.fillCircle(x, y, r);
+  g.fillStyle(0xffffff, 0.25);
+  g.fillCircle(x - r * 0.3, y - r * 0.35, r * 0.3);
+  drawFace(g, x, y - r * 0.05, r * 0.95, mood);
+}
+
+export function drawPassenger(g, { color, s, skin = 0, symbol, hair = 0, mood = 2 }) {
   const base = COLORS[color].hex;
   const C = CONFIG.colors;
   const ink = C.ink;
@@ -211,10 +261,8 @@ export function drawPassenger(g, { color, s, skin = 0, symbol, hair = 0 }) {
   g.fillStyle(hairColors[hair % hairColors.length], 1);
   g.slice(0, -s * 0.25, s * 0.2, Math.PI * 1.08, Math.PI * 1.92, false);
   g.fillPath();
-  // olhos
-  g.fillStyle(ink, 1);
-  g.fillCircle(-s * 0.07, -s * 0.23, s * 0.028);
-  g.fillCircle(s * 0.07, -s * 0.23, s * 0.028);
+  // rosto (muda com o humor da fila)
+  drawFace(g, 0, -s * 0.25, s * 0.2, mood);
   if (symbol) {
     g.fillStyle(ink, 1);
     g.fillCircle(0, s * 0.14, s * 0.17);

@@ -583,3 +583,26 @@ body {
   top: -10px;
   font-size: 13px;
 }
+/* fila inteira em várias filas: uma linha por fila, com a carinha do humor */
+.fds-qline {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0 8px;
+  border-bottom: 2px dashed rgba(27, 35, 64, 0.2);
+}
+.fds-qline:last-child {
+  border-bottom: 0;
+}
+.fds-qface {
+  font-size: 22px;
+  margin-right: 4px;
+}
+.fds-qline .fds-qdot {
+  width: 24px;
+  height: 24px;
+  line-height: 18px;
+  font-size: 11px;
+}

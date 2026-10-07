@@ -45,6 +45,12 @@ export default {
     unlocked: 'Destrancado!',
     cone: 'Obra!',
     combo: 'Combo x{n}!',
+    moodAnnoyed: 'Fila impaciente!',
+    moodAngry: 'Fila nervosa!',
+    homeTitle: 'Voltar ao início?',
+    homeInfo: 'Você perde o andamento desta fase (as vidas não são gastas).',
+    homeYes: 'Sair',
+    homeNo: 'Continuar jogando',
   },
   tutorial: {
     t1: 'Toque num ônibus: se a frente estiver livre, ele vai para o ponto e os passageiros embarcam.',
@@ -60,8 +66,8 @@ export default {
   },
   win: {
     retry3: 'Tentar 3 estrelas',
-    errors: { one: '{n} erro (batida ou ajuda)', other: '{n} erros (batidas ou ajudas)' },
-    perfect: 'Perfeito: nenhum erro!',
+    perfect: 'Perfeito: todas as filas felizes!',
+    happy: '{a} de {b} filas felizes',
     newBest: 'Novo recorde de estrelas!',
     title: 'Todo mundo embarcou!',
     titleChallenge: 'Desafio vencido!',
@@ -72,6 +78,7 @@ export default {
   },
   lose: {
     needColor: 'O próximo passageiro precisava de um ônibus {color}.',
+    needColors: 'Nenhum ônibus servia para a frente das filas ({colors}).',
     titleStuck: 'Trânsito travado!',
     infoStuck: 'Nenhum ônibus consegue sair mais. Desfaça uma jogada ou reinicie.',
     titleSlots: 'Ponto lotado!',
@@ -87,6 +94,8 @@ export default {
   mechanics: {
     new: 'NOVIDADE',
     ok: 'Bora!',
+    mood: { title: 'Humor da fila', text: 'Quem espera muito fica impaciente 😟 e depois nervoso 😠. Uma fila aguenta {n} jogadas seguidas sem ninguém embarcar (os pontinhos embaixo da carinha); batidas também contam. As estrelas vêm das filas FELIZES no fim: 3 felizes = ★★★, 2 = ★★, 1 = ★.' },
+    lines: { title: 'Várias filas!', text: 'O ponto agora tem mais de uma fila. Quem está na frente de QUALQUER fila embarca no ônibus da sua cor, uma fila de cada vez. Atenda todas para ninguém ficar nervoso!' },
     hidden: { title: 'Ônibus coberto', text: 'Ele está coberto com uma lona: a cor só aparece quando a frente dele ficar livre. Planeje com o que você já sabe!' },
     cones: { title: 'Obra na pista', text: 'Os cones bloqueiam a casa até a obra acabar. O número mostra quantas jogadas faltam.' },
     lock: { title: 'Cadeado e chave', text: 'O ônibus com cadeado só sai depois que o ônibus com a chave deixar o estacionamento.' },
@@ -127,6 +136,7 @@ export default {
   tips: {
     prefix: 'Dica do Tião:',
     list: [
+      'reveze: mande ônibus que atendam filas diferentes para ninguém esperar demais.',
       'antes de tocar, veja de que cor são os próximos passageiros (toque no +N para ver a fila toda).',
       'ônibus de cor que ainda vai demorar ocupam vaga à toa. Tire primeiro quem vai encher logo.',
       'com uma vaga sobrando, só tire um ônibus que combine com a frente da fila.',
@@ -207,7 +217,7 @@ export default {
       'Você perde se todas as vagas lotarem sem ônibus da cor do próximo passageiro, ou se um passageiro com relógio não embarcar a tempo.',
       'Toda fase tem solução. Use Desfazer (1 grátis por fase), Dica e Vaga extra quando precisar.',
       'Novidades aparecem pelo caminho: ônibus coberto (cor escondida), cadeado e chave, obra com cones e terminal que solta ônibus.',
-      'Estrelas: 0 erros = 3 estrelas, 1–2 erros = 2, mais que isso = 1. Erro é batida ou ajuda usada (desfazer, dica, vaga extra).',
+      'Estrelas: cada fila fica impaciente e depois nervosa se esperar demais sem embarcar (batidas também contam). No fim, 3 filas felizes = 3 estrelas, 2 = 2, 1 ou nenhuma = 1.',
       'Vidas: você tem 3. Cada derrota gasta 1 (as fases 1–10 não gastam); elas voltam com o tempo (1 a cada 20 min) ou todas de uma vez com um anúncio.',
     ],
     ok: 'Entendi',

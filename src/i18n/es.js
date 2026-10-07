@@ -44,6 +44,12 @@ export default {
     unlocked: '¡Sin candado!',
     cone: '¡Obras!',
     combo: '¡Combo x{n}!',
+    moodAnnoyed: '¡Fila impaciente!',
+    moodAngry: '¡Fila enojada!',
+    homeTitle: '¿Volver al inicio?',
+    homeInfo: 'Pierdes el avance de este nivel (no se gastan vidas).',
+    homeYes: 'Salir',
+    homeNo: 'Seguir jugando',
   },
   tutorial: {
     t1: 'Toca un bus: si tiene el frente libre, va a la parada y los pasajeros suben.',
@@ -59,8 +65,8 @@ export default {
   },
   win: {
     retry3: 'Ir por 3 estrellas',
-    errors: { one: '{n} error (choque o ayuda)', other: '{n} errores (choques o ayudas)' },
-    perfect: '¡Perfecto: ningún error!',
+    perfect: '¡Perfecto: todas las filas felices!',
+    happy: '{a} de {b} filas felices',
     newBest: '¡Nuevo récord de estrellas!',
     title: '¡Todos a bordo!',
     titleChallenge: '¡Desafío superado!',
@@ -71,6 +77,7 @@ export default {
   },
   lose: {
     needColor: 'El próximo pasajero necesitaba un bus {color}.',
+    needColors: 'Ningún bus servía para el frente de las filas ({colors}).',
     titleStuck: '¡Atasco total!',
     infoStuck: 'Ningún bus puede salir. Deshaz una jugada o reinicia.',
     titleSlots: '¡Parada llena!',
@@ -86,6 +93,8 @@ export default {
   mechanics: {
     new: 'NOVEDAD',
     ok: '¡Vamos!',
+    mood: { title: 'Humor de la fila', text: 'Quien espera mucho se impacienta 😟 y luego se enoja 😠. Una fila aguanta {n} jugadas seguidas sin que nadie suba (los puntitos bajo la carita); los choques también cuentan. Las estrellas salen de las filas FELICES al final: 3 felices = ★★★, 2 = ★★, 1 = ★.' },
+    lines: { title: '¡Varias filas!', text: 'La parada ahora tiene más de una fila. Quien está al frente de CUALQUIER fila sube al bus de su color, una fila a la vez. ¡Atiende a todas para que nadie se enoje!' },
     hidden: { title: 'Bus tapado', text: 'Está cubierto con una lona: su color solo aparece cuando su frente queda libre. ¡Planea con lo que ya sabes!' },
     cones: { title: 'Obras en la vía', text: 'Los conos bloquean la casilla hasta que terminen las obras. El número muestra cuántas jugadas faltan.' },
     lock: { title: 'Candado y llave', text: 'El bus con candado solo sale después de que el bus con la llave deje el estacionamiento.' },
@@ -126,6 +135,7 @@ export default {
   tips: {
     prefix: 'Consejo de Tião:',
     list: [
+      'alterna: manda buses que atiendan filas distintas para que nadie espere demasiado.',
       'antes de tocar, mira de qué color son los próximos pasajeros (toca el +N para ver toda la fila).',
       'los buses de un color que tardará en llegar ocupan plaza en vano. Saca primero los que se llenarán pronto.',
       'con una plaza libre, saca solo un bus que coincida con el frente de la fila.',
@@ -206,7 +216,7 @@ export default {
       'Pierdes si todas las plazas se llenan sin un bus del color del próximo pasajero, o si un pasajero con reloj no sube a tiempo.',
       'Todos los niveles tienen solución. Usa Deshacer (1 gratis por nivel), Pista y Plaza extra cuando lo necesites.',
       'Aparecen novedades por el camino: buses tapados (color oculto), candado y llave, obras con conos y terminales que sueltan buses.',
-      'Estrellas: 0 errores = 3 estrellas, 1–2 errores = 2, más = 1. Error es un choque o una ayuda usada (deshacer, pista, plaza extra).',
+      'Estrellas: cada fila se impacienta y luego se enoja si espera demasiado sin subir (los choques también cuentan). Al final, 3 filas felices = 3 estrellas, 2 = 2, 1 o ninguna = 1.',
       'Vidas: tienes 3. Cada derrota gasta 1 (los niveles 1–10 no); vuelven con el tiempo (1 cada 20 min) o todas de una vez con un anuncio.',
     ],
     ok: 'Entendido',

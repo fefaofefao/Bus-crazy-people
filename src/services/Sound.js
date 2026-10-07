@@ -117,5 +117,12 @@ export const Sound = {
   /** Combo: vários ônibus partindo de uma vez (tom sobe com o tamanho). */
   combo: (n = 2) =>
     play(() => [0, 4, 7, 12].slice(0, Math.min(4, n + 1)).forEach((st, i) => tone({ freq: 523.25 * Math.pow(2, st / 12), dur: 0.14, type: 'square', vol: 0.1, delay: i * 0.07 }))),
+  /** Fila perdendo a paciência: "hmpf" (impaciente) ou resmungo mais grave (nervosa). */
+  grumble: (mood = 1) =>
+    play(() => {
+      const base = mood >= 1 ? 330 : 220;
+      tone({ freq: base, to: base * 0.8, dur: 0.12, type: 'sawtooth', vol: 0.1 });
+      tone({ freq: base * 0.9, to: base * 0.6, dur: 0.18, type: 'sawtooth', vol: 0.1, delay: 0.13 });
+    }),
   star: (i = 0) => play(() => tone({ freq: 784 * Math.pow(1.26, i), dur: 0.12, type: 'triangle', vol: 0.22 })),
 };

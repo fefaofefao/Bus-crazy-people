@@ -2,7 +2,8 @@
 // Uso: npm run test:engine
 
 import assert from 'node:assert/strict';
-import { initialState, tap, addSlot, validateLevel, replay, LEVEL_FORMAT, garageSpawnPos } from '../src/core/engine.js';
+import { initialState, tap, addSlot, validateLevel, replay, LEVEL_FORMAT, garageSpawnPos, happyLines, MOOD_HAPPY, MOOD_ANNOYED, MOOD_ANGRY } from '../src/core/engine.js';
+import { starsFor } from '../src/core/stars.js';
 import { solve, nextMove } from '../src/core/solver.js';
 
 const L = (o) => ({ format: LEVEL_FORMAT, id: 0, challenge: false, tutorial: null, priority: [], mechanics: [], ...o, buses: o.buses.map((b, id) => ({ id, ...b })) });
@@ -42,7 +43,7 @@ test('ônibus livre sai para a vaga de menor índice e espera sem passageiros da
   assert.equal(r.events[0].type, 'exit');
   assert.equal(r.events[0].slot, 0);
   assert.equal(r.state.slots[0].bus, 0);
-  assert.equal(r.state.q, 0); // a frente é azul: ninguém embarca
+  assert.deepEqual(r.state.q, [0]); // a frente é azul: ninguém embarca
 });
 
 test('embarque automático, partida ao lotar e vitória', () => {
@@ -225,6 +226,86 @@ test('travado: sem saída e sem obra para terminar = derrota', () => {
   });
   const r = tap(lv, initialState(lv), 0);
   assert.equal(r.state.reason, 'stuck');
+});
+
+// ---------------------------------------------------------------------------
+// Várias filas + humor
+// ---------------------------------------------------------------------------
+// Três ônibus livres (vermelho, azul, amarelo), um por coluna, saindo para cima.
+const three = L({
+  cols: 3,
+  rows: 3,
+  slots: 3,
+  calm: 2,
+  buses: [
+    { x: 0, y: 0, dir: 'up', type: 'small', color: 0 },
+    { x: 1, y: 0, dir: 'up', type: 'small', color: 1 },
+    { x: 2, y: 0, dir: 'up', type: 'small', color: 2 },
+  ],
+  lines: [
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [2, 2, 2, 2],
+  ],
+});
+
+test('várias filas: fase válida; fila vazia ou cor sem lugar é rejeitada', () => {
+  assert.deepEqual(validateLevel(three), []);
+  assert.ok(validateLevel({ ...three, lines: [[0, 0, 0, 0], [], [1, 1, 1, 1, 2, 2, 2, 2]] }).length > 0);
+  assert.ok(validateLevel({ ...three, lines: [[0, 0, 0], [1, 1, 1, 1], [2, 2, 2, 2]] }).length > 0);
+});
+
+test('várias filas: só a fila da cor embarca; as outras esperam', () => {
+  const r = tap(three, initialState(three), 1);
+  assert.deepEqual(r.state.q, [0, 4, 0]);
+  assert.deepEqual(r.state.wait, [1, 0, 1]);
+  assert.ok(r.events.filter((e) => e.type === 'board').every((e) => e.line === 1));
+});
+
+test('embarque em rodízio entre as filas (0, 1, 0, 1…)', () => {
+  const lv = L({ ...three, buses: [{ x: 0, y: 0, dir: 'up', type: 'large', color: 0 }], lines: [[0, 0, 0, 0], [0, 0, 0, 0]] });
+  const r = tap(lv, initialState(lv), 0);
+  assert.deepEqual(r.events.filter((e) => e.type === 'board').map((e) => e.line), [0, 1, 0, 1, 0, 1, 0, 1]);
+  assert.equal(r.state.status, 'won');
+});
+
+test('humor: fila que espera `calm` jogadas piora (feliz -> impaciente -> nervosa) e não melhora', () => {
+  // calm 2: a fila 2 (amarelo) espera 2 jogadas -> impaciente; mais 2 -> nervosa
+  let s = initialState(three);
+  s = tap(three, s, 0).state; // vermelho: filas 1 e 2 esperam 1
+  s = tap(three, s, 1).state; // azul: fila 2 espera 2 -> impaciente
+  assert.deepEqual(s.mood, [MOOD_HAPPY, MOOD_HAPPY, MOOD_ANNOYED]);
+  s = tap(three, s, 2).state; // amarelo: fila 2 embarca, mas o humor fica
+  assert.equal(s.status, 'won');
+  assert.deepEqual(s.mood, [MOOD_HAPPY, MOOD_HAPPY, MOOD_ANNOYED]);
+  assert.equal(happyLines(s), 2);
+  // batidas também contam como espera
+  const lv = { ...three, calm: 1 };
+  const t1 = tap(lv, initialState(lv), 0).state;
+  assert.deepEqual(t1.mood, [MOOD_HAPPY, MOOD_ANNOYED, MOOD_ANNOYED]);
+  const t2 = tap(lv, t1, 1).state;
+  assert.deepEqual(t2.mood, [MOOD_HAPPY, MOOD_ANNOYED, MOOD_ANGRY]);
+});
+
+test('estrelas = filas felizes: 3 = ★★★, 2 = ★★, 1 ou 0 = ★ (menos filas: cada infeliz tira 1)', () => {
+  assert.equal(starsFor(3, 3), 3);
+  assert.equal(starsFor(2, 3), 2);
+  assert.equal(starsFor(1, 3), 1);
+  assert.equal(starsFor(0, 3), 1);
+  assert.equal(starsFor(1, 1), 3);
+  assert.equal(starsFor(0, 1), 2);
+  assert.equal(starsFor(2, 2), 3);
+  assert.equal(starsFor(0, 2), 1);
+});
+
+test('solver keepHappy: acha a ordem que deixa todas as filas felizes', () => {
+  // calm 3: qualquer ordem das 3 cores deixa todas felizes
+  const lv = { ...three, calm: 3 };
+  const r = solve(lv, { keepHappy: true });
+  assert.ok(r.solvable);
+  assert.equal(happyLines(replay(lv, r.path)), 3);
+  // calm 1: toda jogada deixa duas filas esperando – não há como manter todas felizes
+  assert.equal(solve({ ...three, calm: 1 }, { keepHappy: true }).solvable, false);
 });
 
 console.log(`✓ ${n} testes do motor passaram`);

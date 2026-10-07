@@ -44,6 +44,12 @@ export default {
     unlocked: 'Unlocked!',
     cone: 'Roadwork!',
     combo: 'Combo x{n}!',
+    moodAnnoyed: 'Line getting impatient!',
+    moodAngry: 'Line is angry!',
+    homeTitle: 'Back to home?',
+    homeInfo: 'You will lose your progress on this level (no lives are spent).',
+    homeYes: 'Leave',
+    homeNo: 'Keep playing',
   },
   tutorial: {
     t1: 'Tap a bus: if its front is clear, it drives to the stop and passengers get on.',
@@ -59,8 +65,8 @@ export default {
   },
   win: {
     retry3: 'Go for 3 stars',
-    errors: { one: '{n} mistake (bump or helper)', other: '{n} mistakes (bumps or helpers)' },
-    perfect: 'Perfect: no mistakes!',
+    perfect: 'Perfect: every line is happy!',
+    happy: '{a} of {b} lines happy',
     newBest: 'New star record!',
     title: 'Everyone is on board!',
     titleChallenge: 'Challenge beaten!',
@@ -71,6 +77,7 @@ export default {
   },
   lose: {
     needColor: 'The next passenger needed a {color} bus.',
+    needColors: 'No bus matched the front of the lines ({colors}).',
     titleStuck: 'Total gridlock!',
     infoStuck: 'No bus can leave anymore. Undo a move or restart.',
     titleSlots: 'Stop is full!',
@@ -86,6 +93,8 @@ export default {
   mechanics: {
     new: 'NEW',
     ok: "Let's go!",
+    mood: { title: 'Line mood', text: 'Waiting too long makes people impatient 😟 and then angry 😠. A line puts up with {n} moves in a row with nobody boarding (the dots under the face); bumps count too. Stars come from HAPPY lines at the end: 3 happy = ★★★, 2 = ★★, 1 = ★.' },
+    lines: { title: 'More lines!', text: 'The stop now has more than one line. Whoever is at the front of ANY line boards a bus of their color, one line at a time. Serve them all so nobody gets angry!' },
     hidden: { title: 'Covered bus', text: 'This bus is under a tarp: its color only shows once its front is clear. Plan with what you already know!' },
     cones: { title: 'Roadwork', text: 'Cones block the spot until the roadwork is done. The number shows how many moves are left.' },
     lock: { title: 'Lock and key', text: 'The bus with a padlock can only leave after the bus with the key has left the parking lot.' },
@@ -126,6 +135,7 @@ export default {
   tips: {
     prefix: "Tião's tip:",
     list: [
+      'take turns: send buses that serve different lines so nobody waits too long.',
       'before tapping, check the colors coming up next (tap +N to see the whole line).',
       'buses whose color is far down the line just take up a spot. Send out the ones that will fill up soon.',
       'with one spot left, only send out a bus that matches the front of the line.',
@@ -206,7 +216,7 @@ export default {
       'You lose if every spot fills up with no bus matching the next passenger, or if a passenger with a clock does not board in time.',
       'Every level can be solved. Use Undo (1 free per level), Hint and Extra spot when you need them.',
       'New things show up along the way: covered buses (hidden color), lock and key, roadwork cones and terminals that release buses.',
-      'Stars: 0 mistakes = 3 stars, 1–2 mistakes = 2, more = 1. A mistake is a bump or a helper used (undo, hint, extra spot).',
+      'Stars: a line gets impatient and then angry if it waits too long without boarding (bumps count too). At the end, 3 happy lines = 3 stars, 2 = 2, 1 or none = 1.',
       'Lives: you have 3. Each loss costs 1 (levels 1–10 are free); they come back over time (1 every 20 min) or all at once with an ad.',
     ],
     ok: 'Got it',

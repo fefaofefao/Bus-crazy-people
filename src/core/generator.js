@@ -9,14 +9,19 @@
 //    cada toque, uma "leva" de passageiros embarca. Levas curtas obrigam o jogador
 //    a guardar ônibus nas vagas (é daí que vem a dificuldade). Restrições garantem
 //    que a ordem O nunca lota as vagas.
-// 3. Prioritários: escolhidos na fila; a paciência = momento em que embarcam na
+// 3. Filas: a fila única é repartida em pedaços (mesma cor) entre as N filas do
+//    ponto, sempre para a fila mais curta – assim todas andam ao longo da partida.
+//    A ordem O precisa continuar vencendo com o embarque em rodízio.
+// 4. Humor: simula a ordem O e mede a maior espera de cada fila; `calm` = essa
+//    espera + 1 + folga. Logo, seguindo O todas as filas terminam felizes (3 ★).
+// 5. Prioritários: escolhidos nas filas; a paciência = momento em que embarcam na
 //    ordem O + uma folga.
-// 4. O solver confirma que há solução sem boosters (o gerador rejeita o resto) e
+// 6. O solver confirma que há solução sem boosters (o gerador rejeita o resto) e
 //    as métricas de dificuldade são calculadas (ver measure()).
 
 import { mulberry32 } from './prng.js';
 import { DIRS, DIR_KEYS, BUS_TYPES, busCells } from './rules.js';
-import { LEVEL_FORMAT, replay, initialState, tap, legalExits, occupancy, validateLevel, scanPath, isLocked, spawnFromGarages, garageSpawnPos, OCC_FREE } from './engine.js';
+import { LEVEL_FORMAT, replay, initialState, tap, legalExits, occupancy, validateLevel, scanPath, isLocked, spawnFromGarages, garageSpawnPos, frontColors, happyLines, linesOf, OCC_FREE } from './engine.js';
 import { solve } from './solver.js';
 
 /** Monta o estacionamento. Devolve { buses (ordem de inserção), ok }. */
@@ -183,38 +188,48 @@ export function measure(level, { playouts = 160, seed = 12345 } = {}) {
       if (!opts.length) break;
       let pick = opts[rng.int(0, opts.length - 1)];
       if (smart) {
-        // jogador "ingênuo": prefere a cor do passageiro da frente
-        const want = level.queue[s.q];
-        const m = opts.filter((id) => level.buses[id].color === want);
+        // jogador "ingênuo": prefere a cor de algum passageiro da frente
+        const want = frontColors(level, s);
+        const m = opts.filter((id) => want.includes(level.buses[id].color));
         if (m.length) pick = m[rng.int(0, m.length - 1)];
       }
       s = tap(level, s, pick).state;
     }
-    return s.status === 'won';
+    return s.status !== 'won' ? false : happyLines(s) === nLines ? 3 : true;
   };
   let rw = 0;
   let gw = 0;
+  let g3 = 0; // vitórias do ingênuo com todas as filas felizes (3 estrelas)
+  const nLines = linesOf(level).length;
   for (let i = 0; i < playouts; i++) {
     if (run(false)) rw++;
-    if (run(true)) gw++;
+    const r = run(true);
+    if (r) gw++;
+    if (r === 3) g3++;
   }
   const randomWin = rw / playouts;
   const greedyWin = gw / playouts;
   // "jogadas erradas possíveis": ao longo da solução, quantos toques legais levam a
-  // um estado sem saída (provado pelo solver)
+  // um estado sem saída (provado pelo solver) – armadilhas; e quantos, mesmo
+  // vencíveis, já não deixam terminar com todas as filas felizes – armadilhas de estrela
   let traps = 0;
+  let starTraps = 0;
   let options = 0;
   if (level.solution) {
     let s = initialState(level);
     for (const id of level.solution) {
       for (const o of legalExits(level, s)) {
         options++;
-        if (!solve(level, { state: tap(level, s, o).state, maxNodes: 40000 }).solvable) traps++;
+        const n = tap(level, s, o).state;
+        if (!solve(level, { state: n, maxNodes: 40000 }).solvable) traps++;
+        else if (o !== id && !solve(level, { state: n, maxNodes: 20000, keepHappy: true }).solvable) starTraps++;
       }
       s = tap(level, s, id).state;
     }
   }
   const trapRatio = options ? traps / options : 0;
+  const starTrapRatio = options ? starTraps / options : 0;
+  const greedy3 = g3 / playouts;
   const colors = new Set(level.buses.map((b) => b.color)).size;
   const score =
     0.45 * level.buses.length +
@@ -222,11 +237,22 @@ export function measure(level, { playouts = 160, seed = 12345 } = {}) {
     12 * (1 - randomWin) +
     38 * (1 - greedyWin) +
     120 * trapRatio +
+    40 * starTrapRatio +
+    10 * (1 - greedy3) +
     3 * (level.priority?.length ?? 0) +
     1.5 * (level.mechanics?.length ?? 0) +
     2.5 * Math.max(0, 5 - level.slots);
   const r2 = (x) => Math.round(x * 1000) / 1000;
-  return { randomWin: r2(randomWin), greedyWin: r2(greedyWin), traps, trapRatio: r2(trapRatio), score: Math.round(score * 100) / 100 };
+  return {
+    randomWin: r2(randomWin),
+    greedyWin: r2(greedyWin),
+    greedy3: r2(greedy3),
+    traps,
+    trapRatio: r2(trapRatio),
+    starTraps,
+    starTrapRatio: r2(starTrapRatio),
+    score: Math.round(score * 100) / 100,
+  };
 }
 
 /**
@@ -312,6 +338,69 @@ function feasibleOrder(rng, level, rank) {
   return O;
 }
 
+/**
+ * Reparte a fila única em `n` filas: pedaços de 1–3 passageiros da mesma cor vão
+ * para a fila mais curta (empate: sorteio). Devolve as filas.
+ */
+export function dealLines(rng, queue, n, map = null, maxChunk = 3) {
+  if (n <= 1) {
+    if (map) queue.forEach((_, i) => (map[i] = [0, i]));
+    return [queue.slice()];
+  }
+  const lines = Array.from({ length: n }, () => []);
+  let i = 0;
+  while (i < queue.length) {
+    let len = 1;
+    const max = rng.int(1, maxChunk);
+    while (len < max && i + len < queue.length && queue[i + len] === queue[i]) len++;
+    const min = Math.min(...lines.map((l) => l.length));
+    const cands = lines.map((l, k) => k).filter((k) => lines[k].length <= min + 1);
+    const k = cands[rng.int(0, cands.length - 1)];
+    for (let j = 0; j < len; j++) {
+      if (map) map[i + j] = [k, lines[k].length];
+      lines[k].push(queue[i + j]);
+    }
+    i += len;
+  }
+  // filas vazias (fila muito curta) somem; os índices do mapa acompanham
+  const keep = lines.map((l, k) => k).filter((k) => lines[k].length);
+  if (map) for (const m of map) m[0] = keep.indexOf(m[0]);
+  return keep.map((k) => lines[k]);
+}
+
+/**
+ * Simula a ordem O e mede, por fila, a maior espera (jogadas seguidas sem
+ * embarcar) e em que jogada cada passageiro embarcou.
+ * Devolve { won, maxWait, boardMove: [[jogada, ...] por fila] }.
+ */
+export function simulateOrder(level, O) {
+  const lv = { ...level, calm: 1e9 };
+  let s = initialState(lv);
+  const boardMove = linesOf(lv).map((l) => new Array(l.length).fill(0));
+  let maxWait = 0;
+  O.forEach((id, k) => {
+    const r = tap(lv, s, id);
+    s = r.state;
+    for (const e of r.events) if (e.type === 'board') boardMove[e.line][e.passenger] = k + 1;
+    maxWait = Math.max(maxWait, ...s.wait);
+  });
+  return { won: s.status === 'won', maxWait, boardMove };
+}
+
+/** A sequência de toques não tem nenhuma batida? */
+function noBumps(level, path) {
+  let s = initialState(level);
+  for (const id of path) {
+    const r = tap(level, s, id);
+    if (r.events.some((e) => e.type === 'bump')) return false;
+    s = r.state;
+  }
+  return true;
+}
+
+/** Paciência das filas para a ordem O deixar todas felizes, mais uma folga. */
+export const calmFor = (maxWait, slack) => Math.max(2, maxWait + 1 + slack);
+
 export function generateLevel(id, p, seed) {
   const rng = mulberry32(seed);
   const placed = placeBuses(rng, p);
@@ -326,6 +415,8 @@ export function generateLevel(id, p, seed) {
     tutorial: null,
     buses: placed.buses.map((b) => ({ id: b.id, x: b.x, y: b.y, dir: b.dir, type: b.type, color: 0 })),
     queue: [],
+    lines: [],
+    calm: 0,
     priority: [],
     cones: [],
     garages: [],
@@ -338,7 +429,28 @@ export function generateLevel(id, p, seed) {
   if (!O) return null;
   const built = buildQueue(rng, level, O, p);
   if (!built) return null;
-  level.queue = built.queue;
+  // filas: várias repartições; fica a que a ordem O vence com a menor espera máxima
+  const nLines = p.lines ?? 1;
+  let best = null;
+  for (let k = 0; k < (nLines > 1 ? 6 : 1); k++) {
+    const lines = dealLines(rng, built.queue, nLines, null, p.dealMax ?? 3);
+    const sim = simulateOrder({ ...level, lines }, O);
+    if (sim.won && (!best || sim.maxWait < best.sim.maxWait)) best = { lines, sim };
+  }
+  if (!best) return null;
+  delete level.queue;
+  level.lines = best.lines;
+  // paciência mais apertada que ainda permite deixar todas as filas felizes
+  // (pode ser menor que a da ordem O: o solver procura outra ordem) + folga
+  let tight = calmFor(best.sim.maxWait, 0);
+  let happyPath = O;
+  for (let c = tight - 1; c >= 2 && p.tightCalm !== false; c--) {
+    const r = solve({ ...level, calm: c }, { keepHappy: true, maxNodes: 60000 });
+    if (!r.solvable || !noBumps({ ...level, calm: c }, r.path)) break;
+    tight = c;
+    happyPath = r.path;
+  }
+  level.calm = tight + (p.calmSlack ?? 2);
   // limpa campos vazios e registra as mecânicas presentes
   if (!level.cones.length) delete level.cones;
   if (!level.garages.length) delete level.garages;
@@ -350,26 +462,29 @@ export function generateLevel(id, p, seed) {
   const nPri = p.priority ?? 0;
   const used = new Set();
   for (let k = 0; k < nPri; k++) {
-    const lo = Math.floor(level.queue.length * 0.15);
-    const hi = Math.floor(level.queue.length * 0.85);
     for (let tries = 0; tries < 20; tries++) {
-      const idx = rng.int(lo, Math.max(lo, hi));
-      if (used.has(idx)) continue;
-      const needed = built.boardMove[idx];
+      const line = rng.int(0, level.lines.length - 1);
+      const len = level.lines[line].length;
+      const lo = Math.floor(len * 0.15);
+      const idx = rng.int(lo, Math.max(lo, Math.floor(len * 0.85)));
+      if (used.has(`${line}.${idx}`)) continue;
+      const needed = best.sim.boardMove[line][idx];
       if (needed < 3) continue;
-      used.add(idx);
-      level.priority.push({ index: idx, patience: needed + p.prioritySlack });
+      used.add(`${line}.${idx}`);
+      level.priority.push({ line, index: idx, patience: needed + p.prioritySlack });
       break;
     }
   }
-  level.priority.sort((a, b) => a.index - b.index);
+  level.priority.sort((a, b) => a.line - b.line || a.index - b.index);
 
   if (validateLevel(level).length) return null;
   const sol = solve(level, { maxNodes: p.maxSolverNodes ?? 250000 });
   if (!sol.solvable) return null;
   // solução gravada = ordem pretendida (sem nenhuma batida: prova que 3 estrelas são possíveis);
   // se por algum motivo ela não vencer, fica a do solver
-  level.solution = replay(level, O).status === 'won' ? O : sol.path;
+  const final = replay(level, happyPath);
+  if (final.status !== 'won' || happyLines(final) !== level.lines.length) return null;
+  level.solution = happyPath;
   level.meta = { seed, ...measure(level, { seed: seed ^ 0x5bd1e995 }) };
   // fase trivial demais (vence quase sempre jogando ao acaso) é descartada fora do início
   if (p.maxRandomWin != null && level.meta.randomWin > p.maxRandomWin) return null;

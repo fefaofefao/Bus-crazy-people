@@ -6,8 +6,8 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
 import { DIRS, BUS_TYPES, busCells, COLORS } from '../core/rules.js';
-import { SYMBOL_CHARS } from '../ui/art.js';
-import { initialState, tap, addSlot, occupancy, scanPath, isLocked, coneActive, OCC_CONE, OCC_GARAGE, BLOCK_LOCK } from '../core/engine.js';
+import { SYMBOL_CHARS, drawMoodFace, MOOD_COLORS } from '../ui/art.js';
+import { initialState, tap, addSlot, occupancy, scanPath, isLocked, coneActive, linesOf, happyLines, frontColors, calmOf, OCC_CONE, OCC_GARAGE, BLOCK_LOCK, MOOD_HAPPY } from '../core/engine.js';
 import { nextMove } from '../core/solver.js';
 import { starsFor } from '../core/stars.js';
 import { Achievements } from '../services/Achievements.js';
@@ -49,7 +49,7 @@ export class GameScene extends Phaser.Scene {
     this.state = initialState(this.level);
     this.history = [];
     this.undos = CONFIG.game.freeUndosPerLevel;
-    this.errors = 0; // batidas + ajudas (desfazer, dica, vaga extra) – define as estrelas
+    this.lines = linesOf(this.level); // filas do ponto; o humor delas define as estrelas
     this.maxCombo = 0;
     this.extraSlots = 0;
     this.busy = false;
@@ -107,7 +107,8 @@ export class GameScene extends Phaser.Scene {
     // ---- faixas verticais ----
     const topH = CONFIG.layout.topBarHeight * u;
     const roadH = 120 * u;
-    const walkH = 70 * u;
+    // calçada: uma faixa por fila
+    const walkH = this.lines.length > 1 ? (14 + this.lines.length * 40) * u : 70 * u;
     const bottomH = CONFIG.layout.bottomBarHeight * u;
     const tipH = this.tutorial ? 54 * u : 0;
     const yTop = L.top;
@@ -141,8 +142,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < this.state.slots.length; i++) this.slotViews.push(this.makeSlotBay(i));
     this.state.slots.forEach((o, i) => o && this.placeSlotBus(i, o.bus, o.filled, false));
 
-    // ---- fila ----
-    this.queueViews = [];
+    // ---- filas ----
     this.layoutQueue();
     this.renderQueue(first);
 
@@ -257,14 +257,15 @@ export class GameScene extends Phaser.Scene {
     drawCalcadao(g, 0, y, L.W, h, u);
     g.fillStyle(C.ink, 1);
     g.fillRect(0, y + h - 4 * u, L.W, 4 * u);
-    // placa do ponto (à esquerda)
-    const px = L.left + 16 * u;
-    g.fillStyle(C.ink, 1);
-    g.fillRect(px - 2.5 * u, y + 8 * u, 5 * u, h - 14 * u);
-    g.fillRoundedRect(px - 13 * u, y + 2 * u, 26 * u, 25 * u, 6 * u);
-    g.fillStyle(C.shelter, 1);
-    g.fillRoundedRect(px - 10.5 * u, y + 4.5 * u, 21 * u, 20 * u, 4 * u);
-    Icons.bus(g, px, y + 15 * u, 15 * u, 0xffffff);
+    // faixas das filas (linha tracejada entre elas)
+    if (this.lines.length > 1) {
+      g.fillStyle(C.ink, 0.18);
+      const rowH = (h - 14 * u) / this.lines.length;
+      for (let i = 1; i < this.lines.length; i++) {
+        const ly = y + 7 * u + i * rowH;
+        for (let x = L.left + 40 * u; x < L.right - 8 * u; x += 14 * u) g.fillRect(x, ly - 1 * u, 8 * u, 2 * u);
+      }
+    }
   }
 
   drawLot(u) {
@@ -518,10 +519,7 @@ export class GameScene extends Phaser.Scene {
     let tEnd = 0;
     const boardEvents = [];
     for (const e of events) {
-      if (e.type === 'bump') {
-        this.addError();
-        tEnd = Math.max(tEnd, this.animBump(e));
-      }
+      if (e.type === 'bump') tEnd = Math.max(tEnd, this.animBump(e));
       else if (e.type === 'exit') tEnd = Math.max(tEnd, this.animExit(e));
       else if (e.type === 'board' || e.type === 'depart') boardEvents.push(e);
     }
@@ -549,6 +547,9 @@ export class GameScene extends Phaser.Scene {
       }
     }
     tEnd = Math.max(tEnd, t0 + (boardEvents.length ? A.board + 60 : 0));
+    // humor: filas que perderam a paciência nesta jogada
+    const moods = events.filter((e) => e.type === 'mood');
+    if (moods.length) this.time.delayedCall(Math.min(tEnd, 400), () => this.animMood(moods));
     // combo: vários ônibus partindo com um toque só
     if (departs >= 2)
       this.time.delayedCall(t0, () => {
@@ -649,7 +650,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   animBoard(e) {
-    const v = this.queueViews.shift();
+    const row = this.lineRows[e.line ?? 0];
+    const v = row?.views.shift();
     const sv = this.slotViews[e.slot];
     if (v && sv?.bus) {
       this.tweens.add({ targets: v, angle: v.x < sv.bus.x ? 12 : -12, duration: A.board / 2, yoyo: true });
@@ -673,7 +675,30 @@ export class GameScene extends Phaser.Scene {
       Sound.board(e.seat);
     });
     // a fila anda
-    this.shiftQueue(e.passenger + 1);
+    this.shiftQueue(e.line ?? 0, e.passenger + 1, true);
+  }
+
+  /** Fila(s) perdendo a paciência: carinha muda, fila treme, resmungo e estrelas caem. */
+  animMood(events) {
+    const u = this.u;
+    let worst = 2;
+    for (const e of events) {
+      worst = Math.min(worst, e.mood);
+      const row = this.lineRows[e.line];
+      if (!row) continue;
+      this.redrawLine(e.line, e.mood);
+      for (const v of [row.face, ...row.views]) {
+        const x = v.x;
+        this.tweens.add({ targets: v, x: x + 3 * u, duration: 45, yoyo: true, repeat: 3, onComplete: () => v.active && v.setX(x) });
+      }
+      this.floatText(row.x0 + 50 * u, row.y - 6 * u, e.mood >= 1 ? t('game.moodAnnoyed') : t('game.moodAngry'), e.mood >= 1 ? '#ffe28a' : '#ffb3b8', 14);
+    }
+    Sound.grumble(worst);
+    Haptics.collision();
+    if (this.starsG && events.some((e) => e.mood === MOOD_HAPPY - 1)) {
+      this.tweens.add({ targets: this.starsG, x: 3 * u, duration: 50, yoyo: true, repeat: 2, onComplete: () => this.starsG.setX(0) });
+    }
+    this.refreshHud();
   }
 
   animDepart(e) {
@@ -808,27 +833,37 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ===========================================================================
-  // Fila
+  // Filas (uma faixa por fila; à esquerda, a carinha do humor e a paciência)
   // ===========================================================================
   layoutQueue() {
     const u = this.u;
     const L = this.L;
-    this.qSize = 44 * u;
-    this.qGap = 30 * u;
-    this.qX0 = L.left + 48 * u;
-    this.qY = this.zones.yWalk + this.zones.walkH * 0.52;
-    this.qVisible = Math.max(4, Math.min(CONFIG.game.queueVisible, Math.floor((L.right - 46 * u - this.qX0) / this.qGap) + 1));
+    const n = this.lines.length;
+    const multi = n > 1;
+    this.qSize = (multi ? 34 : 44) * u;
+    this.qGap = (multi ? 25 : 30) * u;
+    const x0 = L.left + (multi ? 50 : 56) * u;
+    const top = this.zones.yWalk + (multi ? 7 * u : 0);
+    const rowH = multi ? (this.zones.walkH - 14 * u) / n : this.zones.walkH;
+    this.qVisible = Math.max(4, Math.min(CONFIG.game.queueVisible, Math.floor((L.right - 40 * u - x0) / this.qGap) + 1));
+    this.lineRows = this.lines.map((_, i) => ({ i, x0, y: top + rowH * (i + 0.5) + (multi ? 3 * u : 2 * u), rowH, views: [], face: null, meter: null, more: null }));
   }
 
-  makePassenger(idx, slotPos) {
+  makePassenger(line, idx, slotPos) {
     const lv = this.level;
-    const color = lv.queue[idx];
-    const c = this.add.container(this.qX0 + slotPos * this.qGap, this.qY).setDepth(15);
+    const row = this.lineRows[line];
+    const color = this.lines[line][idx];
+    const c = this.add.container(row.x0 + slotPos * this.qGap, row.y).setDepth(15);
     const g = this.add.graphics();
-    const skin = (idx * 7 + lv.id) % 5;
-    drawPassenger(g, { color, s: this.qSize, skin, hair: (idx * 3) % 4, symbol: this.symbols });
+    const k = idx + line * 17;
+    const skin = (k * 7 + lv.id) % 5;
+    drawPassenger(g, { color, s: this.qSize, skin, hair: (k * 3) % 4, symbol: this.symbols, mood: this.state.mood[line] });
     c.add(g);
-    const pri = (lv.priority || []).find((p) => p.index === idx);
+    c.body = g;
+    c.skin = skin;
+    c.hair = (k * 3) % 4;
+    c.color = color;
+    const pri = (lv.priority || []).find((p) => (p.line ?? 0) === line && p.index === idx);
     if (pri) {
       const u = this.u;
       const badge = this.add.graphics();
@@ -842,62 +877,129 @@ export class GameScene extends Phaser.Scene {
       c.priority = { patience: pri.patience, txt, badge };
     }
     c.idx = idx;
-    // balanço leve de quem espera na fila
-    const bob = this.tweens.add({ targets: g, y: -2.5 * this.u, duration: 520 + (idx % 5) * 70, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: (idx % 7) * 90 });
+    // balanço de quem espera na fila (mais agitado quando a fila está nervosa)
+    const m = this.state.mood[line];
+    const bob = this.tweens.add({ targets: g, y: -2.5 * this.u, duration: (m >= 2 ? 520 : m === 1 ? 300 : 160) + (idx % 5) * 40, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: (idx % 7) * 90 });
     c.once('destroy', () => bob.remove());
     return c;
   }
 
   renderQueue(first) {
-    const lv = this.level;
-    for (const v of this.queueViews) v.destroy();
-    this.queueViews = [];
-    const end = Math.min(lv.queue.length, this.state.q + this.qVisible);
-    for (let i = this.state.q; i < end; i++) {
-      const v = this.makePassenger(i, i - this.state.q);
-      this.queueViews.push(v);
-      if (first) {
-        v.setAlpha(0);
-        this.tweens.add({ targets: v, alpha: 1, duration: 200, delay: (i - this.state.q) * 30 });
+    const u = this.u;
+    for (const row of this.lineRows) {
+      const li = row.i;
+      const line = this.lines[li];
+      const q = this.state.q[li];
+      const end = Math.min(line.length, q + this.qVisible);
+      for (let i = q; i < end; i++) {
+        const v = this.makePassenger(li, i, i - q);
+        row.views.push(v);
+        if (first) {
+          v.setAlpha(0);
+          this.tweens.add({ targets: v, alpha: 1, duration: 200, delay: (i - q) * 30 + li * 60 });
+        }
       }
+      // carinha do humor + paciência (pontinhos que somem a cada jogada sem embarque)
+      const r = (this.lines.length > 1 ? 13 : 16) * u;
+      row.face = this.add.graphics().setDepth(16);
+      row.face.setPosition(this.L.left + 20 * u, row.y - 4 * u);
+      row.faceR = r;
+      row.meter = this.add.graphics().setDepth(16);
+      const zone = this.add.zone(row.face.x, row.y, 40 * u, row.rowH).setInteractive().setDepth(17);
+      zone.on('pointerup', () => this.explainMood());
+      row.more = this.add
+        .text(this.L.right - 8 * u, row.y - this.qSize * 0.05, '', { fontFamily: FONT, fontSize: `${(this.lines.length > 1 ? 12 : 14) * u}px`, fontStyle: 'bold', color: C.textDark })
+        .setOrigin(1, 0.5)
+        .setDepth(16);
+      const moreZone = this.add.zone(this.L.right - 30 * u, row.y, 60 * u, Math.min(row.rowH, this.qSize * 1.4)).setInteractive().setDepth(17);
+      moreZone.on('pointerup', () => this.showQueue());
     }
-    const moreZone = this.add.zone(this.L.right - 30 * this.u, this.qY, 60 * this.u, this.qSize * 1.4).setInteractive().setDepth(17);
-    moreZone.on('pointerup', () => this.showQueue());
-    this.moreText = this.add
-      .text(this.L.right - 8 * this.u, this.qY - this.qSize * 0.05, '', {
-        fontFamily: FONT,
-        fontSize: `${14 * this.u}px`,
-        fontStyle: 'bold',
-        color: C.textDark,
-      })
-      .setOrigin(1, 0.5)
-      .setDepth(16);
+    this.refreshQueueExtras();
+  }
+
+  /** Redesenha a fila (carinha + passageiros) com o humor novo. */
+  redrawLine(li, mood) {
+    const row = this.lineRows[li];
+    for (const v of row.views) {
+      v.body.clear();
+      drawPassenger(v.body, { color: v.color, s: this.qSize, skin: v.skin, hair: v.hair, symbol: this.symbols, mood });
+    }
     this.refreshQueueExtras();
   }
 
   /** Depois de um embarque: a fila anda uma posição e entra um novo no fim. */
-  shiftQueue(nextQ) {
-    this.queueViews.forEach((v, k) => this.tweens.add({ targets: v, x: this.qX0 + k * this.qGap, duration: 120, ease: 'Sine.easeOut' }));
-    const lastIdx = nextQ + this.queueViews.length;
-    if (this.queueViews.length < this.qVisible && lastIdx < this.level.queue.length) {
-      const v = this.makePassenger(lastIdx, this.queueViews.length + 1);
+  shiftQueue(li, nextQ, alreadyShifted = false) {
+    const row = this.lineRows[li];
+    if (!row) return;
+    if (!alreadyShifted) row.views.shift()?.destroy();
+    row.views.forEach((v, k) => this.tweens.add({ targets: v, x: row.x0 + k * this.qGap, duration: 120, ease: 'Sine.easeOut' }));
+    const lastIdx = nextQ + row.views.length;
+    if (row.views.length < this.qVisible && lastIdx < this.lines[li].length) {
+      const v = this.makePassenger(li, lastIdx, row.views.length + 1);
       v.setAlpha(0);
-      this.tweens.add({ targets: v, x: this.qX0 + this.queueViews.length * this.qGap, alpha: 1, duration: 160 });
-      this.queueViews.push(v);
+      this.tweens.add({ targets: v, x: row.x0 + row.views.length * this.qGap, alpha: 1, duration: 160 });
+      row.views.push(v);
     }
-    this.refreshQueueExtras(nextQ);
+    this.refreshQueueExtras();
   }
 
-  refreshQueueExtras(q = this.state.q) {
-    const rest = this.level.queue.length - q - this.queueViews.length;
-    this.moreText?.setText(rest > 0 ? t('game.queueMore', { n: rest }) : '');
-    // paciência dos prioritários
-    for (const v of this.queueViews) {
-      if (!v.priority) continue;
-      const left = v.priority.patience - this.state.moves;
-      v.priority.txt.setText(String(Math.max(0, left)));
-      v.priority.txt.setColor(left <= 2 ? '#c0141f' : '#1f2333');
+  refreshQueueExtras() {
+    const u = this.u;
+    const calm = calmOf(this.level);
+    for (const row of this.lineRows || []) {
+      const li = row.i;
+      const line = this.lines[li];
+      const q = this.state.q[li];
+      const done = q >= line.length;
+      const shown = row.views.length;
+      const rest = line.length - q - shown;
+      row.more?.setText(rest > 0 ? t('game.queueMore', { n: rest }) : '');
+      // carinha
+      const mood = this.state.mood[li];
+      if (row.face) {
+        row.face.clear();
+        drawMoodFace(row.face, 0, 0, row.faceR, mood);
+        row.face.setAlpha(done ? 0.85 : 1);
+      }
+      // paciência: pontinhos (cheios = jogadas que ainda aguenta antes de piorar)
+      if (row.meter) {
+        row.meter.clear();
+        if (!done && mood > 0) {
+          const left = calm - this.state.wait[li];
+          const n = Math.min(calm, 8);
+          const dot = Math.max(2 * u, Math.min(3 * u, (30 * u) / n / 2.6));
+          const w = n * dot * 2.6;
+          const x0 = row.face.x - w / 2 + dot * 1.3;
+          const y = row.face.y + row.faceR + 6 * u;
+          for (let k = 0; k < n; k++) {
+            const filled = k < Math.round((left / calm) * n);
+            row.meter.fillStyle(C.ink, 1);
+            row.meter.fillCircle(x0 + k * dot * 2.6, y, dot + 1 * u);
+            row.meter.fillStyle(filled ? (left <= 1 ? MOOD_COLORS[0] : MOOD_COLORS[mood]) : 0xffffff, 1);
+            row.meter.fillCircle(x0 + k * dot * 2.6, y, dot);
+          }
+        }
+      }
+      // paciência dos prioritários
+      for (const v of row.views) {
+        if (!v.priority) continue;
+        const left = v.priority.patience - this.state.moves;
+        v.priority.txt.setText(String(Math.max(0, left)));
+        v.priority.txt.setColor(left <= 2 ? '#c0141f' : '#1f2333');
+      }
     }
+  }
+
+  /** Toque na carinha: explica o humor e as estrelas. */
+  explainMood() {
+    if (this.modalOpen || this.busy) return;
+    this.modalOpen = true;
+    modal({
+      title: t('mechanics.mood.title'),
+      text: t('mechanics.mood.text', { n: calmOf(this.level) }),
+      buttons: [{ label: t('common.close'), kind: 'ok', onClick: (c) => c() }],
+      onClose: () => (this.modalOpen = false),
+    });
   }
 
   // ===========================================================================
@@ -907,6 +1009,7 @@ export class GameScene extends Phaser.Scene {
     const y = this.zones.yTop + this.zones.topH / 2;
     const sz = 46 * u;
     new Button(this, L.left + pad + sz / 2, y, '', { width: sz, height: sz, color: C.buttonSecondary, radius: 14 * u, icon: 'pause', iconSize: 22 * u }, () => this.showPause()).setDepth(50);
+    new Button(this, L.left + pad + sz * 1.5 + 8 * u, y, '', { width: sz, height: sz, color: C.buttonSecondary, radius: 14 * u, icon: 'home', iconSize: 22 * u }, () => this.onHome()).setDepth(50);
     new Button(this, L.right - pad - sz / 2, y, '', { width: sz, height: sz, color: C.buttonSecondary, radius: 14 * u, icon: 'restart', iconSize: 22 * u }, () => this.restart()).setDepth(50);
     const title = this.add
       .text(L.cx, y - 12 * u, t('game.level', { n: this.levelId }), { fontFamily: DISPLAY, fontSize: `${24 * u}px`, color: '#ffffff', stroke: C.inkCss, strokeThickness: 6 * u })
@@ -941,7 +1044,7 @@ export class GameScene extends Phaser.Scene {
     this.movesText?.setText(t('game.moves', { n: this.state.moves }));
     if (this.starsG) {
       const { x, y, s: sz } = this.starsPos;
-      const n = starsFor(this.errors);
+      const n = starsFor(happyLines(this.state), this.lines.length);
       this.starsG.clear();
       for (let k = 0; k < 3; k++) {
         const sx = x - (2 - k) * sz * 1.05 - sz * 0.5;
@@ -1043,19 +1146,8 @@ export class GameScene extends Phaser.Scene {
       });
   }
 
-  /** Erro: batida ou ajuda usada. As estrelas da tentativa caem com um tremor. */
-  addError() {
-    const before = starsFor(this.errors);
-    this.errors++;
-    if (starsFor(this.errors) < before && this.starsG) {
-      this.tweens.add({ targets: this.starsG, x: 3 * this.u, duration: 50, yoyo: true, repeat: 2, onComplete: () => this.starsG.setX(0) });
-    }
-    this.refreshHud();
-  }
-
   doUndo() {
     if (!this.history.length) return;
-    this.addError();
     let prev = this.history.pop();
     // mantém a vaga extra já ganha
     while (prev.slots.length < this.state.slots.length) prev = addSlot(this.level, prev);
@@ -1070,10 +1162,7 @@ export class GameScene extends Phaser.Scene {
     const id = nextMove(this.level, this.state);
     // sem saída: avisa ANTES de oferecer anúncio (não cobra por uma dica inútil)
     if (id == null) return toast(t('game.noMove'), 3000);
-    this.offerRewarded(t('boosters.hintAd'), () => {
-      this.addError();
-      this.showHint(id);
-    });
+    this.offerRewarded(t('boosters.hintAd'), () => this.showHint(id));
   }
 
   onSlot() {
@@ -1085,7 +1174,6 @@ export class GameScene extends Phaser.Scene {
   grantSlot() {
     if (this.extraSlots >= CONFIG.game.maxExtraSlotsPerLevel) return;
     this.extraSlots++;
-    this.addError();
     this.state = addSlot(this.level, this.state);
     this.history = this.history.map((s) => addSlot(this.level, s));
     this.ended = false;
@@ -1175,7 +1263,8 @@ export class GameScene extends Phaser.Scene {
     this.confetti.explode(60, this.L.cx, this.zones.yRoad);
     Progress.complete(this.levelId);
     AdManager.registerWin(this.levelId);
-    const stars = starsFor(this.errors);
+    const happy = happyLines(this.state);
+    const stars = starsFor(happy, this.lines.length);
     const res = Achievements.recordWin({
       level: this.levelId,
       stars,
@@ -1200,7 +1289,7 @@ export class GameScene extends Phaser.Scene {
     buttons.push({ label: t('win.levels'), kind: 'secondary', onClick: (c) => go(c, 'Levels') });
     const lines = [
       `${t('game.level', { n: this.levelId })} · ${t('win.moves', { n: this.state.moves })}`,
-      this.errors ? t('win.errors', { n: this.errors }) : t('win.perfect'),
+      `${this.state.mood.map((m) => ['😠', '😟', '😊'][m]).join(' ')}  ${happy === this.lines.length ? t('win.perfect') : t('win.happy', { a: happy, b: this.lines.length })}`,
     ];
     if (res.newBest) lines.push(t('win.newBest'));
     for (const a of res.unlocked) lines.push(`🏆 ${t('achievements.unlocked')}: ${t(`achievements.${a.id}.title`)}`);
@@ -1224,7 +1313,8 @@ export class GameScene extends Phaser.Scene {
     GameScene.losses[this.levelId] = (GameScene.losses[this.levelId] ?? 0) + 1;
     const tips = t('tips.list');
     const tip = GameScene.losses[this.levelId] >= 2 ? `\n\n${t('tips.prefix')} ${tips[(GameScene.losses[this.levelId] + this.levelId) % tips.length]}` : '';
-    const need = slots ? `\n${t('lose.needColor', { color: t('colors')[this.level.queue[this.state.q]] })}` : '';
+    const fronts = [...new Set(frontColors(this.level, this.state).filter((c) => c >= 0))].map((c) => t('colors')[c]);
+    const need = slots ? `\n${fronts.length > 1 ? t('lose.needColors', { colors: fronts.join(', ') }) : t('lose.needColor', { color: fronts[0] })}` : '';
     if (!this.exempt && !this.lifeSpent) {
       Lives.consume();
       this.lifeSpent = true;
@@ -1299,6 +1389,22 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Botão de início: sai direto se nada foi jogado; senão confirma antes (evita perder a partida sem querer). */
+  onHome() {
+    if (this.modalOpen || this._leaving) return;
+    if (!this.state.moves || this.state.status !== 'playing') return goTo(this, 'Menu');
+    this.modalOpen = true;
+    modal({
+      title: t('game.homeTitle'),
+      text: t('game.homeInfo'),
+      buttons: [
+        { label: t('game.homeYes'), kind: 'danger', onClick: (c) => (c(), goTo(this, 'Menu')) },
+        { label: t('game.homeNo'), kind: 'ok', onClick: (c) => c() },
+      ],
+      onClose: () => (this.modalOpen = false),
+    });
+  }
+
   /** UX: pausa em vez de sair direto (evita perder a partida sem querer). */
   showPause() {
     if (this.modalOpen || this._leaving) return;
@@ -1333,13 +1439,21 @@ export class GameScene extends Phaser.Scene {
     if (this.modalOpen || this.busy) return;
     this.modalOpen = true;
     const lv = this.level;
-    const rest = lv.queue.slice(this.state.q);
+    const total = this.lines.reduce((a, line, li) => a + line.length - this.state.q[li], 0);
     modal({
-      title: t('queue.title', { n: rest.length }),
-      html: rest
-        .map((c, i) => {
-          const pri = (lv.priority || []).some((p) => p.index === this.state.q + i);
-          return `<span class="fds-qdot" style="background:${'#' + COLORS[c].hex.toString(16).padStart(6, '0')}">${this.symbols ? SYMBOL_CHARS[COLORS[c].symbol] : ''}${pri ? '<b>⏱</b>' : ''}</span>`;
+      title: t('queue.title', { n: total }),
+      html: this.lines
+        .map((line, li) => {
+          const q = this.state.q[li];
+          const dots = line
+            .slice(q)
+            .map((c, i) => {
+              const pri = (lv.priority || []).some((p) => (p.line ?? 0) === li && p.index === q + i);
+              return `<span class="fds-qdot" style="background:${'#' + COLORS[c].hex.toString(16).padStart(6, '0')}">${this.symbols ? SYMBOL_CHARS[COLORS[c].symbol] : ''}${pri ? '<b>⏱</b>' : ''}</span>`;
+            })
+            .join('');
+          const face = ['😠', '😟', '😊'][this.state.mood[li]];
+          return `<div class="fds-qline"><span class="fds-qface">${face}</span>${dots || '✓'}</div>`;
         })
         .join(''),
       buttons: [{ label: t('common.close'), kind: 'ok', onClick: (c) => c() }],
@@ -1349,7 +1463,8 @@ export class GameScene extends Phaser.Scene {
 
   /** Primeira vez com uma mecânica: cartão explicando (uma por fase). */
   showMechanicIntro() {
-    const next = (this.level.mechanics || []).find((m) => !Storage.data.seen.includes(m));
+    const list = ['mood', ...(this.lines.length > 1 ? ['lines'] : []), ...(this.level.mechanics || [])];
+    const next = list.find((m) => !Storage.data.seen.includes(m));
     if (!next || this.modalOpen) return;
     this.modalOpen = true;
     Storage.update((d) => d.seen.push(next));
@@ -1358,11 +1473,12 @@ export class GameScene extends Phaser.Scene {
       mascot: true,
       badge: t('mechanics.new'),
       title: t(`mechanics.${next}.title`),
-      text: t(`mechanics.${next}.text`),
+      text: t(`mechanics.${next}.text`, { n: calmOf(this.level) }),
       buttons: [{ label: t('mechanics.ok'), kind: 'ok', onClick: (c) => c() }],
       onClose: () => {
         this.modalOpen = false;
         this.highlightMechanic(next);
+        this.time.delayedCall(400, () => this.autoHint());
       },
     });
   }
@@ -1371,6 +1487,16 @@ export class GameScene extends Phaser.Scene {
   highlightMechanic(kind) {
     const lv = this.level;
     let pos = null;
+    if ((kind === 'mood' || kind === 'lines') && this.lineRows?.length) {
+      // destaca as carinhas das filas
+      for (const row of this.lineRows) {
+        const ring = this.add.graphics().setDepth(46);
+        ring.lineStyle(4 * this.u, 0xffe28a, 1);
+        ring.strokeCircle(row.face.x, row.face.y, row.faceR + 7 * this.u);
+        this.tweens.add({ targets: ring, alpha: 0, duration: 450, yoyo: true, repeat: 3, onComplete: () => ring.destroy() });
+      }
+      return;
+    }
     if (kind === 'cones' && lv.cones?.length) pos = { x: this.cellX(lv.cones[0].x), y: this.cellY(lv.cones[0].y) };
     if (kind === 'garage' && lv.garages?.length) pos = { x: this.cellX(lv.garages[0].x), y: this.cellY(lv.garages[0].y) };
     const bus = kind === 'lock' ? lv.buses.find((b) => b.lock != null) : kind === 'hidden' ? lv.buses.find((b) => b.hidden && this.state.inLot[b.id] === 1) : null;

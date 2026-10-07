@@ -72,7 +72,7 @@ export function initDebug(game) {
     let info = '';
     if (s?.scene.key === 'Game') {
       const lv = getLevel(s.levelId);
-      info = `\nFase ${lv.id}: ${lv.cols}x${lv.rows}, ${lv.buses.length} ônibus, ${lv.queue.length} passageiros, ${lv.slots} vagas, prioritários ${lv.priority.length} · mecânicas: ${(lv.mechanics || []).join(", ") || "—"}\nscore ${lv.meta.score} · vitória aleatória ${lv.meta.randomWin} · gulosa ${lv.meta.greedyWin} · semente ${lv.meta.seed}`;
+      info = `\nFase ${lv.id}: ${lv.cols}x${lv.rows}, ${lv.buses.length} ônibus, ${lv.lines.flat().length} passageiros em ${lv.lines.length} fila(s) (paciência ${lv.calm}), ${lv.slots} vagas, prioritários ${lv.priority.length} · mecânicas: ${(lv.mechanics || []).join(", ") || "—"}\nscore ${lv.meta.score} · vitória aleatória ${lv.meta.randomWin} · gulosa ${lv.meta.greedyWin} · semente ${lv.meta.seed}`;
     }
     $('dbg-info').textContent =
       `Vidas: ${Lives.get().lives} · Vencidas: ${d.completed.length} · vitórias desde intersticial: ${d.winsSinceInterstitial}/${CONFIG.ads.interstitial.everyNWins}\n` +

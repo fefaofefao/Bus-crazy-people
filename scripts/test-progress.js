@@ -18,12 +18,12 @@ const test = (name, fn) => {
   console.log('  ✓ ' + name);
 };
 
-test('0 erros = 3 estrelas; 1–2 = 2; 3+ = 1', () => {
-  assert.equal(starsFor(0), 3);
-  assert.equal(starsFor(1), 2);
-  assert.equal(starsFor(2), 2);
-  assert.equal(starsFor(3), 1);
-  assert.equal(starsFor(50), 1);
+test('estrelas = filas felizes: 3 = ★★★, 2 = ★★, 1 ou 0 = ★', () => {
+  assert.equal(starsFor(3, 3), 3);
+  assert.equal(starsFor(2, 3), 2);
+  assert.equal(starsFor(1, 3), 1);
+  assert.equal(starsFor(0, 3), 1);
+  assert.equal(starsFor(1, 1), 3); // tutorial com 1 fila
 });
 
 test('melhor resultado por fase é guardado (não piora)', () => {

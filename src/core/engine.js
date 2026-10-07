@@ -6,7 +6,9 @@
 //   { format, id, cols, rows, slots, challenge, tutorial,
 //     buses: [{ id, x, y, dir, type, color,          // id = índice no array
 //               hidden?, lock?, garage? }],          // mecânicas (abaixo)
-//     queue: [cor, ...], priority: [{ index, patience }],
+//     lines: [[cor, ...], ...],                      // filas do ponto (ou `queue` = 1 fila só)
+//     calm: n,                                       // paciência das filas (jogadas, ver HUMOR)
+//     priority: [{ line, index, patience }],
 //     cones: [{ x, y, until }], garages: [{ id, x, y, dir }],
 //     solution: [busId, ...], mechanics: [...], meta: {} }
 //
@@ -23,18 +25,26 @@
 // ESTADO
 //   { inLot: Uint8Array (0 = já saiu, 1 = no estacionamento, 2 = esperando no terminal),
 //     slots: Array(slotCount) de null | { bus, filled },
-//     q: próximo passageiro, moves: jogadas feitas,
+//     q: [próximo passageiro de cada fila], moves: jogadas feitas,
+//     wait: [jogadas seguidas sem embarque, por fila], mood: [humor de cada fila],
 //     status: 'playing' | 'won' | 'lost', reason: null | 'slots' | 'patience' | 'stuck' }
 //
 // REGRAS
 //   - Tocar num ônibus com caminho livre até a borda: ele sai e ocupa a vaga livre
 //     de menor índice. Caminho bloqueado (ou cadeado): "bate". Os dois contam jogada.
-//   - Depois de cada jogada: o passageiro da frente embarca no ônibus da mesma cor
-//     com lugar (vaga de menor índice), repetidamente; ônibus cheio parte. Depois
-//     os terminais soltam ônibus, se houver espaço.
-//   - Vitória: todos os passageiros embarcaram.
+//   - Depois de cada jogada, embarques em rodízio: fila 0, 1, 2, 0, 1… – o primeiro
+//     de cada fila embarca no ônibus da mesma cor com lugar (vaga de menor índice);
+//     a rodada se repete até ninguém mais embarcar. Ônibus cheio parte. Depois os
+//     terminais soltam ônibus, se houver espaço.
+//   - Vitória: todas as filas esvaziaram.
+//
+// HUMOR DAS FILAS (define as estrelas – ver src/core/stars.js)
+//   Cada fila começa FELIZ (2). A cada jogada (batidas incluídas) em que uma fila
+//   com gente não embarca ninguém, a espera dela sobe 1; embarcar zera a espera.
+//   Quando a espera chega a `calm`, a fila piora um nível (feliz -> impaciente ->
+//   nervosa) e a espera recomeça. O humor nunca melhora. Fila vazia não muda mais.
 //   - Derrota: (a) prioritário sem embarcar com a paciência esgotada (moves >= patience);
-//     (b) todas as vagas ocupadas; (c) nenhum ônibus pode sair e nada vai mudar
+//     (b) todas as vagas ocupadas (nenhum ônibus serve para a frente de nenhuma fila); (c) nenhum ônibus pode sair e nada vai mudar
 //     (sem obra para terminar).
 
 import { DIRS, busCells, busCap, busLen, BUS_TYPES, COLORS } from './rules.js';
@@ -47,11 +57,32 @@ export const OCC_GARAGE = -2;
 export const OCC_CONE = -3;
 export const BLOCK_LOCK = -4; // "bloqueador" de uma batida por cadeado
 
+// Humor das filas
+export const MOOD_HAPPY = 2;
+export const MOOD_ANNOYED = 1;
+export const MOOD_ANGRY = 0;
+export const DEFAULT_CALM = 6;
+
+/** Filas da fase: `lines` ou, no formato antigo, `[queue]`. */
+export const linesOf = (level) => level.lines ?? [level.queue ?? []];
+export const calmOf = (level) => level.calm ?? DEFAULT_CALM;
+/** Total de passageiros já embarcados. */
+export const boardedCount = (s) => s.q.reduce((a, b) => a + b, 0);
+/** Passageiro da frente de cada fila (cor), ou -1 se a fila acabou. */
+export function frontColors(level, s) {
+  return linesOf(level).map((line, i) => (s.q[i] < line.length ? line[s.q[i]] : -1));
+}
+/** Quantas filas terminaram (ou estão) felizes. */
+export const happyLines = (s) => s.mood.filter((m) => m === MOOD_HAPPY).length;
+
 export function initialState(level, extraSlots = 0) {
+  const n = linesOf(level).length;
   const s = {
     inLot: new Uint8Array(level.buses.length),
     slots: new Array(level.slots + extraSlots).fill(null),
-    q: 0,
+    q: new Array(n).fill(0),
+    wait: new Array(n).fill(0),
+    mood: new Array(n).fill(MOOD_HAPPY),
     moves: 0,
     status: 'playing',
     reason: null,
@@ -65,7 +96,9 @@ export function cloneState(s) {
   return {
     inLot: s.inLot.slice(),
     slots: s.slots.map((x) => (x ? { bus: x.bus, filled: x.filled } : null)),
-    q: s.q,
+    q: s.q.slice(),
+    wait: s.wait.slice(),
+    mood: s.mood.slice(),
     moves: s.moves,
     status: s.status,
     reason: s.reason,
@@ -118,10 +151,12 @@ export function legalExits(level, s, occ = occupancy(level, s)) {
   return out;
 }
 
+const priWaiting = (p, s) => p.index >= s.q[p.line ?? 0];
+
 /** Paciência restante de cada prioritário que ainda não embarcou. */
 export function waitingPriorities(level, s) {
   const out = [];
-  for (const p of level.priority || []) if (p.index >= s.q) out.push({ index: p.index, remaining: p.patience - s.moves });
+  for (const p of level.priority || []) if (priWaiting(p, s)) out.push({ line: p.line ?? 0, index: p.index, remaining: p.patience - s.moves });
   return out;
 }
 
@@ -140,33 +175,64 @@ export function spawnFromGarages(level, s, events) {
   }
 }
 
-/** Embarques automáticos + partidas. Altera s e acrescenta eventos. */
+/** Embarques automáticos (rodízio entre as filas) + partidas. Altera s, devolve as filas atendidas. */
 function resolveBoarding(level, s, events) {
-  const queue = level.queue;
-  while (s.q < queue.length) {
-    const color = queue[s.q];
-    let slot = -1;
-    for (let i = 0; i < s.slots.length; i++) {
-      const o = s.slots[i];
-      if (o && level.buses[o.bus].color === color && o.filled < busCap(level.buses[o.bus])) {
-        slot = i;
-        break;
+  const lines = linesOf(level);
+  const served = new Array(lines.length).fill(false);
+  let any = true;
+  while (any) {
+    any = false;
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      if (s.q[li] >= line.length) continue;
+      const color = line[s.q[li]];
+      let slot = -1;
+      for (let i = 0; i < s.slots.length; i++) {
+        const o = s.slots[i];
+        if (o && level.buses[o.bus].color === color && o.filled < busCap(level.buses[o.bus])) {
+          slot = i;
+          break;
+        }
+      }
+      if (slot === -1) continue;
+      const o = s.slots[slot];
+      o.filled++;
+      events.push({ type: 'board', line: li, passenger: s.q[li], bus: o.bus, slot, seat: o.filled });
+      s.q[li]++;
+      served[li] = true;
+      any = true;
+      if (o.filled === busCap(level.buses[o.bus])) {
+        events.push({ type: 'depart', bus: o.bus, slot });
+        s.slots[slot] = null;
       }
     }
-    if (slot === -1) break;
-    const o = s.slots[slot];
-    o.filled++;
-    events.push({ type: 'board', passenger: s.q, bus: o.bus, slot, seat: o.filled });
-    s.q++;
-    if (o.filled === busCap(level.buses[o.bus])) {
-      events.push({ type: 'depart', bus: o.bus, slot });
-      s.slots[slot] = null;
+  }
+  return served;
+}
+
+/** Humor: filas com gente que não embarcaram nesta jogada esperam mais um pouco. */
+function updateMoods(level, s, served, events) {
+  const lines = linesOf(level);
+  const calm = calmOf(level);
+  for (let li = 0; li < lines.length; li++) {
+    if (served[li]) {
+      s.wait[li] = 0;
+      continue;
+    }
+    if (s.q[li] >= lines[li].length) continue;
+    s.wait[li]++;
+    if (s.wait[li] >= calm) {
+      s.wait[li] = 0;
+      if (s.mood[li] > MOOD_ANGRY) {
+        s.mood[li]--;
+        events.push({ type: 'mood', line: li, mood: s.mood[li] });
+      }
     }
   }
 }
 
 function checkEnd(level, s, events) {
-  if (s.q >= level.queue.length) {
+  if (linesOf(level).every((line, i) => s.q[i] >= line.length)) {
     s.status = 'won';
     events.push({ type: 'win' });
     return;
@@ -176,7 +242,7 @@ function checkEnd(level, s, events) {
     s.reason = reason;
     events.push({ type: 'lose', reason, ...extra });
   };
-  for (const p of level.priority || []) if (p.index >= s.q && s.moves >= p.patience) return lose('patience', { passenger: p.index });
+  for (const p of level.priority || []) if (priWaiting(p, s) && s.moves >= p.patience) return lose('patience', { line: p.line ?? 0, passenger: p.index });
   if (freeSlotIndex(s) === -1) return lose('slots');
   // travado: nenhum ônibus sai e nenhuma obra vai terminar (esperar não adianta)
   if (!legalExits(level, s).length && !(level.cones || []).some((c) => coneActive(c, s))) lose('stuck');
@@ -194,6 +260,7 @@ export function tap(level, s, busId, occ = null) {
   const n = cloneState(s);
   const events = [];
   n.moves++;
+  let served = null;
   if (isLocked(level, s, bus)) {
     events.push({ type: 'bump', bus: busId, dist: 0, blocker: BLOCK_LOCK, key: bus.lock });
   } else {
@@ -205,9 +272,10 @@ export function tap(level, s, busId, occ = null) {
       n.slots[slot] = { bus: busId, filled: 0 };
       events.push({ type: 'exit', bus: busId, slot });
       for (const b of level.buses) if (b.lock === busId && n.inLot[b.id]) events.push({ type: 'unlock', bus: b.id });
-      resolveBoarding(level, n, events);
+      served = resolveBoarding(level, n, events);
     }
   }
+  updateMoods(level, n, served ?? [], events);
   if ((level.cones || []).some((c) => c.until === n.moves)) events.push({ type: 'cones' });
   spawnFromGarages(level, n, events);
   checkEnd(level, n, events);
@@ -236,7 +304,7 @@ export function replay(level, taps, extraSlots = 0) {
 export function stateKey(s) {
   let k = '';
   for (let i = 0; i < s.inLot.length; i++) k += s.inLot[i];
-  k += '|' + s.q + '|';
+  k += '|' + s.q.join('.') + '|';
   for (const o of s.slots) k += o ? `${o.bus}.${o.filled},` : '_,';
   return k + '|' + s.moves;
 }
@@ -318,18 +386,23 @@ export function validateLevel(level) {
     }
   });
   const qByColor = new Array(COLORS.length).fill(0);
-  for (const c of level.queue || []) {
-    if (!Number.isInteger(c) || c < 0 || c >= COLORS.length) err('cor inválida na fila');
-    else qByColor[c]++;
-  }
+  const lines = level.lines ?? [level.queue ?? []];
+  if (!Array.isArray(lines) || !lines.length || lines.length > 4 || lines.some((l) => !Array.isArray(l) || !l.length)) err('filas inválidas');
+  if (level.calm != null && (!Number.isInteger(level.calm) || level.calm < 1)) err('"calm" inválido');
+  for (const line of lines)
+    for (const c of line || []) {
+      if (!Number.isInteger(c) || c < 0 || c >= COLORS.length) err('cor inválida na fila');
+      else qByColor[c]++;
+    }
   for (let c = 0; c < COLORS.length; c++)
     if (capByColor[c] !== qByColor[c]) err(`cor ${COLORS[c].key}: ${qByColor[c]} passageiros para ${capByColor[c]} lugares`);
   const seen = new Set();
   for (const p of level.priority || []) {
-    if (!Number.isInteger(p.index) || p.index < 0 || p.index >= level.queue.length) err('prioritário com índice inválido');
+    const li = p.line ?? 0;
+    if (!lines[li] || !Number.isInteger(p.index) || p.index < 0 || p.index >= lines[li].length) err('prioritário com índice inválido');
     if (!Number.isInteger(p.patience) || p.patience < 1) err('paciência inválida');
-    if (seen.has(p.index)) err('prioritário repetido');
-    seen.add(p.index);
+    if (seen.has(`${li}.${p.index}`)) err('prioritário repetido');
+    seen.add(`${li}.${p.index}`);
   }
   return errors;
 }

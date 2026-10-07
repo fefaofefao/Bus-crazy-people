@@ -10,12 +10,16 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { GEN } from './generator-config.js';
-import { generateLevel, measure } from '../src/core/generator.js';
+import { generateLevel, measure, dealLines, simulateOrder, calmFor } from '../src/core/generator.js';
+import { mulberry32 } from '../src/core/prng.js';
 import { solve } from '../src/core/solver.js';
 import { LEVEL_FORMAT, validateLevel } from '../src/core/engine.js';
 import { hashInts } from '../src/core/prng.js';
 
-export const PACK_VERSION = 4;
+export const PACK_VERSION = 5;
+
+/** Armadilhas da fase: toques que perdem a fase + toques que perdem as 3 estrelas. */
+export const trapsOf = (meta) => meta.traps + (meta.starTraps ?? 0);
 
 const args = process.argv.slice(2);
 const countArg = args.indexOf('--count');
@@ -85,6 +89,8 @@ function paramsFor(n) {
     scoreDepth: 0.5,
     priority: intro ? 0 : priCount,
     prioritySlack: Math.round(lerp(pri.slack[0], pri.slack[1], tp)),
+    lines: GEN.lines.count,
+    calmSlack: challenge ? GEN.lines.calmSlackChallenge : Math.round(lerp(GEN.lines.calmSlack[0], GEN.lines.calmSlack[1], t)),
     maxRandomWin: lerp(GEN.maxRandomWin[0], GEN.maxRandomWin[1], t),
     target: lerp(R.targetScore[0], R.targetScore[1], t) + (challenge ? GEN.challenge.scoreBonus : 0),
   };
@@ -93,6 +99,7 @@ function paramsFor(n) {
 function loadTutorial() {
   const src = JSON.parse(readFileSync(new URL('../levels/tutorial.json', import.meta.url), 'utf8'));
   return src.levels.map((l, i) => {
+    const map = [];
     const level = {
       format: LEVEL_FORMAT,
       id: i + 1,
@@ -109,14 +116,23 @@ function loadTutorial() {
         type: b.type,
         color: b.color,
       })),
-      queue: l.queue,
-      priority: l.priority ?? [],
+      // `lines` = número de filas (repartidas aqui) ou as próprias filas, já prontas
+      lines: Array.isArray(l.lines) ? l.lines : dealLines(mulberry32(GEN.baseSeed + i), l.queue, l.lines ?? 1, map),
+      calm: l.calm ?? 1e9, // sem `calm`: definido depois do solver (abaixo)
+      priority: (l.priority ?? []).map((p) => (p.line != null ? p : { line: map[p.index][0], index: map[p.index][1], patience: p.patience })),
       mechanics: [],
     };
     const errs = validateLevel(level);
     if (errs.length) throw new Error(errs.join('\n'));
-    const sol = solve(level);
-    if (!sol.solvable) throw new Error(`tutorial ${level.id} sem solução`);
+    if (l.calm == null) {
+      // humor: paciência das filas = maior espera seguindo uma solução + folga do tutorial
+      const sol = solve(level);
+      if (!sol.solvable) throw new Error(`tutorial ${level.id} sem solução`);
+      level.calm = calmFor(simulateOrder(level, sol.path).maxWait, GEN.lines.calmSlackTutorial);
+    }
+    // solução gravada: deixa todas as filas felizes (prova que 3 estrelas são possíveis)
+    const sol = solve(level, { keepHappy: true });
+    if (!sol.solvable) throw new Error(`tutorial ${level.id} sem solução com as filas felizes`);
     level.solution = sol.path;
     level.meta = { seed: 0, handmade: true, ...measure(level) };
     return level;
@@ -132,17 +148,17 @@ function generate(n) {
     const lv = generateLevel(n, p, hashInts(GEN.baseSeed, n, a));
     if (!lv) continue;
     // desafio moderado: armadilhas mínimas e piso de vitória (ver generator-config.js)
-    if (lv.meta.traps < p.minTraps) continue;
+    if (trapsOf(lv.meta) < p.minTraps) continue;
     if (lv.meta.greedyWin < (p.challenge ? GEN.minGreedyWinChallenge : GEN.minGreedyWin)) continue;
     if (p.introMechanic && !lv.mechanics.includes(p.introMechanic === 'locks' ? 'lock' : p.introMechanic === 'garages' ? 'garage' : p.introMechanic)) continue;
     cands.push(lv);
   }
-  if (!cands.length && p.slots > 4 && !p.introMechanic) {
-    // sem armadilha com 5 vagas: tenta com 4 vagas (aperto = armadilhas de verdade)
-    const p4 = { ...p, slots: 4 };
+  if (!cands.length && p.slots > 3 && !p.introMechanic) {
+    // sem armadilha: tenta com uma vaga a menos (aperto = armadilhas de verdade)
+    const p4 = { ...p, slots: p.slots - 1 };
     for (let a = GEN.maxAttemptsPerLevel; a < GEN.maxAttemptsPerLevel * 2 && cands.length < GEN.candidatesPerLevel; a++) {
       const lv = generateLevel(n, p4, hashInts(GEN.baseSeed, n, a));
-      if (lv && lv.meta.traps >= p.minTraps && lv.meta.greedyWin >= GEN.minGreedyWin) cands.push(lv);
+      if (lv && trapsOf(lv.meta) >= p.minTraps && lv.meta.greedyWin >= GEN.minGreedyWin) cands.push(lv);
     }
   }
   if (!cands.length) {
@@ -192,7 +208,7 @@ function generateChallenge(n, decadeMax) {
       const lv = generateLevel(n, pp, hashInts(GEN.baseSeed, n, 5000 + k * C.attempts + a));
       if (!lv) continue;
       const m = lv.meta;
-      if (m.traps < f.traps || m.greedyWin > f.maxGreedy || m.greedyWin < GEN.minGreedyWinChallenge || m.score <= f.floor) continue;
+      if (trapsOf(m) < f.traps || m.greedyWin > f.maxGreedy || m.greedyWin < GEN.minGreedyWinChallenge || m.score <= f.floor) continue;
       cands.push(lv);
     }
     if (!cands.length) {
@@ -206,6 +222,31 @@ function generateChallenge(n, decadeMax) {
     return best;
   }
   throw new Error(`desafio ${n}: nenhuma tentativa válida`);
+}
+
+/**
+ * Tira picos que a suavização em janelas deixou passar: uma fase normal bem acima
+ * das 5 anteriores troca de lugar com a próxima fase normal mais fácil (só depois
+ * da última estreia/limiar, para não mexer nas regras de estreia).
+ */
+function despike(levels) {
+  const MAX_JUMP = 8; // o teste aceita 9
+  const lastIntro = Math.max(...Object.values(GEN.mechanics).map((m) => m.intro), ...GEN.minTraps.map(([from]) => from));
+  const normal = levels.map((l, i) => i).filter((i) => i + 1 > lastIntro && !isChallengeId(i + 1));
+  for (let pass = 0; pass < 5; pass++) {
+    let changed = false;
+    for (let k = 5; k < normal.length; k++) {
+      const prevMax = Math.max(...normal.slice(k - 5, k).map((i) => levels[i].meta.score));
+      const i = normal[k];
+      if (levels[i].meta.score <= prevMax + MAX_JUMP) continue;
+      const j = normal.slice(k + 1).find((x) => levels[x].meta.score <= prevMax + MAX_JUMP);
+      if (j == null) continue;
+      [levels[i], levels[j]] = [levels[j], levels[i]];
+      changed = true;
+    }
+    if (!changed) break;
+  }
+  levels.forEach((l, i) => (l.id = i + 1));
 }
 
 function fillChallenges(levels) {
@@ -253,6 +294,7 @@ if (!onlyChallenges) {
   // Ids finais = posição. A solução continua válida (não depende do id).
   levels.forEach((l, i) => (l.id = i + 1));
 }
+despike(levels);
 fillChallenges(levels);
 
 const pack = {

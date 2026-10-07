@@ -68,12 +68,17 @@ Abra com **`?debug=1`** (ex.: `http://localhost:5173/?debug=1`). Ele nunca funci
 
 Cada mecânica estreia sozinha, com o cartão "Novidade!", e depois se mistura às outras. Há ainda o **Combo** (vários ônibus partindo com um toque) e a derrota "Trânsito travado" (nenhum ônibus consegue mais sair).
 
-**Estrelas (1 a 3 por fase):**
-- **0 erros = ★★★**, 1–2 erros = ★★, 3 ou mais = ★.
-- Erro é toda **batida** (ônibus bloqueado, trancado ou na obra) e toda **ajuda usada** (desfazer, dica, vaga extra).
-- O placar no topo mostra as estrelas da tentativa caindo a cada erro. A tela de fases guarda o melhor resultado de cada fase.
-- Toda fase tem uma solução sem nenhuma batida, então 3 estrelas são sempre possíveis (conferido em `npm run test:levels`).
-- Regras em `src/core/stars.js`.
+**Filas e humor (a base das estrelas):**
+- O ponto tem **3 filas** (1 nas fases 1–3 e 2 nas fases 4–6, para aprender). O primeiro de **qualquer** fila embarca no ônibus da sua cor, em rodízio entre as filas.
+- Cada fila tem um **humor**: 😊 feliz → 😟 impaciente → 😠 nervosa. Se uma fila passa `calm` jogadas seguidas sem ninguém embarcar (batidas contam), ela piora um nível. O humor **não melhora**.
+- Na tela, a carinha à esquerda de cada fila mostra o humor, e os pontinhos embaixo mostram quantas jogadas ela ainda aguenta. Os passageiros mudam de cara junto, e a fila treme e resmunga quando piora.
+
+**Estrelas (1 a 3 por fase) = filas felizes no fim:**
+- **3 filas felizes = ★★★ (perfeito)**, 2 = ★★, 1 ou nenhuma = ★ (ruim). Com menos filas (tutorial), cada fila infeliz tira 1 estrela.
+- As estrelas no topo caem na hora em que uma fila deixa de estar feliz. A tela de fases guarda o melhor resultado.
+- O gerador usa a paciência **mais apertada** que ainda permite 3 estrelas (o solver procura a ordem) e soma uma folga que cai de 2 para 0 ao longo do jogo (0 nos Desafios). A solução gravada deixa as 3 filas felizes e não tem batidas, então 3 estrelas são sempre possíveis (conferido em `npm run test:levels`).
+- Desfazer volta o humor junto com a jogada. Dica aponta, quando dá, uma jogada que mantém todas as filas felizes.
+- Regras em `src/core/engine.js` (HUMOR DAS FILAS) e `src/core/stars.js`.
 
 **Conquistas** (18, tela própria no menu, em `src/services/Achievements.js`):
 - fases vencidas (1, 25, 100, 200, todas);
@@ -87,9 +92,9 @@ Cada mecânica estreia sozinha, com o cartão "Novidade!", e depois se mistura �
 São só medalhas, sem moeda nem vantagem paga.
 
 **Dificuldade: desafio moderado, de propósito.** Nem fácil demais, nem impossível. Regras garantidas pelo gerador e conferidas em `npm run test:levels` (parâmetros em `scripts/generator-config.js`):
-- **Armadilhas obrigatórias:** a partir da fase 15, toda fase tem pelo menos 1 toque que leva a um beco sem saída (provado pelo solver); 2 a partir da fase 60 e 3 a partir da 150. As fases de estreia das mecânicas são exceção, porque servem para aprender.
+- **Armadilhas obrigatórias:** a partir da fase 15, toda fase tem pelo menos 1 toque que leva a um beco sem saída ou que já impede as 3 filas felizes (provado pelo solver); 2 a partir da fase 60 e 3 a partir da 150. As fases de estreia das mecânicas são exceção, porque servem para aprender.
 - **Teto de crueldade:** um jogador "ingênuo", que só segue a cor da frente, vence pelo menos 15% das vezes nas fases normais e 5% nos Desafios.
-- **Vagas:** o padrão é 5. Quando uma fase não consegue armadilhas com 5 vagas (comum no começo, com poucos ônibus), ela usa 4. Os Desafios têm 4 vagas desde a fase 30.
+- **Vagas:** o padrão é 4 (com 3 filas, 4 vagas apertam como 5 apertavam com 1 fila); algumas fases a partir da 60 usam 3. Os Desafios têm 3 vagas desde a fase 30.
 - **Prioritários:** a folga dos passageiros com pressa cai de 3 para 1 jogada.
 - **Desafios (10, 20, 30…, 300) = a fase mais difícil da dezena**, garantido pelo teste:
   - pontuação acima da fase normal mais difícil da dezena (+8);

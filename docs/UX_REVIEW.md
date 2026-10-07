@@ -33,7 +33,8 @@ Avaliação heurística do jogo inteiro (onboarding, partida, feedback, progress
 |---|---|---|
 | 🟠 Repetir derrotas | O jogador que perde várias vezes desiste. | A partir da 2ª derrota na mesma fase, o **Tião dá uma dica** de estratégia (rotativa). Desfazer, dica e vaga extra continuam a um toque. |
 | 🟡 Melhorar o resultado | Depois de vencer com 1–2 estrelas, voltar para tentar 3 era trabalhoso. | Botão **"Tentar 3 estrelas"** na vitória. |
-| 🟡 Feedback de erro | Errar não tinha consequência visível. | As **estrelas da tentativa** ficam no topo e caem (com tremor) a cada batida ou ajuda. |
+| 🟡 Feedback de erro | Errar não tinha consequência visível. | As **estrelas da tentativa** ficam no topo e caem (com tremor) quando uma fila deixa de estar feliz. |
+| 🟠 Pontuação abstrata | "Erros" não tinham rosto: o jogador não via quem estava sofrendo. | **3 filas com humor**: carinha 😊/😟/😠 por fila, pontinhos de paciência e passageiros mudando de cara. Estrelas = filas felizes no fim. Tocar na carinha explica a regra. |
 | Dificuldade | Fácil demais até a metade. | Desafio moderado com **armadilhas obrigatórias** e teto de crueldade (ver README). |
 
 ### Vidas

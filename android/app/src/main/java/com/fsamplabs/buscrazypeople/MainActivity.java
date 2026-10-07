@@ -11,6 +11,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Troca o tema da abertura pelo tema sem barra de título ANTES de criar a janela
+        // (EdgeToEdge cria a janela; se fosse antes, a barra "Bus Crazy People" aparecia
+        // no topo com a imagem da abertura esticada).
+        setTheme(R.style.AppTheme_NoActionBar);
         // Ponta a ponta em todas as versões do Android (no 15+ já é o padrão).
         // As áreas seguras chegam ao jogo pelo plugin SystemBars (capacitor.config.json).
         EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT));

@@ -19,7 +19,7 @@ export const GEN = {
     cols: [5, 7],
     rows: [6, 9],
     buses: [7, 22],
-    colors: [3, 7],
+    colors: [4, 8], // com 3 filas, mais cores = menos ônibus servindo para alguma frente
     pStop: [0.5, 0.95],
     medium: [0.15, 0.75], // peso dos ônibus médios (pequeno = 1)
     large: [0.0, 0.3],
@@ -27,9 +27,15 @@ export const GEN = {
     // meta de pontuação de dificuldade (ver measure() em src/core/generator.js)
     targetScore: [22, 100],
   },
-  slots: 5,
+  slots: 4, // com 3 filas, 4 vagas já dão o aperto que 5 davam com 1 fila
   // Fases normais com só 4 vagas: a partir de `from`, com chance crescente (mais aperto = mais estratégia)
-  fourSlots: { from: 25, chance: [0.25, 0.6] },
+  fourSlots: { from: 60, chance: [0.15, 0.45] }, // (vagas - 1, apesar do nome)
+
+  // Filas do ponto e humor (ver src/core/engine.js). Toda fase gerada tem `count` filas.
+  // calm (paciência das filas) = maior espera seguindo a ordem pretendida + 1 + folga:
+  // a folga cai com a rampa (mais aperto para as 3 estrelas) e é zero nos Desafios.
+  // A paciência base é a MAIS APERTADA que ainda permite 3 estrelas (o solver procura).
+  lines: { count: 3, calmSlack: [2, 0], calmSlackChallenge: 0, calmSlackTutorial: 2 },
 
   // Prioritários: a partir da fase priorityFrom, a cada priorityEvery fases (mais frequente depois)
   priority: {
@@ -70,8 +76,9 @@ export const GEN = {
   smoothWindow: 9,
 
   // Desafio moderado – nem fácil demais, nem impossível:
-  //  - armadilhas mínimas (toques que levam a um beco sem saída, provados pelo solver)
-  //    por faixa de fase: [a partir da fase, mínimo];
+  //  - armadilhas mínimas por faixa de fase: [a partir da fase, mínimo]. Armadilha =
+  //    toque que leva a um beco sem saída OU que já impede terminar com as 3 filas
+  //    felizes (provado pelo solver);
   //  - piso de vitória do jogador "ingênuo" (segue a cor da frente): abaixo disso é cruel.
   minTraps: [
     [14, 1],
