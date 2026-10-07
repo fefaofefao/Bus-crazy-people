@@ -2,8 +2,9 @@
 // Tocar num idioma já mostra a tela nele; "Continuar" confirma e salva.
 
 import Phaser from 'phaser';
+import { Music } from '../services/Music.js';
 import { CONFIG } from '../config.js';
-import { getLayout, FONT } from '../ui/layout.js';
+import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
 import { Storage } from '../services/Storage.js';
@@ -29,6 +30,7 @@ export class LanguageScene extends Phaser.Scene {
   }
 
   create() {
+    Music.play('menu');
     this.cameras.main.setBackgroundColor(C.background);
     fadeIn(this);
     const L = getLayout(this);
@@ -53,7 +55,7 @@ export class LanguageScene extends Phaser.Scene {
     Icons.globe(g, L.cx, my, 56 * u, 0x0b1d2a);
 
     this.add
-      .text(L.cx, my + 92 * u, S.language.title, { fontFamily: FONT, fontSize: `${28 * u}px`, fontStyle: 'bold', color: C.text, align: 'center' })
+      .text(L.cx, my + 92 * u, S.language.title, { fontFamily: DISPLAY, fontSize: `${28 * u}px`, color: C.text, align: 'center' })
       .setOrigin(0.5);
 
     // opções

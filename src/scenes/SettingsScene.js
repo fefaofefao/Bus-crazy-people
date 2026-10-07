@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
-import { getLayout, FONT } from '../ui/layout.js';
+import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { toast, openPage, openHelp, modal } from '../ui/dom.js';
 import { Storage } from '../services/Storage.js';
@@ -26,6 +26,7 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create() {
+    Music.play('menu');
     this.cameras.main.setBackgroundColor(C.background);
     fadeIn(this);
     const L = getLayout(this);
@@ -41,7 +42,7 @@ export class SettingsScene extends Phaser.Scene {
     new Button(this, L.left + 16 * u + 25 * u, topY, '', { width: 50 * u, height: 50 * u, color: C.buttonSecondary, radius: 15 * u, icon: 'home', iconSize: 24 * u }, () =>
       goTo(this, 'Menu'),
     );
-    this.add.text(L.cx, topY, t('settings.title'), { fontFamily: FONT, fontSize: `${26 * u}px`, fontStyle: 'bold', color: C.text }).setOrigin(0.5);
+    this.add.text(L.cx, topY, t('settings.title'), { fontFamily: DISPLAY, fontSize: `${26 * u}px`, color: C.text }).setOrigin(0.5);
 
     const showPurchases = PurchaseManager.isEnabled();
     const showAdPrivacy = AdManager.privacyOptionsRequired();

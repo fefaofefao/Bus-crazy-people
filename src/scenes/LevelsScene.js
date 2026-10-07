@@ -3,9 +3,12 @@
 
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
-import { getLayout, FONT } from '../ui/layout.js';
+import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
+import { Storage } from '../services/Storage.js';
+import { Achievements } from '../services/Achievements.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
+import { Music } from '../services/Music.js';
 import { toast } from '../ui/dom.js';
 import { Progress } from '../services/Progress.js';
 import { LEVEL_COUNT, isChallenge } from '../levels/index.js';
@@ -32,6 +35,7 @@ export class LevelsScene extends Phaser.Scene {
   }
 
   create() {
+    Music.play('menu');
     this.cameras.main.setBackgroundColor(C.background);
     fadeIn(this);
     const L = getLayout(this);
@@ -45,11 +49,11 @@ export class LevelsScene extends Phaser.Scene {
     new Button(this, L.left + 16 * u + 25 * u, topY, '', { width: 50 * u, height: 50 * u, color: C.buttonSecondary, radius: 15 * u, icon: 'home', iconSize: 24 * u }, () =>
       goTo(this, 'Menu'),
     );
-    this.add.text(L.cx, topY, t('levels.title'), { fontFamily: FONT, fontSize: `${26 * u}px`, fontStyle: 'bold', color: C.text }).setOrigin(0.5);
-    const done = Progress.countCompleted();
-    this.add
-      .text(L.right - 18 * u, topY, `${done}/${LEVEL_COUNT}`, { fontFamily: FONT, fontSize: `${17 * u}px`, fontStyle: 'bold', color: '#ffd76a' })
+    this.add.text(L.cx, topY, t('levels.title'), { fontFamily: DISPLAY, fontSize: `${28 * u}px`, color: C.text }).setOrigin(0.5);
+    const starTxt = this.add
+      .text(L.right - 18 * u, topY, `${Achievements.totalStars()}/${LEVEL_COUNT * 3}`, { fontFamily: DISPLAY, fontSize: `${16 * u}px`, color: '#ffc72c' })
       .setOrigin(1, 0.5);
+    Icons.star(this.add.graphics(), starTxt.x - starTxt.width - 12 * u, topY - 1 * u, 20 * u, C.gold);
 
     const gw = Math.min(L.usableW - 40 * u, 340 * u);
     const gap = 12 * u;
@@ -70,13 +74,13 @@ export class LevelsScene extends Phaser.Scene {
       const ch = isChallenge(n);
       if (n > frontier) {
         const g = this.add.graphics();
-        g.fillStyle(0x24304a, 1);
+        g.fillStyle(0x262f55, 1);
         g.fillRoundedRect(x - tile / 2, y - tile / 2, tile, tile, 18 * u);
         if (ch) {
           g.lineStyle(3 * u, C.challenge, 0.45);
           g.strokeRoundedRect(x - tile / 2 + 1.5 * u, y - tile / 2 + 1.5 * u, tile - 3 * u, tile - 3 * u, 17 * u);
         }
-        this.add.text(x, y - 8 * u, String(n), { fontFamily: FONT, fontSize: `${20 * u}px`, fontStyle: 'bold', color: '#4a5878' }).setOrigin(0.5);
+        this.add.text(x, y - 8 * u, String(n), { fontFamily: DISPLAY, fontSize: `${22 * u}px`, color: '#4a5878' }).setOrigin(0.5);
         Icons.lock(g, x, y + 18 * u, 16 * u, 0x4a5878);
         const zone = this.add.zone(x, y, tile, tile).setInteractive();
         zone.on('pointerup', () => toast(t('levels.locked')));
@@ -84,24 +88,29 @@ export class LevelsScene extends Phaser.Scene {
       }
       const completed = Progress.isCompleted(n);
       const isNext = n === next;
-      const color = isNext ? C.button : ch ? 0x8a3a24 : C.buttonSecondary;
-      const btn = new Button(this, x, y, String(n), { width: tile, height: tile, fontSize: 24 * u, radius: 18 * u, color }, () => goTo(this, 'Game', { level: n }));
+      const color = isNext ? C.buttonSuccess : ch ? 0xc23a6e : completed ? C.button : C.buttonSecondary;
+      const btn = new Button(this, x, y, String(n), { width: tile, height: tile, fontSize: 26 * u, radius: 20 * u, color }, () => goTo(this, 'Game', { level: n }));
       btn.label.setY(-5 * u);
       if (isNext) this.tweens.add({ targets: btn, scale: 1.06, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       const badge = this.add.graphics();
+      const stars = Storage.data.stars[n] ?? 0;
       if (completed) {
-        badge.fillStyle(C.buttonSuccess, 1);
-        badge.fillCircle(0, tile * 0.27, 10 * u);
-        Icons.check(badge, 0, tile * 0.27 + 0.5 * u, 12 * u, 0xffffff, 0.2);
+        const ss = 15 * u;
+        for (let k = 0; k < 3; k++) {
+          const sx = (k - 1) * ss * 1.05;
+          const sy = tile * 0.27 - (k === 1 ? 3 * u : 0);
+          Icons.star(badge, sx, sy + 1.5 * u, ss + 3 * u, C.ink);
+          Icons.star(badge, sx, sy, ss, k < stars ? C.gold : 0x55627d);
+        }
       } else if (isNext) Icons.play(badge, 0, tile * 0.26, 14 * u, 0xffffff);
       btn.add(badge);
       if (ch) {
         const hb = this.add.graphics();
-        hb.lineStyle(3 * u, C.challenge, 1);
+        hb.lineStyle(3 * u, C.accent, 1);
         hb.strokeRoundedRect(-tile / 2 + 1.5 * u, -tile / 2 + 1.5 * u, tile - 3 * u, tile - 3 * u, 17 * u);
         btn.add(hb);
         if (!completed) {
-          const st = this.add.text(0, tile * 0.27, '★', { fontFamily: FONT, fontSize: `${15 * u}px`, color: '#ffb199' }).setOrigin(0.5);
+          const st = this.add.text(0, tile * 0.27, '★', { fontFamily: FONT, fontSize: `${15 * u}px`, color: '#ffe28a' }).setOrigin(0.5);
           btn.add(st);
         }
       }
@@ -109,7 +118,7 @@ export class LevelsScene extends Phaser.Scene {
 
     const navY = L.bottom - navH / 2 - 16 * u;
     this.add
-      .text(L.cx, navY, t('levels.range', { a: first, b: Math.min(first + PER_PAGE - 1, LEVEL_COUNT) }), { fontFamily: FONT, fontSize: `${17 * u}px`, fontStyle: 'bold', color: C.textDim })
+      .text(L.cx, navY, t('levels.range', { a: first, b: Math.min(first + PER_PAGE - 1, LEVEL_COUNT) }), { fontFamily: DISPLAY, fontSize: `${17 * u}px`, color: C.textDim })
       .setOrigin(0.5);
     const nav = (dx, label, enabled, page) => {
       const b = new Button(this, L.cx + dx, navY, label, { width: 64 * u, height: 56 * u, fontSize: 30 * u, radius: 18 * u, color: C.buttonSecondary }, () =>

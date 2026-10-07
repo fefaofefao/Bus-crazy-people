@@ -9,9 +9,9 @@ const { mkdirSync, readFileSync } = require('node:fs');
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 
 const LANGS = [
-  { code: 'pt-BR', store: 'pt-BR', tag: 'Organize o estacionamento e leve todo mundo!', sub: '300 fases · sempre com solução' },
-  { code: 'en', store: 'en-US', tag: 'Clear the parking lot and get everyone on board!', sub: '300 levels · always solvable' },
-  { code: 'es', store: 'es-419', tag: '¡Ordena el estacionamiento y lleva a todos!', sub: '300 niveles · siempre con solución' },
+  { code: 'pt-BR', store: 'pt-BR', tag: 'Organize o estacionamento e leve todo mundo!', sub: '300 fases · 3 estrelas · 18 conquistas' },
+  { code: 'en', store: 'en-US', tag: 'Clear the parking lot and get everyone on board!', sub: '300 levels · 3 stars · 18 achievements' },
+  { code: 'es', store: 'es-419', tag: '¡Ordena el estacionamiento y lleva a todos!', sub: '300 niveles · 3 estrellas · 18 logros' },
 ];
 const URL = process.env.GAME_URL || 'http://localhost:4173/';
 
@@ -29,21 +29,24 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
   }
 
   for (const L of LANGS) {
-    // recurso gráfico 1024×500
-    const icon = readFileSync('assets/icon-foreground.svg', 'utf8').replace('width="1024" height="1024"', 'width="440" height="440"');
+    // recurso gráfico 1024×500 (identidade: pôr do sol, raios, ônibus do Tião, Lilita One)
+    const bus = readFileSync('public/brand/bus-front.svg', 'utf8').replace('width="600" height="680"', 'width="330" height="374"');
     const fg = await browser.newPage({ viewport: { width: 1024, height: 500 } });
-    await fg.setContent(`<html><head><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet"></head>
-      <body style="margin:0;width:1024px;height:500px;overflow:hidden;background:linear-gradient(#8fd3ff,#5fb4e6);font-family:Fredoka,system-ui,sans-serif;position:relative">
-      <div style="position:absolute;left:0;right:0;bottom:0;height:90px;background:#565d70"></div>
-      <div style="position:absolute;left:0;right:0;bottom:84px;height:10px;background:#c9bca3"></div>
-      <div style="position:absolute;left:14px;top:20px">${icon}</div>
-      <div style="position:absolute;left:470px;top:70px;width:520px">
-        <div style="font-size:78px;font-weight:700;color:#fff;-webkit-text-stroke:3px #1f2a44;line-height:1">BUS CRAZY</div>
-        <div style="font-size:78px;font-weight:700;color:#ffc93c;-webkit-text-stroke:3px #1f2a44;line-height:1.05">PEOPLE</div>
-        <div style="font-size:30px;font-weight:600;color:#1f2a44;margin-top:18px">${L.tag}</div>
-        <div style="font-size:24px;font-weight:600;color:#fff;margin-top:12px">${L.sub}</div>
+    const rays = Array.from({ length: 18 }, (_, i) => `<div style="position:absolute;left:300px;top:320px;width:1400px;height:90px;margin-top:-45px;transform-origin:0 50%;transform:rotate(${i * 20}deg);background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,0));clip-path:polygon(0 50%,100% 0,100% 100%)"></div>`).join('');
+    const stroke = '-webkit-text-stroke:8px #1b2340;paint-order:stroke fill;';
+    await fg.setContent(`<html><head><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Fredoka:wght@600&display=swap" rel="stylesheet"></head>
+      <body style="margin:0;width:1024px;height:500px;overflow:hidden;background:linear-gradient(#ffd166,#ff8a4c 60%,#ff4f8b);position:relative;font-family:'Lilita One',sans-serif">
+      ${rays}
+      <div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:#1b2340"></div>
+      <div style="position:absolute;left:0;right:0;bottom:70px;height:10px;background:#e7d3ad;border-top:4px solid #1b2340"></div>
+      <div style="position:absolute;left:60px;top:40px;filter:drop-shadow(0 8px 0 rgba(27,35,64,.45))">${bus}</div>
+      <div style="position:absolute;left:430px;top:58px;width:560px;transform:rotate(-4deg)">
+        <div style="font-size:96px;line-height:.95;color:#fff;${stroke}text-shadow:0 8px 0 #1b2340">BUS CRAZY</div>
+        <div style="display:inline-block;margin-top:10px;padding:2px 26px 8px;background:#ff4f8b;border:5px solid #1b2340;border-radius:18px;box-shadow:0 7px 0 #1b2340;font-size:74px;line-height:1;color:#ffc72c;${stroke}">PEOPLE</div>
+        <div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:28px;color:#1b2340;margin-top:22px">${L.tag}</div>
+        <div style="display:inline-block;margin-top:12px;padding:6px 16px;background:#1b2340;border-radius:12px;font-size:24px;color:#ffc72c">${L.sub}</div>
       </div></body></html>`);
-    await fg.waitForTimeout(800);
+    await fg.waitForTimeout(1200);
     await fg.screenshot({ path: `store/feature-graphic-${L.store}.png` });
     await fg.close();
 
@@ -52,7 +55,7 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
     mkdirSync(dir, { recursive: true });
     const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, locale: L.code });
     await ctx.addInitScript((lang) => {
-      localStorage.setItem('busCrazyPeople.save', JSON.stringify({ language: lang, completed: Array.from({ length: 41 }, (_, i) => i + 1), settings: { music: false, sound: false } }));
+      localStorage.setItem('busCrazyPeople.save', JSON.stringify({ language: lang, completed: Array.from({ length: 41 }, (_, i) => i + 1), stars: Object.fromEntries(Array.from({ length: 41 }, (_, i) => [i + 1, 1 + ((i * 7) % 3 === 0 ? 1 : 2) % 3 + ((i % 4) ? 1 : 0)].map((v, j) => (j ? Math.min(3, v) : v)))), achievements: ['first_ride', 'perfect', 'levels_25', 'challenge_1', 'combo_3'], settings: { music: false, sound: false } }));
     }, L.code);
     const p = await ctx.newPage();
     await p.goto(URL);
@@ -80,9 +83,10 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
     await go('Game', { level: 1 }); await shot();
     await go('Game', { level: 42 }); await playN(4); await shot();
     await go('Game', { level: 9 }); await shot();
-    await go('Game', { level: 146 }); await playN(3); await shot();
-    await go('Game', { level: 125 }); await playN(2); await shot();
+    await go('Game', { level: 138 }); await playN(3); await shot();
+    await go('Game', { level: 127 }); await playN(2); await shot();
     await go('Levels', {}); await shot();
+    await go('Achievements', {}); await shot();
     await ctx.close();
     console.log('✓', L.store);
   }

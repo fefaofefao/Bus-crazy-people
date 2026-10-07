@@ -8,7 +8,7 @@ Imagens geradas por `scripts/store-assets.cjs`:
 |---|---|
 | Ícone 512×512 | `store/icon-512.png` |
 | Recurso gráfico 1024×500 | `store/feature-graphic-pt-BR.png`, `-en-US.png` e `-es-419.png` |
-| Capturas 1080×1920 (7 por idioma) | `store/screenshots/pt-BR/`, `en-US/` e `es-419/` |
+| Capturas 1080×1920 (8 por idioma) | `store/screenshots/pt-BR/`, `en-US/` e `es-419/` |
 
 ---
 
@@ -29,9 +29,12 @@ O ponto de ônibus está lotado e o estacionamento virou um nó! Toque nos ônib
 • Ônibus cheio parte buzinando e libera a vaga.
 • Cuidado: se todas as vagas lotarem sem a cor certa, a fase acaba!
 
-✅ UM PUZZLE JUSTO DE VERDADE
+⭐ 3 ESTRELAS E 18 CONQUISTAS
+Termine sem nenhuma batida e sem ajuda para levar 3 estrelas. Junte medalhas por sequências perfeitas, combos e Desafios vencidos.
+
+✅ DIFÍCIL, MAS JUSTO
 • Todas as 300 fases têm solução garantida, conferida por computador, sem precisar de nenhum booster.
-• Dificuldade gradual, sem picos repentinos.
+• Dificuldade que sobe sem parar e sem picos injustos: as últimas fases vão testar o seu planejamento.
 • Desafio opcional a cada 10 fases: jogue quando quiser ou pule.
 • 1 desfazer grátis em toda fase e reinício sempre grátis e instantâneo.
 
@@ -73,9 +76,12 @@ The bus stop is packed and the parking lot is a total jam! Tap the buses in the 
 • A full bus honks, departs and frees its spot.
 • Careful: if every spot fills up without the right color, the level is over!
 
-✅ A TRULY FAIR PUZZLE
+⭐ 3 STARS AND 18 ACHIEVEMENTS
+Finish without a single bump or helper to earn 3 stars. Collect medals for perfect streaks, combos and Challenges beaten.
+
+✅ HARD, BUT FAIR
 • All 300 levels are guaranteed solvable, checked by computer, with no boosters required.
-• A smooth difficulty curve with no sudden spikes.
+• A difficulty curve that keeps climbing with no unfair spikes: the final levels will test your planning.
 • An optional Challenge every 10 levels: play it whenever you want, or skip it.
 • 1 free undo on every level, and restarting is always free and instant.
 
@@ -117,9 +123,12 @@ Puzzle de buses justo: ordena el estacionamiento y lleva a todos.
 • El bus lleno toca la bocina, se va y libera la plaza.
 • Cuidado: si todas las plazas se llenan sin el color correcto, ¡se termina el nivel!
 
-✅ UN PUZZLE JUSTO DE VERDAD
+⭐ 3 ESTRELLAS Y 18 LOGROS
+Termina sin un solo choque ni ayuda para ganar 3 estrellas. Reúne medallas por rachas perfectas, combos y Desafíos superados.
+
+✅ DIFÍCIL, PERO JUSTO
 • Los 300 niveles tienen solución garantizada, comprobada por computadora, sin necesidad de potenciadores.
-• Dificultad gradual, sin saltos repentinos.
+• Una dificultad que sube sin parar y sin saltos injustos: los últimos niveles pondrán a prueba tu planificación.
 • Desafío opcional cada 10 niveles: juégalo cuando quieras o sáltalo.
 • 1 deshacer gratis en cada nivel, y reiniciar siempre es gratis e instantáneo.
 

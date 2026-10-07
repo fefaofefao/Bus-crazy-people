@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
-import { FONT } from './layout.js';
+import { FONT, DISPLAY } from './layout.js';
 import { Icons } from './icons.js';
 import { Sound } from '../services/Sound.js';
 import { Haptics } from '../services/Haptics.js';
@@ -25,16 +25,17 @@ export class Button extends Phaser.GameObjects.Container {
     this.iconG = scene.add.graphics();
     this.label = scene.add
       .text(0, 0, label, {
-        fontFamily: FONT,
+        fontFamily: DISPLAY,
         fontSize: `${this.opts.fontSize}px`,
-        fontStyle: 'bold',
         color: this.opts.textColor,
         align: 'center',
+        stroke: CONFIG.colors.inkCss,
+        strokeThickness: Math.max(2, this.opts.fontSize * 0.14),
       })
       .setOrigin(0.5);
     this.badgeG = scene.add.graphics();
     this.badgeT = scene.add
-      .text(0, 0, '', { fontFamily: FONT, fontSize: `${this.opts.fontSize * 0.8}px`, fontStyle: 'bold', color: this.opts.textColor })
+      .text(0, 0, '', { fontFamily: DISPLAY, fontSize: `${this.opts.fontSize * 0.8}px`, color: this.opts.textColor })
       .setOrigin(0.5);
     this.add([this.bg, this.iconG, this.label, this.badgeG, this.badgeT]);
     this.draw();
@@ -66,13 +67,20 @@ export class Button extends Phaser.GameObjects.Container {
     const { width: w, height: h, color, radius, icon, iconArg, badge } = this.opts;
     const alpha = this.enabled ? 1 : 0.45;
     this.bg.clear();
-    // base mais escura embaixo (efeito 3D)
-    this.bg.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(30).color, alpha);
-    this.bg.fillRoundedRect(-w / 2, -h / 2 + h * 0.08, w, h, radius);
+    // estilo "adesivo": sombra dura azul-marinho, contorno grosso e brilho no topo
+    const ink = CONFIG.colors.ink;
+    const ow = Math.max(2, Math.min(w, h) * 0.06);
+    const r = Math.min(radius, h / 2);
+    this.bg.fillStyle(ink, alpha);
+    this.bg.fillRoundedRect(-w / 2, -h / 2 + h * 0.1, w, h, r);
+    this.bg.fillStyle(ink, alpha);
+    this.bg.fillRoundedRect(-w / 2, -h / 2, w, h, r);
     this.bg.fillStyle(color, alpha);
-    this.bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-    this.bg.fillStyle(0xffffff, 0.14 * alpha);
-    this.bg.fillRoundedRect(-w / 2 + 4, -h / 2 + 3, w - 8, h * 0.4, { tl: radius - 3, tr: radius - 3, bl: 6, br: 6 });
+    this.bg.fillRoundedRect(-w / 2 + ow, -h / 2 + ow, w - ow * 2, h - ow * 2, Math.max(2, r - ow));
+    this.bg.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(18).color, alpha);
+    this.bg.fillRoundedRect(-w / 2 + ow, h / 2 - ow - h * 0.16, w - ow * 2, h * 0.16, { tl: 0, tr: 0, bl: Math.max(2, r - ow), br: Math.max(2, r - ow) });
+    this.bg.fillStyle(0xffffff, 0.22 * alpha);
+    this.bg.fillRoundedRect(-w / 2 + ow * 2.2, -h / 2 + ow * 1.6, w - ow * 4.4, h * 0.2, Math.max(2, (r - ow) * 0.6));
 
     // ícone + texto centralizados juntos
     const fs = this.opts.fontSize;
@@ -98,11 +106,11 @@ export class Button extends Phaser.GameObjects.Container {
       const r = Math.max(h * 0.2, fs * 0.62);
       const bx = w / 2 - r * 0.55;
       const by = -h / 2 + r * 0.45;
-      this.badgeG.fillStyle(0xffffff, alpha);
-      this.badgeG.fillCircle(bx, by, r);
-      this.badgeG.lineStyle(Math.max(1, r * 0.16), Phaser.Display.Color.ValueToColor(color).darken(30).color, alpha);
-      this.badgeG.strokeCircle(bx, by, r);
-      this.badgeT.setColor('#25324a');
+      this.badgeG.fillStyle(CONFIG.colors.ink, alpha);
+      this.badgeG.fillCircle(bx, by + r * 0.12, r * 1.12);
+      this.badgeG.fillStyle(CONFIG.colors.accent, alpha);
+      this.badgeG.fillCircle(bx, by, r * 0.92);
+      this.badgeT.setColor(CONFIG.colors.inkCss);
       this.badgeT.setPosition(bx, by - r * 0.04);
     }
   }
@@ -142,7 +150,7 @@ export function drawHeart(g, x, y, s, color, alpha = 1) {
 
 /** Entrada suave da cena. */
 export function fadeIn(scene) {
-  scene.cameras.main.fadeIn(CONFIG.anim.sceneFade, 0x2d, 0x3a, 0x4f);
+  scene.cameras.main.fadeIn(CONFIG.anim.sceneFade, 0x1b, 0x23, 0x40);
 }
 
 /** Troca de cena com fade (ignora toques repetidos durante a transição). */
@@ -150,7 +158,7 @@ export function goTo(scene, key, data) {
   if (scene._leaving) return;
   scene._leaving = true;
   scene.input.enabled = false;
-  scene.cameras.main.fadeOut(CONFIG.anim.sceneFade, 0x2d, 0x3a, 0x4f);
+  scene.cameras.main.fadeOut(CONFIG.anim.sceneFade, 0x1b, 0x23, 0x40);
   scene.cameras.main.once('camerafadeoutcomplete', () => {
     scene.input.enabled = true;
     scene._leaving = false;

@@ -99,40 +99,52 @@ export const CONFIG = {
   // ---------------------------------------------------------------------------
   // Cores (tema: cidade brasileira de dia)
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Identidade visual (docs/IDENTIDADE.md): estilo "adesivo de rua" – cores
+  // chapadas e saturadas, contorno azul-marinho grosso e sombra dura.
+  // ---------------------------------------------------------------------------
   colors: {
-    background: 0x2d3a4f,
-    sky: 0x7cc6ee,
+    ink: 0x1b2340, // azul-marinho "asfalto à noite": contornos, sombras e fundos
+    inkCss: '#1b2340',
+    background: 0x1b2340,
+    sky: 0x7fd3ff,
+    sunsetTop: 0xffd166, // céu do pôr do sol (menu / splash)
+    sunsetMid: 0xff8a4c,
+    sunsetLow: 0xff4f8b,
+    sea: 0x2e9bff,
+    hill: 0x2a3566, // Pão de Açúcar ao fundo
     text: '#ffffff',
-    textDark: '#25324a',
-    textDim: '#c3cde0',
-    asphalt: 0x4a5163,
-    asphaltDark: 0x3c4253,
-    laneLine: 0xf5d547,
-    road: 0x565d70,
-    sidewalk: 0xece2cf,
-    sidewalkWave: 0x2f3542, // ondas do calçadão
-    curb: 0xc9bca3,
-    shelter: 0x2f9e8f, // abrigo do ponto
-    accent: 0xffc93c,
-    challenge: 0xff5d3d,
-    button: 0x2f6bff,
+    textDark: '#1b2340',
+    textDim: '#b9c3e0',
+    asphalt: 0x434b6b,
+    asphaltDark: 0x353c58,
+    laneLine: 0xffc72c,
+    road: 0x4e5677,
+    sidewalk: 0xfff3dc, // creme do calçadão
+    sidewalkWave: 0x1b2340,
+    curb: 0xe7d3ad,
+    shelter: 0x13b5a6,
+    accent: 0xffc72c, // amarelo-busão (cor da marca)
+    challenge: 0xff4f8b, // rosa-carnaval
+    button: 0x2e9bff, // azul-mar
     buttonText: '#ffffff',
-    buttonSecondary: 0x37415a,
-    buttonAd: 0xff9f1c,
-    buttonSuccess: 0x22b35e,
+    buttonSecondary: 0x3a4670,
+    buttonAd: 0xff7a3d, // laranja-pôr-do-sol (ações com anúncio)
+    buttonSuccess: 0x23b26d, // verde-bandeira (jogar / continuar)
     danger: 0xe5484d,
-    gold: 0xffc93c,
-    panel: 0x24304a,
-    particles: [0xffc93c, 0x4cd3ff, 0xff5c8a, 0x7ce05c, 0xffffff],
+    gold: 0xffc72c,
+    panel: 0xfff3dc,
+    particles: [0xffc72c, 0x2e9bff, 0xff4f8b, 0x23b26d, 0xffffff, 0xff7a3d],
     skin: [0xf2c9a0, 0xd9a274, 0xb57a4e, 0x8d5a3a, 0x6b4128],
   },
+
 
   layout: {
     designWidth: 390,
     designHeight: 780,
     maxDevicePixelRatio: 4,
     sidePadding: 14,
-    topBarHeight: 58,
+    topBarHeight: 68,
     bottomBarHeight: 92,
   },
 

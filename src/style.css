@@ -390,3 +390,196 @@ body {
     opacity: 1;
   }
 }
+
+/* Estrelas da vitória */
+.fds-modal .fds-box p {
+  white-space: pre-line;
+}
+.fds-stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0 6px;
+}
+.fds-star {
+  font-size: 54px;
+  line-height: 1;
+  color: #55627d;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+  transform: scale(0);
+  animation: fds-star-in 0.38s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+.fds-star:nth-child(2) {
+  font-size: 66px;
+  margin-top: -10px;
+}
+.fds-star.on {
+  color: #ffc93c;
+}
+@keyframes fds-star-in {
+  to {
+    transform: scale(1);
+  }
+}
+
+/* =====================================================================
+   Identidade "adesivo de rua" (docs/IDENTIDADE.md) – sobrescreve o básico
+   ===================================================================== */
+:root {
+  --ink: #1b2340;
+  --cream: #fff3dc;
+  --yellow: #ffc72c;
+  --orange: #ff7a3d;
+  --pink: #ff4f8b;
+  --blue: #2e9bff;
+  --green: #23b26d;
+}
+body {
+  background: var(--ink);
+}
+.fds-overlay {
+  background: rgba(27, 35, 64, 0.78);
+}
+.fds-box {
+  background: var(--cream);
+  color: var(--ink);
+  border: 4px solid var(--ink);
+  border-radius: 26px;
+  box-shadow: 0 8px 0 var(--ink), 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.fds-box h2 {
+  font-family: 'Lilita One', Fredoka, sans-serif;
+  font-weight: 400;
+  font-size: 30px;
+  letter-spacing: 0.3px;
+  color: var(--ink);
+}
+.fds-box p {
+  color: #4a5578;
+  font-weight: 600;
+}
+.fds-btn {
+  font-family: 'Lilita One', Fredoka, sans-serif;
+  font-weight: 400;
+  font-size: 21px;
+  letter-spacing: 0.3px;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: var(--blue);
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 5px 0 var(--ink);
+  text-shadow: -1.5px -1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px 1.5px 0 var(--ink);
+  margin-top: 14px;
+}
+.fds-btn:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 2px 0 var(--ink);
+}
+.fds-btn.secondary {
+  background: #3a4670;
+}
+.fds-btn.ok {
+  background: var(--green);
+}
+.fds-btn.ad {
+  background: var(--orange);
+}
+.fds-btn.danger {
+  background: #e5484d;
+}
+.fds-modal .fds-box {
+  border-top: 4px solid var(--ink);
+  position: relative;
+}
+.fds-modal.win .fds-box {
+  background: linear-gradient(#fff3dc, #ffe8b8);
+}
+.fds-modal-badge {
+  font-family: 'Lilita One', Fredoka, sans-serif;
+  font-weight: 400;
+  border: 3px solid var(--ink);
+  background: var(--pink);
+  box-shadow: 0 3px 0 var(--ink);
+  font-size: 15px;
+}
+.fds-mascot {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: -70px auto 2px;
+  filter: drop-shadow(0 4px 0 rgba(27, 35, 64, 0.35));
+}
+.fds-star {
+  color: #c9c2b0;
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 0 4px 0 var(--ink);
+}
+.fds-star.on {
+  color: var(--yellow);
+}
+.fds-toast {
+  background: var(--ink);
+  border: 3px solid var(--yellow);
+  font-weight: 700;
+}
+.fds-help .fds-box {
+  color: var(--ink);
+}
+.fds-help-list {
+  color: var(--ink);
+}
+.fds-help-list li::marker {
+  color: var(--orange);
+}
+.fds-page-head {
+  background: var(--cream);
+  color: var(--ink);
+}
+.fds-ad .fds-box {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  border-color: #fff;
+}
+.fds-ad .fds-box p,
+.fds-ad .fds-box h2 {
+  color: #fff;
+}
+.fds-modal.win .fds-box,
+.fds-modal.lose .fds-box,
+.fds-modal.challenge .fds-box {
+  border-top-color: var(--ink);
+}
+.fds-modal.lose .fds-box {
+  background: linear-gradient(#fff3dc, #ffd9cf);
+}
+.fds-modal.challenge .fds-box {
+  background: linear-gradient(#fff3dc, #ffe1ec);
+}
+/* Fila completa */
+.fds-html {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-height: 46vh;
+  overflow-y: auto;
+  margin: 6px 0 4px;
+  padding: 4px;
+}
+.fds-qdot {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  color: #fff;
+  font-size: 14px;
+  line-height: 24px;
+  text-align: center;
+  text-shadow: 0 0 2px var(--ink);
+}
+.fds-qdot b {
+  position: absolute;
+  right: -8px;
+  top: -10px;
+  font-size: 13px;
+}

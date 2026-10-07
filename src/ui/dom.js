@@ -90,11 +90,31 @@ export async function openHelp() {
  * buttons: [{ label, kind: ''|'secondary'|'ok'|'ad'|'danger', onClick(close) }]
  * kind 'ad' mostra o selo "▶ anúncio". Devolve { close }.
  */
-export function modal({ title, text, badge, tone = '', buttons = [], closable = true, onClose }) {
+export function modal({ title, text, html, badge, tone = '', buttons = [], closable = true, onClose, stars = null, mascot = false }) {
   const ov = openOverlay(`fds-modal ${tone}`, { closable });
+  if (mascot) {
+    const img = el('img', 'fds-mascot');
+    img.src = './brand/tiao.svg';
+    img.alt = '';
+    ov.box.appendChild(img);
+  }
   if (badge) ov.box.appendChild(el('div', 'fds-modal-badge', badge));
+  if (stars != null) {
+    const row = el('div', 'fds-stars');
+    for (let k = 0; k < 3; k++) {
+      const st = el('span', `fds-star ${k < stars ? 'on' : ''}`, '★');
+      st.style.animationDelay = `${0.25 + k * 0.22}s`;
+      row.appendChild(st);
+    }
+    ov.box.appendChild(row);
+  }
   if (title) ov.box.appendChild(el('h2', '', title));
   if (text) ov.box.appendChild(el('p', '', text));
+  if (html) {
+    const div = el('div', 'fds-html');
+    div.innerHTML = html; // conteúdo gerado pelo próprio jogo (sem texto externo)
+    ov.box.appendChild(div);
+  }
   let closed = false;
   const close = () => {
     if (closed) return;
@@ -104,7 +124,7 @@ export function modal({ title, text, badge, tone = '', buttons = [], closable = 
   };
   if (closable) ov.root.__close = close;
   for (const b of buttons) {
-    const btn = button(b.label, b.kind || '', () => b.onClick?.(close));
+    const btn = button(b.label, b.kind || '', () => b.onClick?.(close, btn));
     if (b.kind === 'ad') btn.prepend(el('span', 'fds-ad-tag', '▶'));
     ov.box.appendChild(btn);
   }

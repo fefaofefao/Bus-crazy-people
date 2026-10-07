@@ -68,12 +68,48 @@ Abra com **`?debug=1`** (ex.: `http://localhost:5173/?debug=1`). Ele nunca funci
 
 Cada mecânica estreia sozinha, com o cartão "Novidade!", e depois se mistura às outras. Há ainda o **Combo** (vários ônibus partindo com um toque) e a derrota "Trânsito travado" (nenhum ônibus consegue mais sair).
 
+**Estrelas (1 a 3 por fase):**
+- **0 erros = ★★★**, 1–2 erros = ★★, 3 ou mais = ★.
+- Erro é toda **batida** (ônibus bloqueado, trancado ou na obra) e toda **ajuda usada** (desfazer, dica, vaga extra).
+- O placar no topo mostra as estrelas da tentativa caindo a cada erro. A tela de fases guarda o melhor resultado de cada fase.
+- Toda fase tem uma solução sem nenhuma batida, então 3 estrelas são sempre possíveis (conferido em `npm run test:levels`).
+- Regras em `src/core/stars.js`.
+
+**Conquistas** (18, tela própria no menu, em `src/services/Achievements.js`):
+- fases vencidas (1, 25, 100, 200, todas);
+- estrelas (75, 300, 600, todas);
+- Desafios (1, 10, todos, um com 3★);
+- 10 vitórias seguidas com 3★;
+- combo triplo;
+- 25 passageiros com pressa;
+- vencer com as 4 mecânicas.
+
+São só medalhas, sem moeda nem vantagem paga.
+
+**Dificuldade: desafio moderado, de propósito.** Nem fácil demais, nem impossível. Regras garantidas pelo gerador e conferidas em `npm run test:levels` (parâmetros em `scripts/generator-config.js`):
+- **Armadilhas obrigatórias:** a partir da fase 15, toda fase tem pelo menos 1 toque que leva a um beco sem saída (provado pelo solver); 2 a partir da fase 60 e 3 a partir da 150. As fases de estreia das mecânicas são exceção, porque servem para aprender.
+- **Teto de crueldade:** um jogador "ingênuo", que só segue a cor da frente, vence pelo menos 15% das vezes nas fases normais e 5% nos Desafios.
+- **Vagas:** o padrão é 5. Quando uma fase não consegue armadilhas com 5 vagas (comum no começo, com poucos ônibus), ela usa 4. Os Desafios têm 4 vagas desde a fase 30.
+- **Prioritários:** a folga dos passageiros com pressa cai de 3 para 1 jogada.
+
 **Anti-frustração:**
 - 1 desfazer grátis por fase;
 - desfazer extra, **vaga extra** (temporária) e **dica** (a próxima jogada certa, calculada pelo solver), todos via anúncio recompensado;
 - reiniciar é grátis e instantâneo.
 
 A dica nunca cobra anúncio quando não há saída: nesse caso, ela avisa para desfazer ou reiniciar.
+
+**Som:** vinheta de abertura "fon-fon, ta-ra-rá!" (assinatura da marca, toca ao abrir o app), trilha calma "Bossa da Orla" no menu e "Samba do Ponto" na partida. Tudo é sintetizado por código em `src/services/Music.js`, sem arquivos de áudio.
+
+**UX:** revisão completa em `docs/UX_REVIEW.md`:
+- ônibus sai ao soltar o dedo;
+- toque guardado durante a animação;
+- pausa no lugar de "sair";
+- aviso de última vaga;
+- lugares visíveis no teto dos ônibus;
+- fila completa ao tocar no +N;
+- "Tentar 3 estrelas";
+- dicas do Tião depois de derrotas repetidas.
 
 **Acessibilidade:** modo daltônico com um símbolo único por cor (●▲★■◆✚♥⬢) em ônibus e passageiros, e paleta de 8 cores bem distintas.
 
@@ -165,7 +201,7 @@ O artefato `bus-crazy-people-release` traz o `.aab`, que vai para o Play Console
 
 1. Crie o app: nome **Bus Crazy People**, idioma padrão pt-BR, **Jogo**, **Gratuito**.
 2. Preencha **Conteúdo do app** com as respostas de `STORE_LISTING.md`: segurança dos dados, anúncios, ID de publicidade, público-alvo 13+ e IARC.
-3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 7 capturas por idioma em pt-BR, en-US e es-419).
+3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 8 capturas por idioma em pt-BR, en-US e es-419).
 4. Envie o 1º AAB para **Teste interno** e aceite o **Play App Signing**.
 5. Depois do 1º AAB enviado, crie em **Monetizar → Produtos → Produtos no app** o produto **`remove_ads`**, do tipo único (não consumível), com preço, e **ative**.
 6. **Teste fechado (obrigatório para conta pessoal nova):** 12 ou mais testadores inscritos por **14 dias seguidos**. Depois disso, peça acesso à produção.
@@ -191,10 +227,10 @@ src/
   config.js                 parâmetros (anúncios, animações, cores, layout)
   core/                     lógica pura: rules, engine, solver, generator, prng
   levels/index.js           carrega o pacote de fases
-  scenes/                   Boot (splash), Language, Menu, Levels, Game, Settings
+  scenes/                   Boot (splash), Language, Menu, Levels, Achievements, Game, Settings
   services/                 AdManager (+ ads/), PurchaseManager (+ purchases/), Storage,
                             Progress, Sound, Music, Haptics, BackButton
-  ui/                       art (ônibus/passageiros/símbolos), icons, logo, widgets, dom
+  ui/                       art (ônibus/passageiros/símbolos), scenery (pôr do sol), icons, logo, widgets, dom
   i18n/                     pt-BR (padrão), en, es
 public/privacy/index.html   política de privacidade (3 idiomas)
 scripts/                    gerador, testes, ícones, imagens da loja, sync do AdMob
@@ -203,7 +239,7 @@ docs/                       formato das fases, arte, roadmap, app-ads.txt
 STORE_LISTING.md            textos da loja + rascunho de Segurança dos dados
 ```
 
-Para trocar a arte, veja `docs/ARTE.md`. Para as próximas versões (desafio diário, Play Games, novas mecânicas), veja `docs/ROADMAP.md`.
+Identidade visual (paleta, tipografia, mascote Seu Tião, logo, componentes): `docs/IDENTIDADE.md`. Para trocar a arte, veja `docs/ARTE.md`. Para as próximas versões (desafio diário, Play Games, novas mecânicas), veja `docs/ROADMAP.md`.
 
 ## 6. Critérios de aceite do MVP
 

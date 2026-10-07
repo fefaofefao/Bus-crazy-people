@@ -12,7 +12,7 @@
 // Uso: npm run test:levels
 
 import { readFileSync } from 'node:fs';
-import { validateLevel, replay } from '../src/core/engine.js';
+import { validateLevel, replay, initialState, tap } from '../src/core/engine.js';
 import { solve } from '../src/core/solver.js';
 import { COLORS } from '../src/core/rules.js';
 
@@ -33,6 +33,18 @@ levels.forEach((lv, i) => {
   // 2. solução gravada
   const s = replay(lv, lv.solution || []);
   if (s.status !== 'won') fail(`fase ${id}: solução gravada não vence (status ${s.status}${s.reason ? ', ' + s.reason : ''})`);
+  // 2b. a solução gravada não tem nenhuma batida => 3 estrelas (0 erros) são sempre possíveis
+  {
+    let st = initialState(lv);
+    for (const id of lv.solution || []) {
+      const r = tap(lv, st, id);
+      if (r.events.some((e) => e.type === 'bump')) {
+        fail(`fase ${id}: a solução gravada tem batida (3 estrelas não garantidas)`);
+        break;
+      }
+      st = r.state;
+    }
+  }
   // 3. solver independente
   const r = solve(lv, { maxNodes: 400000 });
   if (!r.solvable) fail(`fase ${id}: solver não achou solução${r.capped ? ' (limite de nós)' : ''}`);
@@ -55,6 +67,15 @@ for (const [k, cfg] of Object.entries(GEN.mechanics)) {
   const lv = levels[cfg.intro - 1];
   if (JSON.stringify(lv.mechanics) !== JSON.stringify([MKEY[k]])) fail(`fase ${cfg.intro}: deveria estrear só "${MKEY[k]}" (tem ${lv.mechanics})`);
   for (const l of levels.slice(0, cfg.intro - 1)) if ((l.mechanics || []).includes(MKEY[k])) fail(`fase ${l.id}: "${MKEY[k]}" antes da estreia (${cfg.intro})`);
+}
+
+// 4c. desafio moderado: armadilhas mínimas e piso de vitória do jogador ingênuo
+for (const l of levels.slice(10)) {
+  const min = GEN.minTraps.reduce((m, [from, k]) => (l.id >= from ? k : m), 0);
+  const isIntro = Object.values(GEN.mechanics).some((m) => m.intro === l.id);
+  if (l.meta.traps < (isIntro ? 0 : min)) fail(`fase ${l.id}: só ${l.meta.traps} armadilha(s) (mínimo ${min})`);
+  const floor = l.challenge ? GEN.minGreedyWinChallenge : GEN.minGreedyWin;
+  if (l.meta.greedyWin < floor) fail(`fase ${l.id}: dura demais (jogador ingênuo vence ${l.meta.greedyWin})`);
 }
 
 // 5. curva sem picos (só fases normais depois do tutorial)

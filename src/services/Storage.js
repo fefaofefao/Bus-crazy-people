@@ -21,6 +21,10 @@ const defaults = () => ({
   settings: { sound: true, music: true, vibration: true, colorblind: false },
   language: null, // null = ainda não escolheu (mostra a tela de idioma no primeiro acesso)
   seen: [], // mecânicas já apresentadas (cartão "Novidade!")
+  stars: {}, // melhor resultado por fase: { "12": 3 } (1 a 3 estrelas)
+  achievements: [], // ids das conquistas desbloqueadas (src/services/Achievements.js)
+  // contadores das conquistas
+  stats: { perfectStreak: 0, bestStreak: 0, maxCombo: 0, hurried: 0, mechanicsWon: [] },
   // reservado para a v1.1 (desafio diário, Play Games): não usado no MVP
   daily: {},
 });
@@ -42,6 +46,14 @@ function sanitize(raw) {
   }
   if (LANGUAGE_CODES.includes(raw.language)) d.language = raw.language;
   if (Array.isArray(raw.seen)) d.seen = [...new Set(raw.seen.filter((x) => typeof x === 'string' && x.length <= 20))];
+  if (raw.stars && typeof raw.stars === 'object' && !Array.isArray(raw.stars)) {
+    for (const [k, v] of Object.entries(raw.stars)) if (/^[1-9]\d{0,5}$/.test(k) && isInt(v, 1, 3)) d.stars[k] = v;
+  }
+  if (Array.isArray(raw.achievements)) d.achievements = [...new Set(raw.achievements.filter((x) => typeof x === 'string' && x.length <= 30))];
+  if (raw.stats && typeof raw.stats === 'object') {
+    for (const k of ['perfectStreak', 'bestStreak', 'maxCombo', 'hurried']) if (isInt(raw.stats[k], 0, 1e7)) d.stats[k] = raw.stats[k];
+    if (Array.isArray(raw.stats.mechanicsWon)) d.stats.mechanicsWon = [...new Set(raw.stats.mechanicsWon.filter((x) => typeof x === 'string' && x.length <= 20))];
+  }
   if (raw.daily && typeof raw.daily === 'object' && !Array.isArray(raw.daily)) d.daily = raw.daily;
   return d;
 }

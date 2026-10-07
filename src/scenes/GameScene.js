@@ -5,19 +5,24 @@
 
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
-import { DIRS, BUS_TYPES, busCells } from '../core/rules.js';
+import { DIRS, BUS_TYPES, busCells, COLORS } from '../core/rules.js';
+import { SYMBOL_CHARS } from '../ui/art.js';
 import { initialState, tap, addSlot, occupancy, scanPath, isLocked, coneActive, OCC_CONE, OCC_GARAGE, BLOCK_LOCK } from '../core/engine.js';
 import { nextMove } from '../core/solver.js';
+import { starsFor } from '../core/stars.js';
+import { Achievements } from '../services/Achievements.js';
 import { getLevel, LEVEL_COUNT } from '../levels/index.js';
-import { getLayout, FONT } from '../ui/layout.js';
+import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
+import { drawCalcadao } from '../ui/scenery.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
 import { busTexture, drawPassenger, shade, pruneBusTextures } from '../ui/art.js';
-import { toast, modal } from '../ui/dom.js';
+import { toast, modal, openHelp } from '../ui/dom.js';
 import { Storage } from '../services/Storage.js';
 import { Progress } from '../services/Progress.js';
 import { Sound } from '../services/Sound.js';
 import { Haptics } from '../services/Haptics.js';
+import { Music } from '../services/Music.js';
 import { AdManager } from '../services/AdManager.js';
 import { Debug } from '../debug.js';
 import { t } from '../i18n/index.js';
@@ -27,6 +32,8 @@ const A = CONFIG.anim;
 const ROT = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 };
 
 export class GameScene extends Phaser.Scene {
+  /** derrotas por fase nesta sessão (para a dica do Tião) */
+  static losses = {};
   constructor() {
     super('Game');
   }
@@ -36,10 +43,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    Music.play('game');
     this.level = getLevel(this.levelId);
     this.state = initialState(this.level);
     this.history = [];
     this.undos = CONFIG.game.freeUndosPerLevel;
+    this.errors = 0; // batidas + ajudas (desfazer, dica, vaga extra) – define as estrelas
+    this.maxCombo = 0;
     this.extraSlots = 0;
     this.busy = false;
     this.modalOpen = false;
@@ -53,7 +63,9 @@ export class GameScene extends Phaser.Scene {
     if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
     else this.showMechanicIntro();
 
-    this.input.on('pointerdown', (p) => this.onPointer(p));
+    this.input.on('pointerdown', (p) => this.onPointerDown(p));
+    this.input.on('pointerup', (p) => this.onPointerUp(p));
+    this.input.on('pointerupoutside', () => this.cancelPress());
     const onResize = () => this.time.delayedCall(30, () => this.build(false));
     this.scale.on('resize', onResize);
     const onDebug = () => this.build(false);
@@ -187,22 +199,35 @@ export class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
   drawCity(L, u, y0, y1) {
     const g = this.add.graphics();
-    g.fillStyle(C.sky, 1);
+    // céu de fim de tarde
+    g.fillGradientStyle(C.sunsetTop, C.sunsetTop, C.sunsetMid, C.sunsetMid, 1);
     g.fillRect(0, 0, L.W, y1);
-    // casas coloridas (morro) e prédios ao fundo
-    const houses = [0xffb347, 0x7ec8a9, 0xf47c7c, 0xffe066, 0x9fa8ff, 0x6fd3e8, 0xf6a6c9, 0xb4e06c];
-    let x = 0;
+    // Pão de Açúcar ao fundo
+    g.fillStyle(C.hill, 0.55);
+    const hill = (cx, w, h) => {
+      const pts = [];
+      for (let i = 0; i <= 20; i++) {
+        const tt = i / 20;
+        pts.push({ x: cx - w / 2 + w * tt, y: y1 - Math.pow(Math.sin(Math.PI * tt), 0.6) * h });
+      }
+      g.fillPoints(pts, true);
+    };
+    hill(L.W * 0.82, 120 * u, 50 * u);
+    hill(L.W * 0.66, 70 * u, 28 * u);
+    // casario colorido com contorno (estilo adesivo)
+    const houses = [0xffb347, 0x13b5a6, 0xff4f8b, 0xffd166, 0x7d8cff, 0x5fd3ff, 0xff8a4c, 0x8fdc6a];
+    let x = -6 * u;
     let k = 0;
     while (x < L.W) {
       const w = (34 + ((k * 37) % 26)) * u;
-      const h = (22 + ((k * 53) % 24)) * u;
+      const h = (18 + ((k * 53) % 20)) * u;
+      g.fillStyle(C.ink, 1);
+      g.fillRect(x, y1 - h - 2 * u, w, h + 2 * u);
       g.fillStyle(houses[k % houses.length], 1);
-      g.fillRect(x, y1 - h, w - 2 * u, h);
-      g.fillStyle(0xffffff, 0.55);
-      for (let wy = y1 - h + 6 * u; wy < y1 - 8 * u; wy += 11 * u) for (let wx = x + 5 * u; wx < x + w - 10 * u; wx += 11 * u) g.fillRect(wx, wy, 5 * u, 5 * u);
-      g.fillStyle(shade(houses[k % houses.length], 0.75), 1);
-      g.fillRect(x, y1 - h, w - 2 * u, 3 * u);
-      x += w;
+      g.fillRect(x + 2 * u, y1 - h, w - 4 * u, h);
+      g.fillStyle(C.ink, 0.6);
+      for (let wy = y1 - h + 6 * u; wy < y1 - 8 * u; wy += 11 * u) for (let wx = x + 7 * u; wx < x + w - 10 * u; wx += 11 * u) g.fillRect(wx, wy, 5 * u, 6 * u);
+      x += w - 2 * u;
       k++;
     }
   }
@@ -211,34 +236,31 @@ export class GameScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(C.road, 1);
     g.fillRect(0, y, L.W, h);
+    g.fillStyle(C.ink, 1);
+    g.fillRect(0, y, L.W, 3 * u);
     // meio-fio
     g.fillStyle(C.curb, 1);
-    g.fillRect(0, y + h - 6 * u, L.W, 6 * u);
+    g.fillRect(0, y + h - 7 * u, L.W, 7 * u);
+    g.fillStyle(C.ink, 1);
+    g.fillRect(0, y + h - 8 * u, L.W, 2 * u);
     // faixa tracejada
-    g.fillStyle(0xffffff, 0.35);
+    g.fillStyle(0xffffff, 0.5);
     for (let x = 0; x < L.W; x += 34 * u) g.fillRect(x, y + 10 * u, 18 * u, 3 * u);
   }
 
   drawSidewalk(L, u, y, h) {
     const g = this.add.graphics();
-    g.fillStyle(C.sidewalk, 1);
-    g.fillRect(0, y, L.W, h);
-    // ondas do calçadão
-    g.lineStyle(4 * u, C.sidewalkWave, 0.13);
-    for (let row = 0; row < 4; row++) {
-      const pts = [];
-      for (let x = -10 * u; x <= L.W + 10 * u; x += 6 * u) pts.push({ x, y: y + 10 * u + row * 17 * u + Math.sin(x / (16 * u) + row) * 5 * u });
-      g.strokePoints(pts);
-    }
-    g.fillStyle(C.curb, 1);
+    drawCalcadao(g, 0, y, L.W, h, u);
+    g.fillStyle(C.ink, 1);
     g.fillRect(0, y + h - 4 * u, L.W, 4 * u);
     // placa do ponto (à esquerda)
-    const px = L.left + 14 * u;
-    g.fillStyle(0x3b4252, 1);
-    g.fillRect(px - 1.5 * u, y + 8 * u, 3 * u, h - 14 * u);
+    const px = L.left + 16 * u;
+    g.fillStyle(C.ink, 1);
+    g.fillRect(px - 2.5 * u, y + 8 * u, 5 * u, h - 14 * u);
+    g.fillRoundedRect(px - 13 * u, y + 2 * u, 26 * u, 25 * u, 6 * u);
     g.fillStyle(C.shelter, 1);
-    g.fillRoundedRect(px - 10 * u, y + 4 * u, 20 * u, 20 * u, 4 * u);
-    Icons.bus(g, px, y + 14 * u, 15 * u, 0xffffff);
+    g.fillRoundedRect(px - 10.5 * u, y + 4.5 * u, 21 * u, 20 * u, 4 * u);
+    Icons.bus(g, px, y + 15 * u, 15 * u, 0xffffff);
   }
 
   drawLot(u) {
@@ -247,33 +269,50 @@ export class GameScene extends Phaser.Scene {
     const m = 8 * u;
     const w = this.cell * lv.cols;
     const h = this.cell * lv.rows;
+    // meio-fio com contorno e sombra dura
+    g.fillStyle(0x000000, 0.3);
+    g.fillRoundedRect(this.gx - m - 6 * u, this.gy - m - 6 * u + 7 * u, w + (m + 6 * u) * 2, h + (m + 6 * u) * 2, 18 * u);
+    g.fillStyle(C.ink, 1);
+    g.fillRoundedRect(this.gx - m - 6 * u, this.gy - m - 6 * u, w + (m + 6 * u) * 2, h + (m + 6 * u) * 2, 18 * u);
     g.fillStyle(C.curb, 1);
     g.fillRoundedRect(this.gx - m - 4 * u, this.gy - m - 4 * u, w + (m + 4 * u) * 2, h + (m + 4 * u) * 2, 16 * u);
     g.fillStyle(C.asphalt, 1);
     g.fillRoundedRect(this.gx - m, this.gy - m, w + m * 2, h + m * 2, 12 * u);
     // marcações das vagas do estacionamento
-    g.fillStyle(C.laneLine, 0.22);
+    g.lineStyle(Math.max(1, 1.5 * u), C.laneLine, 0.18);
     for (let y = 0; y < lv.rows; y++)
       for (let x = 0; x < lv.cols; x++) {
         const cx = this.cellX(x);
         const cy = this.cellY(y);
-        g.fillRect(cx - this.cell * 0.04, cy - this.cell * 0.04, this.cell * 0.08, this.cell * 0.08);
+        const q = this.cell * 0.12;
+        g.lineBetween(cx - q, cy, cx + q, cy);
+        g.lineBetween(cx, cy - q, cx, cy + q);
       }
   }
 
+  /** Dica do tutorial: balão com o Seu Tião. */
   drawTip(L, u, y, h) {
     const g = this.add.graphics();
     const w = L.usableW - 24 * u;
-    g.fillStyle(0xffffff, 0.95);
-    g.fillRoundedRect(L.cx - w / 2, y, w, h - 6 * u, 12 * u);
+    const x0 = L.cx - w / 2;
+    const bh = h - 6 * u;
+    g.fillStyle(C.ink, 1);
+    g.fillRoundedRect(x0 + 40 * u, y + 4 * u, w - 40 * u, bh, 14 * u);
+    g.fillStyle(C.panel, 1);
+    g.fillRoundedRect(x0 + 40 * u, y, w - 40 * u, bh, 14 * u);
+    g.lineStyle(3 * u, C.ink, 1);
+    g.strokeRoundedRect(x0 + 40 * u, y, w - 40 * u, bh, 14 * u);
+    g.fillStyle(C.panel, 1);
+    g.fillTriangle(x0 + 42 * u, y + bh * 0.35, x0 + 30 * u, y + bh * 0.55, x0 + 42 * u, y + bh * 0.7);
+    if (this.textures.exists('tiao')) this.add.image(x0 + 20 * u, y + bh / 2, 'tiao').setDisplaySize(52 * u, 52 * u);
     this.add
-      .text(L.cx, y + (h - 6 * u) / 2, t(`tutorial.${this.level.tutorial.text}`), {
+      .text(x0 + 40 * u + (w - 40 * u) / 2, y + bh / 2, t(`tutorial.${this.level.tutorial.text}`), {
         fontFamily: FONT,
-        fontSize: `${14.5 * u}px`,
-        fontStyle: '500',
+        fontSize: `${14 * u}px`,
+        fontStyle: '600',
         color: C.textDark,
         align: 'center',
-        wordWrap: { width: w - 20 * u },
+        wordWrap: { width: w - 64 * u },
         lineSpacing: 1 * u,
       })
       .setOrigin(0.5);
@@ -302,7 +341,7 @@ export class GameScene extends Phaser.Scene {
     this.busW = w;
     const L = Math.round(len * this.cell - this.cell * 0.2);
     const hidden = b.hidden && !this.revealed.has(b.id);
-    const key = busTexture(this, { type: b.type, color: b.color, w, len: L, symbol: this.symbols, hidden });
+    const key = busTexture(this, { type: b.type, color: b.color, w, len: L, symbol: this.symbols, hidden, pips: BUS_TYPES[b.type].cap });
     const c = this.busCenter(b);
     const img = this.add.image(c.x, c.y, key);
     // origem no centro da carroceria (a textura tem margem e sombra)
@@ -416,14 +455,45 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Toque: converte a posição numa casa do estacionamento. */
-  onPointer(p) {
-    if (this.busy || this.modalOpen || this.ended || this._leaving) return;
+  busAt(p) {
     const x = Math.floor((p.x - this.gx) / this.cell);
     const y = Math.floor((p.y - this.gy) / this.cell);
-    if (x < 0 || y < 0 || x >= this.level.cols || y >= this.level.rows) return;
-    const occ = occupancy(this.level, this.state);
-    const id = occ[y * this.level.cols + x];
-    if (id >= 0) this.play(id);
+    if (x < 0 || y < 0 || x >= this.level.cols || y >= this.level.rows) return -1;
+    return occupancy(this.level, this.state)[y * this.level.cols + x];
+  }
+
+  /** UX: o ônibus "afunda" ao encostar e só sai ao soltar o dedo em cima dele (evita toque errado). */
+  onPointerDown(p) {
+    if (this.modalOpen || this.ended || this._leaving) return;
+    const id = this.busAt(p);
+    if (id < 0) return;
+    this.cancelPress();
+    const img = this.busViews.get(id);
+    if (!img) return;
+    this.pressed = { id, img };
+    img.setScale(0.94);
+    img.setTint(0xfff0c8);
+    Haptics.tap();
+  }
+
+  cancelPress() {
+    if (!this.pressed) return;
+    const { img } = this.pressed;
+    if (img.active) {
+      img.setScale(1);
+      img.clearTint();
+    }
+    this.pressed = null;
+  }
+
+  onPointerUp(p) {
+    const pr = this.pressed;
+    this.cancelPress();
+    if (!pr || this.modalOpen || this.ended || this._leaving) return;
+    if (this.busAt(p) !== pr.id) return; // arrastou para fora: cancela
+    // durante uma animação, guarda o toque e executa logo depois (resposta imediata)
+    if (this.busy) this.queuedTap = pr.id;
+    else this.play(pr.id);
   }
 
   play(busId) {
@@ -444,7 +514,10 @@ export class GameScene extends Phaser.Scene {
     let tEnd = 0;
     const boardEvents = [];
     for (const e of events) {
-      if (e.type === 'bump') tEnd = Math.max(tEnd, this.animBump(e));
+      if (e.type === 'bump') {
+        this.addError();
+        tEnd = Math.max(tEnd, this.animBump(e));
+      }
       else if (e.type === 'exit') tEnd = Math.max(tEnd, this.animExit(e));
       else if (e.type === 'board' || e.type === 'depart') boardEvents.push(e);
     }
@@ -458,6 +531,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.time.delayedCall(tEnd * 0.6 + 40, () => this.revealHidden());
     const departs = boardEvents.filter((e) => e.type === 'depart').length;
+    this.maxCombo = Math.max(this.maxCombo, departs);
     // embarques começam quando o ônibus chega à vaga
     let t0 = tEnd;
     const stagger = boardEvents.length > 16 ? A.boardStagger * 0.6 : A.boardStagger;
@@ -482,9 +556,16 @@ export class GameScene extends Phaser.Scene {
       this.busy = false;
       this.refreshHud();
       if (this.state.status !== 'playing') {
+        this.queuedTap = null;
         this.ended = true;
         this.time.delayedCall(A.endDelay, () => this.showEnd());
-      } else this.autoHint();
+        return;
+      }
+      this.warnLastSlot();
+      const q = this.queuedTap;
+      this.queuedTap = null;
+      if (q != null && this.state.inLot[q] === 1) this.play(q);
+      else this.autoHint();
     });
   }
 
@@ -614,10 +695,32 @@ export class GameScene extends Phaser.Scene {
 
   floatText(x, y, text, color, size = 15) {
     const tx = this.add
-      .text(x, y, text, { fontFamily: FONT, fontSize: `${size * this.u}px`, fontStyle: 'bold', color, stroke: '#000000', strokeThickness: 4 * this.u })
+      .text(x, y, text, { fontFamily: DISPLAY, fontSize: `${size * this.u}px`, color, stroke: C.inkCss, strokeThickness: 5 * this.u })
       .setOrigin(0.5)
       .setDepth(70);
     this.tweens.add({ targets: tx, y: y - 26 * this.u, alpha: 0, duration: 650, onComplete: () => tx.destroy() });
+  }
+
+  /** UX: quando só resta uma vaga, ela pisca em rosa e o Tião avisa (uma vez por situação). */
+  warnLastSlot() {
+    const free = this.state.slots.filter((x) => !x).length;
+    if (free !== 1) {
+      this.lastSlotWarned = false;
+      return;
+    }
+    if (this.lastSlotWarned) return;
+    this.lastSlotWarned = true;
+    const i = this.state.slots.indexOf(null);
+    const sv = this.slotViews[i];
+    if (!sv) return;
+    const g = this.add.graphics().setDepth(19);
+    const w = this.slotW - 8 * this.u;
+    const h = this.slotBusL + 16 * this.u;
+    g.fillStyle(C.challenge, 0.35);
+    g.fillRoundedRect(sv.x - w / 2, sv.y - h / 2, w, h, 8 * this.u);
+    this.tweens.add({ targets: g, alpha: 0, duration: 380, yoyo: true, repeat: 3, onComplete: () => g.destroy() });
+    this.floatText(sv.x, sv.y, t('game.lastSlot'), '#ffd2e0', 16);
+    Haptics.collision();
   }
 
   // ===========================================================================
@@ -642,12 +745,16 @@ export class GameScene extends Phaser.Scene {
     const w = this.slotW - 8 * u;
     const h = this.slotBusL + 16 * u;
     const extra = i >= this.level.slots;
-    g.lineStyle(2.5 * u, extra ? C.accent : 0xffffff, extra ? 0.9 : 0.45);
-    g.strokeRoundedRect(x - w / 2, this.slotY - h / 2, w, h, 8 * u);
-    if (extra) {
-      g.fillStyle(C.accent, 0.15);
-      g.fillRoundedRect(x - w / 2, this.slotY - h / 2, w, h, 8 * u);
+    // baia do ponto: asfalto mais escuro, borda amarela tracejada e "ÔNIBUS" pintado no chão
+    g.fillStyle(C.ink, 0.28);
+    g.fillRoundedRect(x - w / 2, this.slotY - h / 2, w, h, 8 * u);
+    g.fillStyle(extra ? C.challenge : C.laneLine, extra ? 1 : 0.9);
+    const dash = 7 * u;
+    for (let yy = this.slotY - h / 2; yy < this.slotY + h / 2 - dash / 2; yy += dash * 2) {
+      g.fillRect(x - w / 2, yy, 3 * u, dash);
+      g.fillRect(x + w / 2 - 3 * u, yy, 3 * u, dash);
     }
+    g.fillRect(x - w / 2, this.slotY + h / 2 - 3 * u, w, 3 * u);
     return { i, x, y: this.slotY, g, bus: null, info: null, fillG: null, filled: 0, cap: 0, color: 0 };
   }
 
@@ -666,7 +773,7 @@ export class GameScene extends Phaser.Scene {
     sv.filled = filled;
     sv.fillG = this.add.graphics().setDepth(21);
     sv.info = this.add
-      .text(sv.x, sv.y + this.slotBusL / 2 + 9 * u, '', { fontFamily: FONT, fontSize: `${12 * u}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#2b3040', strokeThickness: 3 * u })
+      .text(sv.x, sv.y + this.slotBusL / 2 + 9 * u, '', { fontFamily: DISPLAY, fontSize: `${13 * u}px`, color: '#ffffff', stroke: C.inkCss, strokeThickness: 4 * u })
       .setOrigin(0.5)
       .setDepth(22);
     this.drawSlotFill(sv);
@@ -750,6 +857,8 @@ export class GameScene extends Phaser.Scene {
         this.tweens.add({ targets: v, alpha: 1, duration: 200, delay: (i - this.state.q) * 30 });
       }
     }
+    const moreZone = this.add.zone(this.L.right - 30 * this.u, this.qY, 60 * this.u, this.qSize * 1.4).setInteractive().setDepth(17);
+    moreZone.on('pointerup', () => this.showQueue());
     this.moreText = this.add
       .text(this.L.right - 8 * this.u, this.qY - this.qSize * 0.05, '', {
         fontFamily: FONT,
@@ -793,22 +902,25 @@ export class GameScene extends Phaser.Scene {
   buildTopBar(L, u, pad) {
     const y = this.zones.yTop + this.zones.topH / 2;
     const sz = 46 * u;
-    new Button(this, L.left + pad + sz / 2, y, '', { width: sz, height: sz, color: C.buttonSecondary, radius: 14 * u, icon: 'home', iconSize: 22 * u }, () => goTo(this, 'Menu')).setDepth(50);
+    new Button(this, L.left + pad + sz / 2, y, '', { width: sz, height: sz, color: C.buttonSecondary, radius: 14 * u, icon: 'pause', iconSize: 22 * u }, () => this.showPause()).setDepth(50);
     new Button(this, L.right - pad - sz / 2, y, '', { width: sz, height: sz, color: C.buttonSecondary, radius: 14 * u, icon: 'restart', iconSize: 22 * u }, () => this.restart()).setDepth(50);
     const title = this.add
-      .text(L.cx, y - 9 * u, t('game.level', { n: this.levelId }), { fontFamily: FONT, fontSize: `${22 * u}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#2b3a55', strokeThickness: 5 * u })
+      .text(L.cx, y - 12 * u, t('game.level', { n: this.levelId }), { fontFamily: DISPLAY, fontSize: `${24 * u}px`, color: '#ffffff', stroke: C.inkCss, strokeThickness: 6 * u })
       .setOrigin(0.5)
       .setDepth(50);
     if (this.level.challenge) {
       const bg = this.add.graphics().setDepth(50);
-      const bt = this.add.text(title.x + title.width / 2 + 8 * u, y - 9 * u, t('game.challenge'), { fontFamily: FONT, fontSize: `${10 * u}px`, fontStyle: 'bold', color: '#ffffff' }).setOrigin(0, 0.5).setDepth(51);
+      const bt = this.add.text(title.x + title.width / 2 + 8 * u, y - 12 * u, t('game.challenge'), { fontFamily: DISPLAY, fontSize: `${11 * u}px`, color: '#ffffff' }).setOrigin(0, 0.5).setDepth(51);
       bg.fillStyle(C.challenge, 1);
       bg.fillRoundedRect(bt.x - 5 * u, bt.y - 8 * u, bt.width + 10 * u, 16 * u, 8 * u);
     }
     this.movesText = this.add
-      .text(L.cx, y + 14 * u, '', { fontFamily: FONT, fontSize: `${13 * u}px`, fontStyle: 'bold', color: '#ffffff', stroke: '#2b3a55', strokeThickness: 4 * u })
-      .setOrigin(0.5)
+      .text(L.cx + 10 * u, y + 17 * u, '', { fontFamily: DISPLAY, fontSize: `${13 * u}px`, color: '#ffffff', stroke: C.inkCss, strokeThickness: 4 * u })
+      .setOrigin(0, 0.5)
       .setDepth(50);
+    // estrelas da tentativa atual (caem a cada erro)
+    this.starsG = this.add.graphics().setDepth(50);
+    this.starsPos = { x: L.cx - 4 * u, y: y + 16 * u, s: 14 * u };
   }
 
   buildBottomBar(L, u, pad) {
@@ -823,6 +935,16 @@ export class GameScene extends Phaser.Scene {
 
   refreshHud() {
     this.movesText?.setText(t('game.moves', { n: this.state.moves }));
+    if (this.starsG) {
+      const { x, y, s: sz } = this.starsPos;
+      const n = starsFor(this.errors);
+      this.starsG.clear();
+      for (let k = 0; k < 3; k++) {
+        const sx = x - (2 - k) * sz * 1.05 - sz * 0.5;
+        Icons.star(this.starsG, sx + 1 * this.u, y + 1.5 * this.u, sz, 0x1f2a44);
+        Icons.star(this.starsG, sx, y, sz, k < n ? C.gold : 0x55627d);
+      }
+    }
     if (this.undoBtn) {
       const free = this.undos > 0;
       this.undoBtn.setOpts({ badge: free ? this.undos : '▶', color: free ? C.button : C.buttonAd });
@@ -917,8 +1039,19 @@ export class GameScene extends Phaser.Scene {
       });
   }
 
+  /** Erro: batida ou ajuda usada. As estrelas da tentativa caem com um tremor. */
+  addError() {
+    const before = starsFor(this.errors);
+    this.errors++;
+    if (starsFor(this.errors) < before && this.starsG) {
+      this.tweens.add({ targets: this.starsG, x: 3 * this.u, duration: 50, yoyo: true, repeat: 2, onComplete: () => this.starsG.setX(0) });
+    }
+    this.refreshHud();
+  }
+
   doUndo() {
     if (!this.history.length) return;
+    this.addError();
     let prev = this.history.pop();
     // mantém a vaga extra já ganha
     while (prev.slots.length < this.state.slots.length) prev = addSlot(this.level, prev);
@@ -933,7 +1066,10 @@ export class GameScene extends Phaser.Scene {
     const id = nextMove(this.level, this.state);
     // sem saída: avisa ANTES de oferecer anúncio (não cobra por uma dica inútil)
     if (id == null) return toast(t('game.noMove'), 3000);
-    this.offerRewarded(t('boosters.hintAd'), () => this.showHint(id));
+    this.offerRewarded(t('boosters.hintAd'), () => {
+      this.addError();
+      this.showHint(id);
+    });
   }
 
   onSlot() {
@@ -945,6 +1081,7 @@ export class GameScene extends Phaser.Scene {
   grantSlot() {
     if (this.extraSlots >= CONFIG.game.maxExtraSlotsPerLevel) return;
     this.extraSlots++;
+    this.addError();
     this.state = addSlot(this.level, this.state);
     this.history = this.history.map((s) => addSlot(this.level, s));
     this.ended = false;
@@ -974,6 +1111,15 @@ export class GameScene extends Phaser.Scene {
     this.confetti.explode(60, this.L.cx, this.zones.yRoad);
     Progress.complete(this.levelId);
     AdManager.registerWin(this.levelId);
+    const stars = starsFor(this.errors);
+    const res = Achievements.recordWin({
+      level: this.levelId,
+      stars,
+      maxCombo: this.maxCombo,
+      hurried: (this.level.priority || []).length,
+      mechanics: this.level.mechanics || [],
+    });
+    if (stars === 3) Sound.combo(3);
     const last = this.levelId >= LEVEL_COUNT;
     const go = async (close, target) => {
       close();
@@ -981,16 +1127,25 @@ export class GameScene extends Phaser.Scene {
       await AdManager.maybeShowInterstitial(this.levelId);
       this.modalOpen = false;
       if (target === 'next') goTo(this, 'Game', { level: this.levelId + 1 });
+      else if (target === 'retry') goTo(this, 'Game', { level: this.levelId });
       else goTo(this, target);
     };
     const buttons = [];
     if (!last) buttons.push({ label: t('win.next'), kind: 'ok', onClick: (c) => go(c, 'next') });
+    if (stars < 3) buttons.push({ label: t('win.retry3'), kind: '', onClick: (c) => go(c, 'retry') });
     buttons.push({ label: t('win.levels'), kind: 'secondary', onClick: (c) => go(c, 'Levels') });
+    const lines = [
+      `${t('game.level', { n: this.levelId })} · ${t('win.moves', { n: this.state.moves })}`,
+      this.errors ? t('win.errors', { n: this.errors }) : t('win.perfect'),
+    ];
+    if (res.newBest) lines.push(t('win.newBest'));
+    for (const a of res.unlocked) lines.push(`🏆 ${t('achievements.unlocked')}: ${t(`achievements.${a.id}.title`)}`);
     modal({
       tone: 'win',
       badge: this.level.challenge ? t('game.challenge') : null,
+      stars,
       title: last ? t('win.lastLevel') : this.level.challenge ? t('win.titleChallenge') : t('win.title'),
-      text: `${t('game.level', { n: this.levelId })} · ${t('win.moves', { n: this.state.moves })}`,
+      text: lines.join('\n'),
       buttons,
       closable: false,
     });
@@ -1002,6 +1157,10 @@ export class GameScene extends Phaser.Scene {
     Haptics.collision();
     const slots = this.state.reason === 'slots';
     const stuck = this.state.reason === 'stuck';
+    GameScene.losses[this.levelId] = (GameScene.losses[this.levelId] ?? 0) + 1;
+    const tips = t('tips.list');
+    const tip = GameScene.losses[this.levelId] >= 2 ? `\n\n${t('tips.prefix')} ${tips[(GameScene.losses[this.levelId] + this.levelId) % tips.length]}` : '';
+    const need = slots ? `\n${t('lose.needColor', { color: t('colors')[this.level.queue[this.state.q]] })}` : '';
     const buttons = [];
     if (this.history.length) {
       const free = this.undos > 0;
@@ -1048,10 +1207,59 @@ export class GameScene extends Phaser.Scene {
     buttons.push({ label: t('lose.home'), kind: 'secondary', onClick: (c) => (c(), (this.modalOpen = false), goTo(this, 'Menu')) });
     modal({
       tone: 'lose',
+      mascot: true,
       title: slots ? t('lose.titleSlots') : stuck ? t('lose.titleStuck') : t('lose.titlePatience'),
-      text: slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience'),
+      text: (slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience')) + need + tip,
       buttons,
       closable: false,
+    });
+  }
+
+  /** UX: pausa em vez de sair direto (evita perder a partida sem querer). */
+  showPause() {
+    if (this.modalOpen || this._leaving) return;
+    this.modalOpen = true;
+    const st = () => Storage.data.settings;
+    const onOff = (on) => (on ? '✓' : '✕');
+    const m = modal({
+      title: t('pause.title'),
+      text: `${t('game.level', { n: this.levelId })} · ${t('game.moves', { n: this.state.moves })}`,
+      buttons: [
+        { label: t('pause.resume'), kind: 'ok', onClick: (c) => c() },
+        { label: t('pause.restart'), kind: '', onClick: (c) => (c(), this.restart()) },
+        { label: `${t('pause.sound')} ${onOff(st().sound)}`, kind: 'secondary', onClick: (c, b) => {
+          Storage.update((d) => (d.settings.sound = !d.settings.sound));
+          b.lastChild.textContent = `${t('pause.sound')} ${onOff(st().sound)}`;
+        } },
+        { label: `${t('pause.music')} ${onOff(st().music)}`, kind: 'secondary', onClick: (c, b) => {
+          Storage.update((d) => (d.settings.music = !d.settings.music));
+          Music.refresh();
+          b.lastChild.textContent = `${t('pause.music')} ${onOff(st().music)}`;
+        } },
+        { label: t('settings.howToPlay'), kind: 'secondary', onClick: () => openHelp() },
+        { label: t('pause.quit'), kind: 'danger', onClick: (c) => (c(), goTo(this, 'Menu')) },
+      ],
+      onClose: () => (this.modalOpen = false),
+    });
+    void m;
+  }
+
+  /** UX: ver a fila inteira (planejar as próximas cores). */
+  showQueue() {
+    if (this.modalOpen || this.busy) return;
+    this.modalOpen = true;
+    const lv = this.level;
+    const rest = lv.queue.slice(this.state.q);
+    modal({
+      title: t('queue.title', { n: rest.length }),
+      html: rest
+        .map((c, i) => {
+          const pri = (lv.priority || []).some((p) => p.index === this.state.q + i);
+          return `<span class="fds-qdot" style="background:${'#' + COLORS[c].hex.toString(16).padStart(6, '0')}">${this.symbols ? SYMBOL_CHARS[COLORS[c].symbol] : ''}${pri ? '<b>⏱</b>' : ''}</span>`;
+        })
+        .join(''),
+      buttons: [{ label: t('common.close'), kind: 'ok', onClick: (c) => c() }],
+      onClose: () => (this.modalOpen = false),
     });
   }
 
@@ -1063,6 +1271,7 @@ export class GameScene extends Phaser.Scene {
     Storage.update((d) => d.seen.push(next));
     modal({
       tone: 'challenge',
+      mascot: true,
       badge: t('mechanics.new'),
       title: t(`mechanics.${next}.title`),
       text: t(`mechanics.${next}.text`),
@@ -1095,6 +1304,7 @@ export class GameScene extends Phaser.Scene {
     const next = this.levelId + 1;
     modal({
       tone: 'challenge',
+      mascot: true,
       badge: t('game.challenge'),
       title: t('game.challengeIntro'),
       text: t('game.challengeInfo'),

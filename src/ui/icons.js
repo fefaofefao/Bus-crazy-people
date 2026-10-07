@@ -366,4 +366,63 @@ export const Icons = {
     g.fillStyle(0xff7a1a, 1);
     g.fillRoundedRect(x - s * 0.42, y + s * 0.3, s * 0.84, s * 0.12, s * 0.04);
   },
+
+  flag(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillRect(x - s * 0.3, y - s * 0.42, s * 0.08, s * 0.86);
+    g.fillTriangle(x - s * 0.22, y - s * 0.42, x + s * 0.38, y - s * 0.22, x - s * 0.22, y);
+  },
+
+  crown(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillPoints(
+      [
+        { x: x - s * 0.42, y: y + s * 0.26 },
+        { x: x - s * 0.44, y: y - s * 0.24 },
+        { x: x - s * 0.2, y: y },
+        { x, y: y - s * 0.36 },
+        { x: x + s * 0.2, y },
+        { x: x + s * 0.44, y: y - s * 0.24 },
+        { x: x + s * 0.42, y: y + s * 0.26 },
+      ],
+      true,
+    );
+    g.fillRect(x - s * 0.42, y + s * 0.3, s * 0.84, s * 0.1);
+  },
+
+  flame(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillCircle(x, y + s * 0.14, s * 0.28);
+    g.fillTriangle(x - s * 0.27, y + s * 0.08, x + s * 0.27, y + s * 0.08, x + s * 0.06, y - s * 0.46);
+    g.fillTriangle(x - s * 0.26, y + s * 0.1, x - s * 0.04, y - s * 0.12, x - s * 0.22, y - s * 0.3);
+  },
+
+  bolt(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillPoints(
+      [
+        { x: x + s * 0.12, y: y - s * 0.46 },
+        { x: x - s * 0.28, y: y + s * 0.06 },
+        { x: x - s * 0.02, y: y + s * 0.06 },
+        { x: x - s * 0.12, y: y + s * 0.46 },
+        { x: x + s * 0.28, y: y - s * 0.08 },
+        { x: x + s * 0.02, y: y - s * 0.08 },
+      ],
+      true,
+    );
+  },
+
+  map(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillCircle(x, y - s * 0.12, s * 0.26);
+    g.fillTriangle(x - s * 0.23, y - s * 0.02, x + s * 0.23, y - s * 0.02, x, y + s * 0.44);
+    g.fillStyle(0x000000, 0.4);
+    g.fillCircle(x, y - s * 0.12, s * 0.1);
+  },
+
+  pause(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillRoundedRect(x - s * 0.3, y - s * 0.36, s * 0.2, s * 0.72, s * 0.05);
+    g.fillRoundedRect(x + s * 0.1, y - s * 0.36, s * 0.2, s * 0.72, s * 0.05);
+  },
 };

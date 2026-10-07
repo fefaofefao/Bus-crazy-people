@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import '@fontsource/fredoka/latin-500.css';
 import '@fontsource/fredoka/latin-700.css';
+import '@fontsource/lilita-one/latin-400.css';
 import './style.css';
 import { CONFIG } from './config.js';
 import { setRenderRatio } from './ui/layout.js';
@@ -12,6 +13,7 @@ import { GameScene } from './scenes/GameScene.js';
 import { SettingsScene } from './scenes/SettingsScene.js';
 import { LanguageScene } from './scenes/LanguageScene.js';
 import { LevelsScene } from './scenes/LevelsScene.js';
+import { AchievementsScene } from './scenes/AchievementsScene.js';
 import { initDebug } from './debug.js';
 import { initBackButton } from './services/BackButton.js';
 
@@ -31,7 +33,7 @@ function measure() {
 
 // Espera a fonte carregar antes de desenhar textos (no máximo 2 s)
 const fontsReady = Promise.race([
-  Promise.all(['500 20px Fredoka', '700 20px Fredoka'].map((f) => document.fonts.load(f))),
+  Promise.all(['500 20px Fredoka', '700 20px Fredoka', '400 20px "Lilita One"'].map((f) => document.fonts.load(f))),
   new Promise((r) => setTimeout(r, 2000)),
 ]).catch(() => {});
 
@@ -41,14 +43,14 @@ setRenderRatio(s.w / s.cssW);
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent,
-  backgroundColor: CONFIG.colors.background,
+  backgroundColor: CONFIG.colors.ink,
   // Resolução física; o tamanho na tela é 100% do #game (CSS)
   scale: { mode: Phaser.Scale.NONE, width: s.w, height: s.h, zoom: s.cssW / s.w },
   // roundPixels: imagens e textos em pixel inteiro (sem meio-pixel borrado)
   render: { antialias: true, antialiasGL: true, roundPixels: true },
   // windowEvents: false => toques nas sobreposições HTML (anúncio, compra, debug) não chegam ao jogo
   input: { activePointers: 3, windowEvents: false },
-  scene: [BootScene, LanguageScene, MenuScene, LevelsScene, GameScene, SettingsScene],
+  scene: [BootScene, LanguageScene, MenuScene, LevelsScene, AchievementsScene, GameScene, SettingsScene],
 });
 
 /** Aplica um novo tamanho físico (w × h pixels) para um elemento de cssW px CSS. */

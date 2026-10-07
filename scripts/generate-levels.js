@@ -13,7 +13,7 @@ import { solve } from '../src/core/solver.js';
 import { LEVEL_FORMAT, validateLevel } from '../src/core/engine.js';
 import { hashInts } from '../src/core/prng.js';
 
-export const PACK_VERSION = 2;
+export const PACK_VERSION = 3;
 
 const args = process.argv.slice(2);
 const countArg = args.indexOf('--count');
@@ -54,15 +54,23 @@ function paramsFor(n) {
     for (const k of Object.keys(mech)) delete mech[k];
     mech[intro] = intro === 'hidden' ? 2 : 1;
   }
+  const minTraps = GEN.minTraps.reduce((m, [from, k]) => (n >= from ? k : m), 0);
   return {
     challenge,
+    minTraps: intro ? 0 : minTraps, // estreia de mecânica: sem exigência (é para aprender)
     mech,
     introMechanic: intro,
     cols: Math.round(lerp(R.cols[0], R.cols[1], t)),
     rows: Math.round(lerp(R.rows[0], R.rows[1], t)),
     buses: Math.round(lerp(R.buses[0], R.buses[1], t)),
     colors: Math.round(lerp(R.colors[0], R.colors[1], t)),
-    slots: challenge && n >= GEN.challenge.slotsMinusFrom ? GEN.slots - 1 : GEN.slots,
+    slots: challenge
+      ? n >= GEN.challenge.slotsMinusFrom
+        ? GEN.slots - 1
+        : GEN.slots
+      : !intro && n >= GEN.fourSlots.from && (hashInts(GEN.baseSeed, n, 55) % 1000) / 1000 < lerp(GEN.fourSlots.chance[0], GEN.fourSlots.chance[1], (n - GEN.fourSlots.from) / (GEN.total - GEN.fourSlots.from))
+        ? GEN.slots - 1
+        : GEN.slots,
     pStop: lerp(R.pStop[0], R.pStop[1], t),
     fifoBias: lerp(R.fifoBias[0], R.fifoBias[1], t),
     typeWeights: { small: 1, medium: lerp(R.medium[0], R.medium[1], t), large: lerp(R.large[0], R.large[1], t) },
@@ -109,8 +117,27 @@ function generate(n) {
   for (let a = 0; a < GEN.maxAttemptsPerLevel && (cands.length < GEN.candidatesPerLevel || (!near() && cands.length < GEN.candidatesPerLevel * 3)); a++) {
     const lv = generateLevel(n, p, hashInts(GEN.baseSeed, n, a));
     if (!lv) continue;
+    // desafio moderado: armadilhas mínimas e piso de vitória (ver generator-config.js)
+    if (lv.meta.traps < p.minTraps) continue;
+    if (lv.meta.greedyWin < (p.challenge ? GEN.minGreedyWinChallenge : GEN.minGreedyWin)) continue;
     if (p.introMechanic && !lv.mechanics.includes(p.introMechanic === 'locks' ? 'lock' : p.introMechanic === 'garages' ? 'garage' : p.introMechanic)) continue;
     cands.push(lv);
+  }
+  if (!cands.length && p.slots > 4 && !p.introMechanic) {
+    // sem armadilha com 5 vagas: tenta com 4 vagas (aperto = armadilhas de verdade)
+    const p4 = { ...p, slots: 4 };
+    for (let a = GEN.maxAttemptsPerLevel; a < GEN.maxAttemptsPerLevel * 2 && cands.length < GEN.candidatesPerLevel; a++) {
+      const lv = generateLevel(n, p4, hashInts(GEN.baseSeed, n, a));
+      if (lv && lv.meta.traps >= p.minTraps && lv.meta.greedyWin >= GEN.minGreedyWin) cands.push(lv);
+    }
+  }
+  if (!cands.length) {
+    // nenhuma candidata passou nos filtros: tenta de novo sem o mínimo de armadilhas (registrado no log)
+    console.warn(`  fase ${n}: sem candidata com ${p.minTraps} armadilha(s); relaxando`);
+    for (let a = GEN.maxAttemptsPerLevel * 2; a < GEN.maxAttemptsPerLevel * 3 && cands.length < 4; a++) {
+      const lv = generateLevel(n, p, hashInts(GEN.baseSeed, n, a));
+      if (lv && (!p.introMechanic || lv.mechanics.length)) cands.push(lv);
+    }
   }
   if (!cands.length) throw new Error(`fase ${n}: nenhuma tentativa válida`);
   cands.sort((x, y) => Math.abs(x.meta.score - p.target) - Math.abs(y.meta.score - p.target) || x.meta.seed - y.meta.seed);
@@ -128,12 +155,13 @@ for (let n = GEN.firstGenerated; n <= total; n++) {
 
 // Suavização: reordena as fases normais (não tutorial, não Desafio) por pontuação
 // dentro de janelas, preservando as posições dos Desafios.
-const introIds = new Set(Object.values(GEN.mechanics).map((m) => m.intro));
-const normalIdx = levels.map((l, i) => i).filter((i) => i >= 10 && !levels[i].challenge && !introIds.has(i + 1));
+const introIds = new Set([...Object.values(GEN.mechanics).map((m) => m.intro), ...GEN.minTraps.map(([from]) => from)]);
+const mechIntro = new Set(Object.values(GEN.mechanics).map((m) => m.intro));
+const normalIdx = levels.map((l, i) => i).filter((i) => i >= 10 && !levels[i].challenge && !mechIntro.has(i + 1));
 // janelas nunca atravessam a estreia de uma mecânica (senão ela apareceria antes)
 const segments = [[]];
 for (const i of normalIdx) {
-  if ([...introIds].some((id) => id - 1 < i && segments.at(-1).some((j) => j < id - 1))) segments.push([]);
+  if ([...introIds].some((id) => id - 1 <= i && segments.at(-1).some((j) => j < id - 1))) segments.push([]);
   segments.at(-1).push(i);
 }
 const windows = segments.flatMap((seg) => Array.from({ length: Math.ceil(seg.length / GEN.smoothWindow) }, (_, k) => seg.slice(k * GEN.smoothWindow, (k + 1) * GEN.smoothWindow)));

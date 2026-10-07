@@ -16,7 +16,7 @@
 
 import { mulberry32 } from './prng.js';
 import { DIRS, DIR_KEYS, BUS_TYPES, busCells } from './rules.js';
-import { LEVEL_FORMAT, initialState, tap, legalExits, occupancy, validateLevel, scanPath, isLocked, spawnFromGarages, garageSpawnPos, OCC_FREE } from './engine.js';
+import { LEVEL_FORMAT, replay, initialState, tap, legalExits, occupancy, validateLevel, scanPath, isLocked, spawnFromGarages, garageSpawnPos, OCC_FREE } from './engine.js';
 import { solve } from './solver.js';
 
 /** Monta o estacionamento. Devolve { buses (ordem de inserção), ok }. */
@@ -219,9 +219,9 @@ export function measure(level, { playouts = 160, seed = 12345 } = {}) {
   const score =
     0.45 * level.buses.length +
     0.9 * colors +
-    25 * (1 - randomWin) +
-    20 * (1 - greedyWin) +
-    70 * trapRatio +
+    12 * (1 - randomWin) +
+    38 * (1 - greedyWin) +
+    120 * trapRatio +
     3 * (level.priority?.length ?? 0) +
     1.5 * (level.mechanics?.length ?? 0) +
     2.5 * Math.max(0, 5 - level.slots);
@@ -367,7 +367,9 @@ export function generateLevel(id, p, seed) {
   if (validateLevel(level).length) return null;
   const sol = solve(level, { maxNodes: p.maxSolverNodes ?? 250000 });
   if (!sol.solvable) return null;
-  level.solution = sol.path;
+  // solução gravada = ordem pretendida (sem nenhuma batida: prova que 3 estrelas são possíveis);
+  // se por algum motivo ela não vencer, fica a do solver
+  level.solution = replay(level, O).status === 'won' ? O : sol.path;
   level.meta = { seed, ...measure(level, { seed: seed ^ 0x5bd1e995 }) };
   // fase trivial demais (vence quase sempre jogando ao acaso) é descartada fora do início
   if (p.maxRandomWin != null && level.meta.randomWin > p.maxRandomWin) return null;
