@@ -168,12 +168,20 @@ Regras do **intersticial** (`CONFIG.ads.interstitial` em `src/config.js`, testad
 
 Não há banners. O consentimento **UMP** (UE/Reino Unido) aparece antes de pedir anúncios, e o botão "Opções de privacidade (anúncios)" aparece em Ajustes quando o Google exige.
 
-### Remover anúncios (Play Billing)
+### Compras (Play Billing): Vidas infinitas
 
-- Produto **não consumível `remove_ads`**, com Google Play Billing real via `@capgo/native-purchases`. O plugin reconhece a compra automaticamente.
-- Desliga os **intersticiais**. Os recompensados continuam disponíveis, como opção.
-- **Restaurar compras** em Ajustes. Ao abrir o app, ele também confere a compra na conta Google (útil ao reinstalar ou em caso de reembolso).
-- No navegador e no modo debug aparece uma compra **de teste** simulada.
+Dois produtos do tipo **único (não consumível)**, com Google Play Billing real via `@capgo/native-purchases`. O plugin reconhece a compra automaticamente. A lista fica em `CONFIG.purchases.products` (`src/config.js`).
+
+| ID no Play Console | Nome | Preço sugerido | Libera |
+|---|---|---|---|
+| `infinite_lives` | Vidas infinitas | R$ 9,99 | vidas que nunca acabam (o indicador mostra ∞) |
+| `infinite_lives_no_ads` | Vidas infinitas + sem anúncios | R$ 14,99 | vidas infinitas + desliga os **intersticiais** (os recompensados continuam como opção) |
+
+- O preço mostrado no jogo vem da Google Play, na moeda de cada país. O preço em `config.js` só aparece no navegador.
+- A **Loja** abre em Ajustes → Compras e no botão "∞ Vidas infinitas" da tela "Sem vidas".
+- **Restaurar compras** fica na Loja e em Ajustes. Ao abrir o app, ele também confere as compras na conta Google (reinstalação, outro aparelho ou reembolso).
+- No navegador e no modo debug aparece uma compra **de teste** simulada. O painel de debug tem "Vidas infinitas" e "Anúncios removidos".
+- Quem já tem "Vidas infinitas" e quer o combo paga o combo inteiro (a Google Play não tem "upgrade" para produtos únicos).
 
 ---
 
@@ -221,7 +229,7 @@ O artefato `bus-crazy-people-release` traz o `.aab`, que vai para o Play Console
 2. Preencha **Conteúdo do app** com as respostas de `STORE_LISTING.md`: segurança dos dados, anúncios, ID de publicidade, público-alvo 13+ e IARC.
 3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 8 capturas por idioma em pt-BR, en-US e es-419).
 4. Envie o 1º AAB para **Teste interno** e aceite o **Play App Signing**.
-5. Depois do 1º AAB enviado, crie em **Monetizar → Produtos → Produtos no app** o produto **`remove_ads`**, do tipo único (não consumível), com preço, e **ative**.
+5. Depois do 1º AAB enviado, crie em **Monetizar → Produtos → Produtos no app** os produtos **`infinite_lives`** (R$ 9,99) e **`infinite_lives_no_ads`** (R$ 14,99), do tipo único (não consumível), e **ative** os dois. Antes, cadastre o **perfil de pagamentos** (Configuração → Perfil de pagamentos). Para testar sem pagar, adicione os testadores em **Configuração → Testes de licença**.
 6. **Teste fechado (obrigatório para conta pessoal nova):** 12 ou mais testadores inscritos por **14 dias seguidos**. Depois disso, peça acesso à produção.
 7. Produção: envie o AAB final e lance.
 

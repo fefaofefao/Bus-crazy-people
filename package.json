@@ -1,7 +1,7 @@
 {
   "name": "bus-crazy-people",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Bus Crazy People – puzzle de ônibus justo (Phaser 3 + Vite + Capacitor)",
   "scripts": {

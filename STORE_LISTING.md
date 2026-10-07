@@ -53,7 +53,7 @@ Alguns passageiros têm um relógio: embarque-os antes de a paciência acabar!
 • Funciona 100% offline.
 
 💡 AJUDINHAS OPCIONAIS
-Dica, vaga extra e desfazer extra assistindo a um anúncio, só se você quiser. Os anúncios aparecem só em pausas naturais, nunca no meio da partida, e a compra "Remover anúncios" desliga os intersticiais.
+Dica, vaga extra e desfazer extra assistindo a um anúncio, só se você quiser. Os anúncios aparecem só em pausas naturais, nunca no meio da partida, e há duas compras únicas: "Vidas infinitas" e "Vidas infinitas + sem anúncios" (que também desliga os intersticiais).
 
 Bora organizar esse busão?
 
@@ -100,7 +100,7 @@ Colorful city buses, a bus stop, a wavy-patterned sidewalk and houses in every c
 • Works 100% offline.
 
 💡 OPTIONAL HELPERS
-Get a hint, an extra spot or an extra undo by watching an ad, only if you want to. Ads show up only at natural breaks, never mid-level, and the "Remove ads" purchase turns off interstitials.
+Get a hint, an extra spot or an extra undo by watching an ad, only if you want to. Ads show up only at natural breaks, never mid-level, and there are two one-time purchases: "Infinite lives" and "Infinite lives + no ads" (which also turns off interstitials).
 
 Ready to sort out this bus mess?
 
@@ -147,7 +147,7 @@ Buses urbanos de colores, parada de autobús, una vereda con dibujo de olas y ca
 • Funciona 100 % sin conexión.
 
 💡 AYUDAS OPCIONALES
-Consigue una pista, una plaza extra o un deshacer extra viendo un anuncio, solo si quieres. Los anuncios aparecen solo en pausas naturales, nunca en medio del nivel, y la compra "Quitar anuncios" desactiva los intersticiales.
+Consigue una pista, una plaza extra o un deshacer extra viendo un anuncio, solo si quieres. Los anuncios aparecen solo en pausas naturales, nunca en medio del nivel, y hay dos compras únicas: "Vidas infinitas" y "Vidas infinitas + sin anuncios" (que también desactiva los intersticiales).
 
 ¿Listo para ordenar este lío de buses?
 
@@ -190,7 +190,7 @@ Para todos os tipos abaixo: **Coletado = Sim**, **Compartilhado = Sim**, **Proce
 | Informações e desempenho do app | **Registros de falhas** · **Diagnóstico** | Análise · Prevenção de fraudes, segurança e compliance |
 | IDs do dispositivo ou outros | **IDs do dispositivo ou outros** (ID de publicidade) | Publicidade ou marketing · Análise · Prevenção de fraudes, segurança e compliance |
 
-| Informações financeiras | **Histórico de compras** (só "Remover anúncios") | Funcionalidade do app. **Coletado = Sim, Compartilhado = Não**, obrigatório para quem compra. Escolha conservadora: o pagamento é da Google Play, mas o app consulta se a compra existe (Restaurar compras). |
+| Informações financeiras | **Histórico de compras** (só as compras "Vidas infinitas") | Funcionalidade do app. **Coletado = Sim, Compartilhado = Não**, obrigatório para quem compra. Escolha conservadora: o pagamento é da Google Play, mas o app consulta se a compra existe (Restaurar compras). |
 
 **Não marque:** nome, e-mail, contatos, fotos, localização precisa ou dados de pagamento.
 

@@ -1,7 +1,7 @@
 // Vidas (fora das fases): perder todos os corações de uma fase gasta 1 vida.
 // Vencer nunca gasta. Sem vidas, espera a recarga ou assiste a um anúncio para encher.
 // A recarga é calculada pelo relógio (funciona com o app fechado).
-// Configuração em CONFIG.lives.
+// Configuração em CONFIG.lives. Com a compra "Vidas infinitas", nunca acabam.
 
 import { CONFIG } from '../config.js';
 import { Storage } from './Storage.js';
@@ -28,14 +28,19 @@ function settle() {
   }
 }
 
+/** Comprou "Vidas infinitas" (sozinha ou no combo)? */
+const infinite = () => CONFIG.purchases.enabled && Storage.data.infiniteLives === true;
+
 export const Lives = {
-  /** { lives, max, nextInMs } — nextInMs = 0 quando cheio */
+  infinite,
+  /** { lives, max, nextInMs, infinite } — nextInMs = 0 quando cheio */
   get() {
+    if (infinite()) return { lives: CONFIG.lives.max, max: CONFIG.lives.max, nextInMs: 0, infinite: true };
     settle();
     const d = Storage.data;
     const max = CONFIG.lives.max;
     const nextInMs = d.lives >= max ? 0 : Math.max(0, d.livesAt + regenMs() - Date.now());
-    return { lives: d.lives, max, nextInMs };
+    return { lives: d.lives, max, nextInMs, infinite: false };
   },
   has() {
     return this.get().lives > 0;
@@ -45,6 +50,7 @@ export const Lives = {
     return level <= CONFIG.lives.freeUntilLevel;
   },
   consume() {
+    if (infinite()) return;
     settle();
     Storage.update((d) => {
       if (d.lives >= CONFIG.lives.max) d.livesAt = Date.now(); // começa a contar a recarga

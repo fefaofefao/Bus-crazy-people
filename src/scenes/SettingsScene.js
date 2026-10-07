@@ -6,6 +6,7 @@ import { CONFIG } from '../config.js';
 import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { toast, openPage, openHelp, modal } from '../ui/dom.js';
+import { openStore } from '../ui/store.js';
 import { Storage } from '../services/Storage.js';
 import { PurchaseManager } from '../services/PurchaseManager.js';
 import { AdManager } from '../services/AdManager.js';
@@ -71,18 +72,13 @@ export class SettingsScene extends Phaser.Scene {
     const langName = LANGUAGES.find((l) => l.code === getLanguage())?.name ?? '';
     new Button(this, L.cx, y, t('settings.language', { name: langName }), opts(C.button, 'globe'), () => goTo(this, 'Language', { from: 'Settings' }));
 
-    let removeAds = null;
+    let store = null;
     if (showPurchases) {
       y += bh / 2 + 22 * u;
       section(y, t('settings.purchases'));
       y += 26 * u + bh / 2;
-      removeAds = new Button(this, L.cx, y, '', opts(C.buttonAd, 'noAds'), async () => {
-        if (PurchaseManager.isAdsRemoved()) return;
-        const r = await PurchaseManager.buyRemoveAds();
-        if (!this.scene.isActive()) return;
-        toast(r === 'error' ? t('settings.storeError') : r ? t('settings.bought') : t('settings.canceled'));
-        refresh();
-      });
+      // Loja: Vidas infinitas / Vidas infinitas + sem anúncios
+      store = new Button(this, L.cx, y, '', opts(C.buttonAd, 'heart'), () => openStore({ onClose: () => this.scene.isActive() && refresh() }));
       y += gap;
       new Button(this, L.cx, y, t('settings.restore'), opts(C.buttonSecondary, 'restart'), async () => {
         const r = await PurchaseManager.restorePurchases();
@@ -139,10 +135,10 @@ export class SettingsScene extends Phaser.Scene {
       set(music, st.music, 'settings.musicOn', 'settings.musicOff');
       set(vib, st.vibration, 'settings.vibrationOn', 'settings.vibrationOff');
       set(cb, st.colorblind, 'settings.colorblindOn', 'settings.colorblindOff');
-      if (removeAds) {
-        const removed = PurchaseManager.isAdsRemoved();
-        removeAds.label.setText(removed ? t('settings.adsRemoved') : t('settings.removeAds'));
-        removeAds.setOpts({ color: removed ? C.buttonSuccess : C.buttonAd, icon: removed ? 'check' : 'noAds' });
+      if (store) {
+        const all = PurchaseManager.products().every((p) => PurchaseManager.owns(p.id));
+        store.label.setText(all ? t('store.allOwnedShort') : t('store.button'));
+        store.setOpts({ color: all ? C.buttonSuccess : C.buttonAd, icon: all ? 'check' : 'heart' });
       }
     }
     refresh();

@@ -100,4 +100,21 @@ const { CONFIG } = await import('../src/config.js');
 
 const langs = await Promise.all(['pt-BR', 'en', 'es'].map((l) => import(`../src/i18n/${l}.js`)));
 for (const a of LIST) for (const L of langs) assert.ok(L.default.achievements[a.id]?.title && L.default.achievements[a.id]?.desc, a.id);
+test('compras: vidas infinitas não acabam; combo também tira anúncios; zerar progresso mantém', () => {
+  const ids = CONFIG.purchases.products.map((p) => p.id).sort();
+  assert.deepEqual(ids, ['infinite_lives', 'infinite_lives_no_ads']);
+  const bundle = CONFIG.purchases.products.find((p) => p.id === 'infinite_lives_no_ads');
+  assert.deepEqual([...bundle.grants].sort(), ['ads', 'lives']);
+  Storage.update((d) => ((d.lives = 0), (d.infiniteLives = true)));
+  assert.equal(Lives.has(), true);
+  assert.equal(Lives.get().infinite, true);
+  Lives.consume();
+  assert.equal(Storage.data.lives, 0); // não mexe no contador escondido
+  assert.equal(Lives.has(), true);
+  Storage.update((d) => (d.adsRemoved = true));
+  Storage.reset(true);
+  assert.equal(Storage.data.infiniteLives, true);
+  assert.equal(Storage.data.adsRemoved, true);
+});
+
 console.log(`✓ ${n} testes de estrelas e conquistas passaram (${LIST.length} conquistas)`);

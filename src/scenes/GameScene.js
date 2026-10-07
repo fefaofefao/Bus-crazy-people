@@ -19,6 +19,8 @@ import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
 import { busTexture, drawPassenger, shade, pruneBusTextures } from '../ui/art.js';
 import { toast, modal, openHelp } from '../ui/dom.js';
+import { openStore } from '../ui/store.js';
+import { PurchaseManager } from '../services/PurchaseManager.js';
 import { Storage } from '../services/Storage.js';
 import { Progress } from '../services/Progress.js';
 import { Sound } from '../services/Sound.js';
@@ -1231,6 +1233,20 @@ export class GameScene extends Phaser.Scene {
             }
           },
         },
+        ...(PurchaseManager.isEnabled()
+          ? [
+              {
+                label: `∞ ${t('store.lives.title')}`,
+                kind: 'ok',
+                onClick: (close) => {
+                  // abre a loja; se comprar, as vidas viram infinitas e o jogo segue
+                  clearInterval(timer);
+                  close();
+                  openStore({ onClose: () => (Lives.has() ? done(m.close, true) : ((this.modalOpen = false), this.showNoLives(afterLoss))) });
+                },
+              },
+            ]
+          : []),
         { label: t('lives.back'), kind: 'secondary', onClick: (close) => (done(close, false), goTo(this, 'Levels')) },
       ],
       closable: false,
@@ -1322,6 +1338,8 @@ export class GameScene extends Phaser.Scene {
     const st = Lives.get();
     const lifeLine = this.exempt
       ? `\n\n${t('lives.free')}`
+      : st.infinite
+        ? `\n\n♥ ∞ ${t('lives.infinite')}`
       : `\n\n♥ ${t('lives.lost', { n: st.lives })}${st.lives === 0 ? ' ' + t('lives.nextShort', { t: Lives.format(st.nextInMs) }) : ''}`;
     const buttons = [];
     if (this.history.length) {

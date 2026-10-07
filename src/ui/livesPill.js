@@ -23,8 +23,8 @@ export function livesPill(scene, x, y, u, { onClick } = {}) {
   function draw() {
     const st = Lives.get();
     const full = st.lives >= st.max;
-    count.setText(String(st.lives));
-    sub.setText(full ? t('lives.full') : t('lives.next', { t: Lives.format(st.nextInMs) }));
+    count.setText(st.infinite ? '∞' : String(st.lives));
+    sub.setText(st.infinite ? t('lives.infinite') : full ? t('lives.full') : t('lives.next', { t: Lives.format(st.nextInMs) }));
     const iconW = 24 * u;
     w = 12 * u + iconW + 6 * u + count.width + 8 * u + sub.width + 14 * u;
     let cx = -w / 2 + 12 * u;

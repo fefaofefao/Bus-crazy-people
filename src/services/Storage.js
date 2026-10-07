@@ -16,7 +16,8 @@ const defaults = () => ({
   schema: SCHEMA,
   completed: [], // fases vencidas (ids)
   skipped: [], // fases Desafio puladas (só informativo)
-  adsRemoved: false,
+  adsRemoved: false, // compra "Vidas infinitas + sem anúncios"
+  infiniteLives: false, // compra "Vidas infinitas" (ou o combo)
   winsSinceInterstitial: 0, // vitórias desde o último intersticial
   settings: { sound: true, music: true, vibration: true, colorblind: false },
   language: null, // null = ainda não escolheu (mostra a tela de idioma no primeiro acesso)
@@ -42,6 +43,7 @@ function sanitize(raw) {
   d.completed = intList(raw.completed, 100000);
   d.skipped = intList(raw.skipped, 100000);
   if (isBool(raw.adsRemoved)) d.adsRemoved = raw.adsRemoved;
+  if (isBool(raw.infiniteLives)) d.infiniteLives = raw.infiniteLives;
   if (isInt(raw.winsSinceInterstitial, 0, 1e6)) d.winsSinceInterstitial = raw.winsSinceInterstitial;
   if (raw.settings && typeof raw.settings === 'object') {
     for (const k of Object.keys(d.settings)) if (isBool(raw.settings[k])) d.settings[k] = raw.settings[k];
@@ -102,7 +104,7 @@ export const Storage = {
 
   /**
    * Zera o progresso (Configurações → Zerar progresso).
-   * keepPrefs = true mantém idioma, preferências e a compra "Remover anúncios".
+   * keepPrefs = true mantém idioma, preferências e as compras.
    */
   reset(keepPrefs = true) {
     const old = this.data;
@@ -111,6 +113,7 @@ export const Storage = {
       this.data.language = old.language;
       this.data.settings = { ...old.settings };
       this.data.adsRemoved = old.adsRemoved;
+      this.data.infiniteLives = old.infiniteLives;
     }
     this.save();
   },

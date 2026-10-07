@@ -7,6 +7,7 @@
 //   init(): Promise<void>
 //   buy(productId): Promise<boolean>        -> true se a compra foi concluída
 //   restore(): Promise<string[]>            -> ids dos produtos já comprados
+//   prices(ids): Promise<{}>                -> vazio: usa o preço de CONFIG
 
 import { el, openOverlay, button } from '../../ui/dom.js';
 import { t } from '../../i18n/index.js';
@@ -50,6 +51,10 @@ export const TestPurchaseProvider = {
         }),
       );
     });
+  },
+
+  async prices() {
+    return {};
   },
 
   async restore() {

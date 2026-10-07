@@ -71,9 +71,16 @@ export const CONFIG = {
     freeUntilLevel: 10, // tutorial (1–10) não gasta vida
   },
 
+  // Produtos da Google Play (Play Console → Monetizar → Produtos no app), todos
+  // "produto único" (não consumível). `grants` = o que cada um libera.
+  // `price` só aparece no navegador / se a loja não responder: no app vale o preço
+  // configurado no Play Console (já convertido para a moeda de cada país).
   purchases: {
     enabled: true,
-    removeAdsId: 'remove_ads', // produto não consumível no Play Console
+    products: [
+      { id: 'infinite_lives_no_ads', grants: ['lives', 'ads'], price: 'R$ 14,99' },
+      { id: 'infinite_lives', grants: ['lives'], price: 'R$ 9,99' },
+    ],
   },
 
   // ---------------------------------------------------------------------------

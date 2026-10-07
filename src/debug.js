@@ -26,6 +26,7 @@ export function initDebug(game) {
     <div class="row"><input type="number" min="1" max="${LEVEL_COUNT}" step="1" placeholder="Nº da fase" id="dbg-level"><button id="dbg-go">Ir para fase</button></div>
     <label><input type="checkbox" id="dbg-sol"> Mostrar ordem de solução</label>
     <label><input type="checkbox" id="dbg-ads"> Anúncios removidos</label>
+    <label><input type="checkbox" id="dbg-inf"> Vidas infinitas</label>
     <div class="row"><button id="dbg-unlock">Liberar todas as fases</button><button id="dbg-timer">Zerar timer de anúncio</button></div>
     <div class="row"><button id="dbg-lives-full">Vidas cheias</button><button id="dbg-lives-zero">Zerar vidas</button></div>
     <div class="row"><button class="warn" id="dbg-reset">Zerar tudo</button></div>
@@ -46,6 +47,7 @@ export function initDebug(game) {
     changed();
   });
   $('dbg-ads').addEventListener('change', (e) => Storage.update((d) => (d.adsRemoved = e.target.checked)));
+  $('dbg-inf').addEventListener('change', (e) => (Storage.update((d) => (d.infiniteLives = e.target.checked)), changed()));
   $('dbg-timer').addEventListener('click', () => AdManager.resetTimer());
   $('dbg-unlock').addEventListener('click', () => {
     Storage.update((d) => (d.completed = Array.from({ length: LEVEL_COUNT - 1 }, (_, i) => i + 1)));
@@ -68,6 +70,7 @@ export function initDebug(game) {
   const refresh = () => {
     const d = Storage.data;
     $('dbg-ads').checked = d.adsRemoved;
+    $('dbg-inf').checked = d.infiniteLives;
     const s = activeScene();
     let info = '';
     if (s?.scene.key === 'Game') {
