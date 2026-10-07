@@ -1,0 +1,12 @@
+{
+  "applicationId": "com.fsamplabs.buscrazypeople",
+  "minTargetSdk": 36,
+  "allowedPermissions": [
+    "android.permission.INTERNET",
+    "android.permission.VIBRATE",
+    "com.google.android.gms.permission.AD_ID"
+  ],
+  "privacyPolicyUrl": "https://fefaofefao.github.io/Bus-crazy-people/privacy/",
+  "contactEmail": "fe.m.sampaio@hotmail.com",
+  "ignoreDirs": []
+}

@@ -25,12 +25,12 @@ O ponto de ônibus está lotado e o estacionamento virou um nó! Toque nos ônib
 
 🚌 COMO JOGAR
 • Toque num ônibus: se a frente estiver livre, ele vai para o ponto.
-• Os passageiros embarcam sozinhos no ônibus da mesma cor.
+• Três filas esperam no ponto: o primeiro de cada fila embarca sozinho no ônibus da mesma cor.
 • Ônibus cheio parte buzinando e libera a vaga.
 • Cuidado: se todas as vagas lotarem sem a cor certa, a fase acaba!
 
 ⭐ 3 ESTRELAS E 18 CONQUISTAS
-Termine sem nenhuma batida e sem ajuda para levar 3 estrelas. Junte medalhas por sequências perfeitas, combos e Desafios vencidos.
+Quem espera demais fica impaciente 😟 e depois nervoso 😠. Termine com as 3 filas felizes para levar 3 estrelas! Junte medalhas por sequências perfeitas, combos e Desafios vencidos.
 
 ✅ DIFÍCIL, MAS JUSTO
 • Todas as 300 fases têm solução garantida, conferida por computador, sem precisar de nenhum booster.
@@ -72,12 +72,12 @@ The bus stop is packed and the parking lot is a total jam! Tap the buses in the 
 
 🚌 HOW TO PLAY
 • Tap a bus: if its front is clear, it drives to the stop.
-• Passengers board a bus of their own color automatically.
+• Three lines wait at the stop: whoever is at the front of each line boards a bus of their color automatically.
 • A full bus honks, departs and frees its spot.
 • Careful: if every spot fills up without the right color, the level is over!
 
 ⭐ 3 STARS AND 18 ACHIEVEMENTS
-Finish without a single bump or helper to earn 3 stars. Collect medals for perfect streaks, combos and Challenges beaten.
+Wait too long and people get impatient 😟, then angry 😠. Finish with all 3 lines happy to earn 3 stars! Collect medals for perfect streaks, combos and Challenges beaten.
 
 ✅ HARD, BUT FAIR
 • All 300 levels are guaranteed solvable, checked by computer, with no boosters required.
@@ -119,12 +119,12 @@ Puzzle de buses justo: ordena el estacionamiento y lleva a todos.
 
 🚌 CÓMO JUGAR
 • Toca un bus: si tiene el frente libre, va a la parada.
-• Los pasajeros suben solos al bus de su mismo color.
+• Tres filas esperan en la parada: el primero de cada fila sube solo al bus de su color.
 • El bus lleno toca la bocina, se va y libera la plaza.
 • Cuidado: si todas las plazas se llenan sin el color correcto, ¡se termina el nivel!
 
 ⭐ 3 ESTRELLAS Y 18 LOGROS
-Termina sin un solo choque ni ayuda para ganar 3 estrellas. Reúne medallas por rachas perfectas, combos y Desafíos superados.
+Quien espera demasiado se impacienta 😟 y luego se enoja 😠. ¡Termina con las 3 filas felices para ganar 3 estrellas! Reúne medallas por rachas perfectas, combos y Desafíos superados.
 
 ✅ DIFÍCIL, PERO JUSTO
 • Los 300 niveles tienen solución garantizada, comprobada por computadora, sin necesidad de potenciadores.
@@ -190,7 +190,9 @@ Para todos os tipos abaixo: **Coletado = Sim**, **Compartilhado = Sim**, **Proce
 | Informações e desempenho do app | **Registros de falhas** · **Diagnóstico** | Análise · Prevenção de fraudes, segurança e compliance |
 | IDs do dispositivo ou outros | **IDs do dispositivo ou outros** (ID de publicidade) | Publicidade ou marketing · Análise · Prevenção de fraudes, segurança e compliance |
 
-**Não marque:** nome, e-mail, contatos, fotos, localização precisa, informações financeiras ou histórico de compras. A compra "Remover anúncios" é processada pela própria Google Play, e o app só recebe a confirmação de que ela existe.
+| Informações financeiras | **Histórico de compras** (só "Remover anúncios") | Funcionalidade do app. **Coletado = Sim, Compartilhado = Não**, obrigatório para quem compra. Escolha conservadora: o pagamento é da Google Play, mas o app consulta se a compra existe (Restaurar compras). |
+
+**Não marque:** nome, e-mail, contatos, fotos, localização precisa ou dados de pagamento.
 
 ## Outras declarações (Política → Conteúdo do app)
 
