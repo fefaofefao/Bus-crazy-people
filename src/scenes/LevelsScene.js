@@ -6,6 +6,7 @@ import { CONFIG } from '../config.js';
 import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
 import { Storage } from '../services/Storage.js';
 import { Achievements } from '../services/Achievements.js';
+import { livesPill } from '../ui/livesPill.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
 import { Music } from '../services/Music.js';
@@ -60,7 +61,8 @@ export class LevelsScene extends Phaser.Scene {
     const tile = Math.floor((gw - gap * (COLS - 1)) / COLS);
     const gridH = ROWS * tile + (ROWS - 1) * gap;
     const navH = 64 * u;
-    const areaTop = topY + 46 * u;
+    livesPill(this, L.cx, topY + 50 * u, u);
+    const areaTop = topY + 80 * u;
     const areaBottom = L.bottom - navH - 24 * u;
     const gy0 = Math.max(areaTop, areaTop + (areaBottom - areaTop - gridH) / 2);
     const gx0 = L.cx - (COLS * tile + (COLS - 1) * gap) / 2;

@@ -66,6 +66,38 @@ test('save corrompido de estrelas é limpo', () => {
   assert.deepEqual(Storage.data.stars, { 8: 3 });
 });
 
+const { Lives } = await import('../src/services/Lives.js');
+const { CONFIG } = await import('../src/config.js');
+{
+  Storage.reset(false);
+  let now = 1_000_000_000;
+  const realNow = Date.now;
+  Date.now = () => now;
+  const MIN = 60 * 1000;
+  assert.equal(Lives.get().lives, 3);
+  Lives.consume();
+  Lives.consume();
+  Lives.consume();
+  assert.equal(Lives.has(), false, 'sem vidas após 3 derrotas');
+  now += CONFIG.lives.regenMinutes * MIN - 1000;
+  assert.equal(Lives.get().lives, 0, 'ainda não voltou');
+  now += 1000;
+  assert.equal(Lives.get().lives, 1, '1 vida a cada 20 min');
+  now += CONFIG.lives.regenMinutes * MIN * 5;
+  assert.equal(Lives.get().lives, 3, 'nunca passa do máximo');
+  Lives.consume();
+  Lives.refund();
+  assert.equal(Lives.get().lives, 3, 'vida devolvida ao continuar');
+  Lives.consume();
+  Lives.consume();
+  Lives.refill();
+  assert.equal(Lives.get().lives, 3, 'anúncio enche as vidas');
+  assert.ok(Lives.exempt(10) && !Lives.exempt(11), 'tutorial não gasta vida');
+  Date.now = realNow;
+  n++;
+  console.log('  ✓ vidas: 3, perde 1 por derrota, volta 1 a cada 20 min, anúncio enche, tutorial grátis');
+}
+
 const langs = await Promise.all(['pt-BR', 'en', 'es'].map((l) => import(`../src/i18n/${l}.js`)));
 for (const a of LIST) for (const L of langs) assert.ok(L.default.achievements[a.id]?.title && L.default.achievements[a.id]?.desc, a.id);
 console.log(`✓ ${n} testes de estrelas e conquistas passaram (${LIST.length} conquistas)`);

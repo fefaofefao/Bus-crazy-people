@@ -13,6 +13,7 @@ import { Sound } from '../services/Sound.js';
 import { Haptics } from '../services/Haptics.js';
 import { Progress } from '../services/Progress.js';
 import { Achievements, LIST } from '../services/Achievements.js';
+import { livesPill } from '../ui/livesPill.js';
 import { LEVELS_VERSION, LEVEL_COUNT } from '../levels/index.js';
 import { Music } from '../services/Music.js';
 import { t } from '../i18n/index.js';
@@ -82,12 +83,8 @@ export class MenuScene extends Phaser.Scene {
     new Button(this, L.cx, rowY, t('menu.achievements'), { ...small, width: third, icon: 'trophy', color: C.buttonAd, fontSize: 14 * u }, () => goTo(this, 'Achievements'));
     new Button(this, L.cx + third + 10 * u, rowY, t('menu.settings'), { ...small, width: third, icon: 'gear', color: C.buttonSecondary }, () => goTo(this, 'Settings'));
 
-    // progresso
-    const done = Progress.countCompleted();
-    this.add
-      .text(L.cx, playY - 58 * u, `${done}/${LEVEL_COUNT}`, { fontFamily: DISPLAY, fontSize: `${15 * u}px`, color: C.inkCss })
-      .setOrigin(0.5)
-      .setAlpha(0.75);
+    // vidas (toque: mostra quando a próxima volta)
+    livesPill(this, L.cx, playY - 64 * u, u);
 
     this.add
       .text(L.cx, L.bottom - 10 * u, `v${__APP_VERSION__} · fases v${LEVELS_VERSION} · FSamp Labs`, { fontFamily: DISPLAY, fontSize: `${11 * u}px`, color: C.inkCss })

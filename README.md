@@ -92,6 +92,13 @@ São só medalhas, sem moeda nem vantagem paga.
 - **Vagas:** o padrão é 5. Quando uma fase não consegue armadilhas com 5 vagas (comum no começo, com poucos ônibus), ela usa 4. Os Desafios têm 4 vagas desde a fase 30.
 - **Prioritários:** a folga dos passageiros com pressa cai de 3 para 1 jogada.
 
+**Vidas (3):**
+- Cada **derrota gasta 1 vida**. Vencer nunca gasta, e as fases 1–10 (tutorial) não gastam.
+- Se o jogador se recupera na própria tela de derrota (desfazer ou vaga extra), a vida é **devolvida**.
+- **Sem vidas:** esperar a recarga (**1 vida a cada 20 min**, contada pelo relógio, mesmo com o app fechado) ou **assistir a um anúncio** que enche as 3. Quando uma vida volta, a tela "Sem vidas" libera o jogo sozinha.
+- As vidas aparecem no menu e na lista de fases, com a contagem até a próxima.
+- Ajustes em `CONFIG.lives` (`src/config.js`); lógica em `src/services/Lives.js`, testada em `npm run test:progress`.
+
 **Anti-frustração:**
 - 1 desfazer grátis por fase;
 - desfazer extra, **vaga extra** (temporária) e **dica** (a próxima jogada certa, calculada pelo solver), todos via anúncio recompensado;

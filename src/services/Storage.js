@@ -21,6 +21,8 @@ const defaults = () => ({
   settings: { sound: true, music: true, vibration: true, colorblind: false },
   language: null, // null = ainda não escolheu (mostra a tela de idioma no primeiro acesso)
   seen: [], // mecânicas já apresentadas (cartão "Novidade!")
+  lives: CONFIG.lives.max, // vidas (ver services/Lives.js)
+  livesAt: 0, // instante (ms) de referência da recarga; 0 = cheio
   stars: {}, // melhor resultado por fase: { "12": 3 } (1 a 3 estrelas)
   achievements: [], // ids das conquistas desbloqueadas (src/services/Achievements.js)
   // contadores das conquistas
@@ -45,6 +47,8 @@ function sanitize(raw) {
     for (const k of Object.keys(d.settings)) if (isBool(raw.settings[k])) d.settings[k] = raw.settings[k];
   }
   if (LANGUAGE_CODES.includes(raw.language)) d.language = raw.language;
+  if (isInt(raw.lives, 0, 1000)) d.lives = raw.lives;
+  if (isInt(raw.livesAt, 0, 1e15)) d.livesAt = raw.livesAt;
   if (Array.isArray(raw.seen)) d.seen = [...new Set(raw.seen.filter((x) => typeof x === 'string' && x.length <= 20))];
   if (raw.stars && typeof raw.stars === 'object' && !Array.isArray(raw.stars)) {
     for (const [k, v] of Object.entries(raw.stars)) if (/^[1-9]\d{0,5}$/.test(k) && isInt(v, 1, 3)) d.stars[k] = v;

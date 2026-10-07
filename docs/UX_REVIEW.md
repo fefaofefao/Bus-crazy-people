@@ -36,6 +36,16 @@ Avaliação heurística do jogo inteiro (onboarding, partida, feedback, progress
 | 🟡 Feedback de erro | Errar não tinha consequência visível. | As **estrelas da tentativa** ficam no topo e caem (com tremor) a cada batida ou ajuda. |
 | Dificuldade | Fácil demais até a metade. | Desafio moderado com **armadilhas obrigatórias** e teto de crueldade (ver README). |
 
+### Vidas
+
+- São 3; uma derrota gasta 1, e a recarga é de 1 a cada 20 min ou todas de uma vez com um anúncio opcional.
+- **Cuidados de UX:**
+  - o tutorial não gasta vida;
+  - a vida volta se o jogador se recupera na hora;
+  - a tela "Sem vidas" mostra a contagem ao vivo e libera sozinha;
+  - as vidas ficam sempre visíveis no menu e na lista de fases;
+  - o botão "Reiniciar" avisa "Sem vidas" antes de tentar.
+
 ## 5. Acessibilidade
 
 - Modo daltônico com símbolo por cor (também na lista da fila).

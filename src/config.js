@@ -60,6 +60,17 @@ export const CONFIG = {
     skipRewardedWhenAdsRemoved: false,
   },
 
+  // ---------------------------------------------------------------------------
+  // Vidas (fora das fases): perder uma fase gasta 1 vida; vencer nunca gasta.
+  // Sem vidas: esperar a recarga (pelo relógio, mesmo com o app fechado) ou
+  // assistir a um anúncio que enche todas.
+  // ---------------------------------------------------------------------------
+  lives: {
+    max: 3,
+    regenMinutes: 20, // 1 vida a cada 20 min
+    freeUntilLevel: 10, // tutorial (1–10) não gasta vida
+  },
+
   purchases: {
     enabled: true,
     removeAdsId: 'remove_ads', // produto não consumível no Play Console
@@ -133,6 +144,8 @@ export const CONFIG = {
     buttonSuccess: 0x23b26d, // verde-bandeira (jogar / continuar)
     danger: 0xe5484d,
     gold: 0xffc72c,
+    heart: 0xff4f6d,
+    heartEmpty: 0x55627d,
     panel: 0xfff3dc,
     particles: [0xffc72c, 0x2e9bff, 0xff4f8b, 0x23b26d, 0xffffff, 0xff7a3d],
     skin: [0xf2c9a0, 0xd9a274, 0xb57a4e, 0x8d5a3a, 0x6b4128],

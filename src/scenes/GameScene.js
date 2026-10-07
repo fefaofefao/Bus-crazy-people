@@ -11,6 +11,7 @@ import { initialState, tap, addSlot, occupancy, scanPath, isLocked, coneActive, 
 import { nextMove } from '../core/solver.js';
 import { starsFor } from '../core/stars.js';
 import { Achievements } from '../services/Achievements.js';
+import { Lives } from '../services/Lives.js';
 import { getLevel, LEVEL_COUNT } from '../levels/index.js';
 import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
 import { drawCalcadao } from '../ui/scenery.js';
@@ -60,7 +61,10 @@ export class GameScene extends Phaser.Scene {
     this.build(true);
     fadeIn(this);
 
-    if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
+    this.exempt = Lives.exempt(this.levelId);
+    this.lifeSpent = false;
+    if (!this.exempt && !Lives.has()) this.showNoLives();
+    else if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
     else this.showMechanicIntro();
 
     this.input.on('pointerdown', (p) => this.onPointerDown(p));
@@ -1092,7 +1096,67 @@ export class GameScene extends Phaser.Scene {
 
   restart() {
     if (this._leaving) return;
+    if (!this.exempt && !Lives.has()) return this.showNoLives(true);
     goTo(this, 'Game', { level: this.levelId });
+  }
+
+  /** Continuou a fase depois da derrota (desfazer / vaga extra): a vida volta. */
+  recoverFromLoss() {
+    if (this.lifeSpent) {
+      Lives.refund();
+      this.lifeSpent = false;
+      toast(t('lives.refunded'));
+    }
+  }
+
+  /**
+   * Sem vidas: espera a recarga (contagem ao vivo) ou assiste a um anúncio que
+   * enche as vidas. afterLoss = true quando veio do "Reiniciar" depois de perder.
+   */
+  showNoLives(afterLoss = false) {
+    if (this.modalOpen && !afterLoss) return;
+    this.modalOpen = true;
+    const info = () => t('lives.info', { t: Lives.format(Lives.get().nextInMs) });
+    let timer = null;
+    const done = (close, play) => {
+      clearInterval(timer);
+      close();
+      this.modalOpen = false;
+      if (play) goTo(this, 'Game', { level: this.levelId });
+    };
+    const m = modal({
+      tone: 'lose',
+      mascot: true,
+      badge: '♥ 0',
+      title: t('lives.none'),
+      text: info(),
+      buttons: [
+        {
+          label: t('lives.ad'),
+          kind: 'ad',
+          onClick: async (close) => {
+            const ok = await AdManager.showRewarded(() => Lives.refill());
+            if (ok) {
+              Sound.reward();
+              toast(t('lives.refilled'));
+              done(close, true);
+            }
+          },
+        },
+        { label: t('lives.back'), kind: 'secondary', onClick: (close) => (done(close, false), goTo(this, 'Levels')) },
+      ],
+      closable: false,
+    });
+    // contagem ao vivo; quando uma vida volta, libera o jogo sozinho
+    timer = setInterval(() => {
+      if (!m.root.isConnected) return clearInterval(timer);
+      if (Lives.has()) {
+        toast(t('lives.back1'));
+        return done(m.close, true);
+      }
+      const p = m.root.querySelector('.fds-box p');
+      if (p) p.textContent = info();
+    }, 1000);
   }
 
   // ===========================================================================
@@ -1161,6 +1225,14 @@ export class GameScene extends Phaser.Scene {
     const tips = t('tips.list');
     const tip = GameScene.losses[this.levelId] >= 2 ? `\n\n${t('tips.prefix')} ${tips[(GameScene.losses[this.levelId] + this.levelId) % tips.length]}` : '';
     const need = slots ? `\n${t('lose.needColor', { color: t('colors')[this.level.queue[this.state.q]] })}` : '';
+    if (!this.exempt && !this.lifeSpent) {
+      Lives.consume();
+      this.lifeSpent = true;
+    }
+    const st = Lives.get();
+    const lifeLine = this.exempt
+      ? `\n\n${t('lives.free')}`
+      : `\n\n♥ ${t('lives.lost', { n: st.lives })}${st.lives === 0 ? ' ' + t('lives.nextShort', { t: Lives.format(st.nextInMs) }) : ''}`;
     const buttons = [];
     if (this.history.length) {
       const free = this.undos > 0;
@@ -1172,10 +1244,12 @@ export class GameScene extends Phaser.Scene {
           if (free) {
             this.undos--;
             this.modalOpen = false;
+            this.recoverFromLoss();
             this.doUndo();
           } else {
             const ok = await AdManager.showRewarded(() => {
               this.modalOpen = false;
+              this.recoverFromLoss();
               this.doUndo();
             });
             if (!ok) {
@@ -1194,6 +1268,7 @@ export class GameScene extends Phaser.Scene {
           close();
           const ok = await AdManager.showRewarded(() => {
             this.modalOpen = false;
+            this.recoverFromLoss();
             this.grantSlot();
           });
           if (!ok) {
@@ -1203,13 +1278,22 @@ export class GameScene extends Phaser.Scene {
         },
       });
     }
-    buttons.push({ label: t('lose.restart'), kind: 'ok', onClick: (c) => (c(), (this.modalOpen = false), this.restart()) });
+    buttons.push({
+      label: !this.exempt && !Lives.has() ? t('lives.noneShort') : t('lose.restart'),
+      kind: 'ok',
+      onClick: (c) => {
+        c();
+        if (!this.exempt && !Lives.has()) return this.showNoLives(true);
+        this.modalOpen = false;
+        this.restart();
+      },
+    });
     buttons.push({ label: t('lose.home'), kind: 'secondary', onClick: (c) => (c(), (this.modalOpen = false), goTo(this, 'Menu')) });
     modal({
       tone: 'lose',
       mascot: true,
       title: slots ? t('lose.titleSlots') : stuck ? t('lose.titleStuck') : t('lose.titlePatience'),
-      text: (slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience')) + need + tip,
+      text: (slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience')) + need + lifeLine + tip,
       buttons,
       closable: false,
     });

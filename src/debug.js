@@ -7,6 +7,7 @@ import { el, isolate } from './ui/dom.js';
 import { CONFIG } from './config.js';
 import { Storage } from './services/Storage.js';
 import { AdManager } from './services/AdManager.js';
+import { Lives } from './services/Lives.js';
 import { getLevel, LEVEL_COUNT } from './levels/index.js';
 
 export const Debug = {
@@ -26,6 +27,7 @@ export function initDebug(game) {
     <label><input type="checkbox" id="dbg-sol"> Mostrar ordem de solução</label>
     <label><input type="checkbox" id="dbg-ads"> Anúncios removidos</label>
     <div class="row"><button id="dbg-unlock">Liberar todas as fases</button><button id="dbg-timer">Zerar timer de anúncio</button></div>
+    <div class="row"><button id="dbg-lives-full">Vidas cheias</button><button id="dbg-lives-zero">Zerar vidas</button></div>
     <div class="row"><button class="warn" id="dbg-reset">Zerar tudo</button></div>
     <div class="info" id="dbg-info"></div>`;
   document.body.append(isolate(toggle), isolate(panel));
@@ -49,6 +51,14 @@ export function initDebug(game) {
     Storage.update((d) => (d.completed = Array.from({ length: LEVEL_COUNT - 1 }, (_, i) => i + 1)));
     activeScene()?.scene.restart();
   });
+  $('dbg-lives-full').addEventListener('click', () => {
+    Lives.refill();
+    activeScene()?.scene.restart();
+  });
+  $('dbg-lives-zero').addEventListener('click', () => {
+    Storage.update((d) => ((d.lives = 0), (d.livesAt = Date.now())));
+    activeScene()?.scene.restart();
+  });
   $('dbg-reset').addEventListener('click', () => {
     if (!confirm('Zerar todo o progresso (inclusive idioma e compras de teste)?')) return;
     Storage.reset(false);
@@ -65,7 +75,7 @@ export function initDebug(game) {
       info = `\nFase ${lv.id}: ${lv.cols}x${lv.rows}, ${lv.buses.length} ônibus, ${lv.queue.length} passageiros, ${lv.slots} vagas, prioritários ${lv.priority.length} · mecânicas: ${(lv.mechanics || []).join(", ") || "—"}\nscore ${lv.meta.score} · vitória aleatória ${lv.meta.randomWin} · gulosa ${lv.meta.greedyWin} · semente ${lv.meta.seed}`;
     }
     $('dbg-info').textContent =
-      `Vencidas: ${d.completed.length} · vitórias desde intersticial: ${d.winsSinceInterstitial}/${CONFIG.ads.interstitial.everyNWins}\n` +
+      `Vidas: ${Lives.get().lives} · Vencidas: ${d.completed.length} · vitórias desde intersticial: ${d.winsSinceInterstitial}/${CONFIG.ads.interstitial.everyNWins}\n` +
       `Segundos desde o último intersticial: ${AdManager.secondsSinceLastInterstitial()} (mín. ${CONFIG.ads.interstitial.minIntervalSeconds})` +
       info;
   };
