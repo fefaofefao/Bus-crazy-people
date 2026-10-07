@@ -606,3 +606,17 @@ body {
   line-height: 18px;
   font-size: 11px;
 }
+
+/* Tablets e telas grandes: janelas proporcionais ao jogo (o canvas escala; o HTML não) */
+@media (min-width: 600px) and (min-height: 860px) {
+  .fds-box,
+  .fds-toast {
+    zoom: 1.35;
+  }
+}
+@media (min-width: 900px) and (min-height: 1100px) {
+  .fds-box,
+  .fds-toast {
+    zoom: 1.6;
+  }
+}

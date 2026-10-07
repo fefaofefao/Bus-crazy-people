@@ -28,7 +28,7 @@ export const CONFIG = {
     tutorialLevels: 10, // fases 1–10: dica visual (mãozinha) automática
     freeUndosPerLevel: 1,
     maxExtraSlotsPerLevel: 1, // booster "vaga extra" (anúncio), temporária
-    queueVisible: 11, // passageiros desenhados na calçada (o resto vira "+N")
+    queueVisible: 16, // máximo de passageiros desenhados por fila (cabe o que a largura permitir; o resto vira "+N")
   },
 
   // ---------------------------------------------------------------------------

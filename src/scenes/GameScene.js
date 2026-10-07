@@ -68,6 +68,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.exempt && !Lives.has()) this.showNoLives();
     else if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
     else this.showMechanicIntro();
+    if (!this.modalOpen) this.time.delayedCall(250, () => this.showLevelBanner());
 
     this.input.on('pointerdown', (p) => this.onPointerDown(p));
     this.input.on('pointerup', (p) => this.onPointerUp(p));
@@ -847,7 +848,7 @@ export class GameScene extends Phaser.Scene {
     const x0 = L.left + (multi ? 50 : 56) * u;
     const top = this.zones.yWalk + (multi ? 7 * u : 0);
     const rowH = multi ? (this.zones.walkH - 14 * u) / n : this.zones.walkH;
-    this.qVisible = Math.max(4, Math.min(CONFIG.game.queueVisible, Math.floor((L.right - 40 * u - x0) / this.qGap) + 1));
+    this.qVisible = Math.max(4, Math.min(CONFIG.game.queueVisible, Math.floor((L.right - 34 * u - x0) / this.qGap) + 1));
     this.lineRows = this.lines.map((_, i) => ({ i, x0, y: top + rowH * (i + 0.5) + (multi ? 3 * u : 2 * u), rowH, views: [], face: null, meter: null, more: null }));
   }
 
@@ -962,6 +963,14 @@ export class GameScene extends Phaser.Scene {
         row.face.clear();
         drawMoodFace(row.face, 0, 0, row.faceR, mood);
         row.face.setAlpha(done ? 0.85 : 1);
+        // aviso: só aguenta mais 1 jogada sem embarcar -> a carinha pulsa
+        const warn = !done && mood > 0 && calm - this.state.wait[li] <= 1;
+        if (warn && !row.pulse) row.pulse = this.tweens.add({ targets: row.face, scale: 1.18, duration: 260, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        else if (!warn && row.pulse) {
+          row.pulse.stop();
+          row.pulse = null;
+          row.face.setScale(1);
+        }
       }
       // paciência: pontinhos (cheios = jogadas que ainda aguenta antes de piorar)
       if (row.meter) {
@@ -990,6 +999,34 @@ export class GameScene extends Phaser.Scene {
         v.priority.txt.setColor(left <= 2 ? '#c0141f' : '#1f2333');
       }
     }
+  }
+
+  /** Abertura da fase: "Fase N" + objetivo (some sozinha; não bloqueia o toque). */
+  showLevelBanner() {
+    if (this.modalOpen || this.state.moves) return;
+    const u = this.u;
+    const y = this.gy + (this.cell * this.level.rows) / 2;
+    const c = this.add.container(this.L.cx, y).setDepth(80);
+    const title = this.add
+      .text(0, -12 * u, t('game.level', { n: this.levelId }), { fontFamily: DISPLAY, fontSize: `${34 * u}px`, color: '#ffffff', stroke: C.inkCss, strokeThickness: 8 * u })
+      .setOrigin(0.5);
+    const n = this.lines.length;
+    const sub = this.add
+      .text(0, 24 * u, n > 1 ? t('game.goal', { n }) : t('game.goal1'), { fontFamily: DISPLAY, fontSize: `${16 * u}px`, color: '#ffe28a', stroke: C.inkCss, strokeThickness: 5 * u })
+      .setOrigin(0.5);
+    const w = Math.max(title.width, sub.width) + 44 * u;
+    const h = 92 * u;
+    const bg = this.add.graphics();
+    bg.fillStyle(C.ink, 0.35);
+    bg.fillRoundedRect(-w / 2, -h / 2 + 6 * u, w, h, 22 * u);
+    bg.fillStyle(this.level.challenge ? C.challenge : C.button, 1);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 22 * u);
+    bg.lineStyle(4 * u, C.ink, 1);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 22 * u);
+    c.add([bg, title, sub]);
+    c.setScale(0.6).setAlpha(0);
+    this.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: c, alpha: 0, y: y - 30 * u, delay: 1300, duration: 320, ease: 'Quad.easeIn', onComplete: () => c.destroy() });
   }
 
   /** Toque na carinha: explica o humor e as estrelas. */
@@ -1034,7 +1071,7 @@ export class GameScene extends Phaser.Scene {
 
   buildBottomBar(L, u, pad) {
     const y = this.zones.yBottom + this.zones.bottomH / 2;
-    const w = (L.usableW - pad * 2 - 16 * u) / 3;
+    const w = Math.min((L.usableW - pad * 2 - 16 * u) / 3, 150 * u); // paisagem/tablet: não estica demais
     const h = 58 * u;
     const opts = (icon, color) => ({ width: w, height: h, fontSize: 16 * u, radius: 18 * u, icon, iconSize: 22 * u, color });
     this.undoBtn = new Button(this, L.cx - w - 8 * u, y, t('game.undo'), opts('undo', C.button), () => this.onUndo()).setDepth(50);
@@ -1497,6 +1534,7 @@ export class GameScene extends Phaser.Scene {
         this.modalOpen = false;
         this.highlightMechanic(next);
         this.time.delayedCall(400, () => this.autoHint());
+        this.time.delayedCall(150, () => this.showLevelBanner());
       },
     });
   }
@@ -1549,7 +1587,7 @@ export class GameScene extends Phaser.Scene {
           },
         },
       ],
-      onClose: () => (this.modalOpen = false),
+      onClose: () => ((this.modalOpen = false), this.time.delayedCall(150, () => this.showLevelBanner())),
     });
   }
 
