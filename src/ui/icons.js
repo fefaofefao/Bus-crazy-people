@@ -346,4 +346,24 @@ export const Icons = {
     g.fillCircle(x - s * 0.24, y + s * 0.26, s * 0.1);
     g.fillCircle(x + s * 0.24, y + s * 0.26, s * 0.1);
   },
+
+  /** Chave (destranca o ônibus com cadeado). */
+  key(g, x, y, s, color) {
+    g.fillStyle(color, 1);
+    g.fillCircle(x - s * 0.22, y, s * 0.22);
+    g.fillRect(x - s * 0.05, y - s * 0.06, s * 0.5, s * 0.12);
+    g.fillRect(x + s * 0.3, y, s * 0.08, s * 0.18);
+    g.fillRect(x + s * 0.14, y, s * 0.08, s * 0.13);
+    g.fillStyle(0x1f2333, 1);
+    g.fillCircle(x - s * 0.22, y, s * 0.08);
+  },
+
+  cone(g, x, y, s) {
+    g.fillStyle(0xff7a1a, 1);
+    g.fillTriangle(x, y - s * 0.46, x - s * 0.3, y + s * 0.34, x + s * 0.3, y + s * 0.34);
+    g.fillStyle(0xffffff, 1);
+    g.fillRect(x - s * 0.14, y - s * 0.04, s * 0.28, s * 0.1);
+    g.fillStyle(0xff7a1a, 1);
+    g.fillRoundedRect(x - s * 0.42, y + s * 0.3, s * 0.84, s * 0.12, s * 0.04);
+  },
 };

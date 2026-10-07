@@ -20,6 +20,7 @@ const defaults = () => ({
   winsSinceInterstitial: 0, // vitórias desde o último intersticial
   settings: { sound: true, music: true, vibration: true, colorblind: false },
   language: null, // null = ainda não escolheu (mostra a tela de idioma no primeiro acesso)
+  seen: [], // mecânicas já apresentadas (cartão "Novidade!")
   // reservado para a v1.1 (desafio diário, Play Games): não usado no MVP
   daily: {},
 });
@@ -40,6 +41,7 @@ function sanitize(raw) {
     for (const k of Object.keys(d.settings)) if (isBool(raw.settings[k])) d.settings[k] = raw.settings[k];
   }
   if (LANGUAGE_CODES.includes(raw.language)) d.language = raw.language;
+  if (Array.isArray(raw.seen)) d.seen = [...new Set(raw.seen.filter((x) => typeof x === 'string' && x.length <= 20))];
   if (raw.daily && typeof raw.daily === 'object' && !Array.isArray(raw.daily)) d.daily = raw.daily;
   return d;
 }

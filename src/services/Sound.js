@@ -110,5 +110,12 @@ export const Sound = {
       tone({ freq: 392, dur: 0.14, type: 'square', vol: 0.09, delay: 0.15 });
       tone({ freq: 494, dur: 0.14, type: 'square', vol: 0.07, delay: 0.15 });
     }),
+  /** Ônibus coberto revelado. */
+  reveal: () => play(() => [660, 990].forEach((f, i) => tone({ freq: f, dur: 0.09, type: 'triangle', vol: 0.2, delay: i * 0.06 }))),
+  /** Ônibus saindo do terminal. */
+  spawn: () => play(() => tone({ freq: 300, to: 520, dur: 0.14, type: 'triangle', vol: 0.18 })),
+  /** Combo: vários ônibus partindo de uma vez (tom sobe com o tamanho). */
+  combo: (n = 2) =>
+    play(() => [0, 4, 7, 12].slice(0, Math.min(4, n + 1)).forEach((st, i) => tone({ freq: 523.25 * Math.pow(2, st / 12), dur: 0.14, type: 'square', vol: 0.1, delay: i * 0.07 }))),
   star: (i = 0) => play(() => tone({ freq: 784 * Math.pow(1.26, i), dur: 0.12, type: 'triangle', vol: 0.22 })),
 };

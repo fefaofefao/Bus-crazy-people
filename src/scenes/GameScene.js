@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config.js';
 import { DIRS, BUS_TYPES, busCells } from '../core/rules.js';
-import { initialState, tap, addSlot, occupancy } from '../core/engine.js';
+import { initialState, tap, addSlot, occupancy, scanPath, isLocked, coneActive, OCC_CONE, OCC_GARAGE, BLOCK_LOCK } from '../core/engine.js';
 import { nextMove } from '../core/solver.js';
 import { getLevel, LEVEL_COUNT } from '../levels/index.js';
 import { getLayout, FONT } from '../ui/layout.js';
@@ -51,6 +51,7 @@ export class GameScene extends Phaser.Scene {
     fadeIn(this);
 
     if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
+    else this.showMechanicIntro();
 
     this.input.on('pointerdown', (p) => this.onPointer(p));
     const onResize = () => this.time.delayedCall(30, () => this.build(false));
@@ -133,14 +134,19 @@ export class GameScene extends Phaser.Scene {
     pruneBusTextures(this, (k) => k.includes(`_${this.busW}_`) || k.includes(`_${Math.round(this.slotBusW)}_`));
     this.busViews = new Map();
     let i = 0;
+    this.revealed = this.revealed ?? new Set();
+    for (const b of lv.buses) if (b.hidden && this.isPathClear(b)) this.revealed.add(b.id);
     for (const b of lv.buses) {
-      if (!this.state.inLot[b.id]) continue;
+      if (this.state.inLot[b.id] !== 1) continue;
       const v = this.makeLotBus(b);
       if (first) {
         v.setScale(0.4).setAlpha(0);
         this.tweens.add({ targets: v, scale: 1, alpha: 1, duration: A.appear, delay: i++ * A.appearStagger, ease: 'Back.easeOut' });
       }
     }
+    this.mechG = this.add.graphics().setDepth(13);
+    this.mechTexts = [];
+    this.drawMechanics();
     this.drawDebug();
 
     // ---- HUD ----
@@ -295,7 +301,8 @@ export class GameScene extends Phaser.Scene {
     const w = Math.round(this.cell * 0.76);
     this.busW = w;
     const L = Math.round(len * this.cell - this.cell * 0.2);
-    const key = busTexture(this, { type: b.type, color: b.color, w, len: L, symbol: this.symbols });
+    const hidden = b.hidden && !this.revealed.has(b.id);
+    const key = busTexture(this, { type: b.type, color: b.color, w, len: L, symbol: this.symbols, hidden });
     const c = this.busCenter(b);
     const img = this.add.image(c.x, c.y, key);
     // origem no centro da carroceria (a textura tem margem e sombra)
@@ -303,8 +310,109 @@ export class GameScene extends Phaser.Scene {
     img.setOrigin((pad + w / 2) / img.width, (pad + L / 2) / img.height);
     img.setRotation(ROT[b.dir]);
     img.setDepth(10);
+    img.hiddenShown = hidden;
     this.busViews.set(b.id, img);
     return img;
+  }
+
+  isPathClear(b) {
+    if (this.state.inLot[b.id] !== 1) return false;
+    return scanPath(this.level, occupancy(this.level, this.state), b).blockerId === -1;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mecânicas: terminais, obras (cones), cadeado/chave e ônibus cobertos
+  // ---------------------------------------------------------------------------
+  drawMechanics() {
+    const g = this.mechG;
+    if (!g) return;
+    g.clear();
+    this.mechTexts.forEach((x) => x.destroy());
+    this.mechTexts = [];
+    const lv = this.level;
+    const u = this.u;
+    const cs = this.cell;
+    const label = (x, y, text, color = '#ffffff', size = 13) => {
+      const tx = this.add
+        .text(x, y, text, { fontFamily: FONT, fontSize: `${size * u}px`, fontStyle: 'bold', color, stroke: '#1f2333', strokeThickness: 3.5 * u })
+        .setOrigin(0.5)
+        .setDepth(14);
+      this.mechTexts.push(tx);
+    };
+    // terminais
+    for (const gar of lv.garages || []) {
+      const x = this.cellX(gar.x);
+      const y = this.cellY(gar.y);
+      const r = cs * 0.44;
+      g.fillStyle(0x000000, 0.25);
+      g.fillRoundedRect(x - r + 2 * u, y - r + 3 * u, r * 2, r * 2, r * 0.3);
+      g.fillStyle(0x2c3444, 1);
+      g.fillRoundedRect(x - r, y - r, r * 2, r * 2, r * 0.3);
+      g.fillStyle(C.shelter, 1);
+      g.fillRoundedRect(x - r, y - r, r * 2, r * 0.5, { tl: r * 0.3, tr: r * 0.3, bl: 0, br: 0 });
+      const { dx, dy } = DIRS[gar.dir];
+      g.fillStyle(0xffffff, 0.9);
+      const ax = x + dx * r * 0.35;
+      const ay = y + dy * r * 0.35 + r * 0.1;
+      g.fillTriangle(ax + dx * r * 0.35, ay + dy * r * 0.35, ax - dy * r * 0.3 - dx * r * 0.1, ay + dx * r * 0.3 - dy * r * 0.1, ax + dy * r * 0.3 - dx * r * 0.1, ay - dx * r * 0.3 - dy * r * 0.1);
+      const waiting = lv.buses.filter((b) => b.garage === gar.id && this.state.inLot[b.id] === 2).length;
+      label(x, y - r * 0.72, String(waiting), waiting ? '#ffe28a' : '#9aa3b5', 12);
+    }
+    // cones da obra
+    for (const c of lv.cones || []) {
+      if (!coneActive(c, this.state)) continue;
+      const x = this.cellX(c.x);
+      const y = this.cellY(c.y);
+      const h = cs * 0.62;
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(x, y + h * 0.42, h * 0.8, h * 0.18);
+      g.fillStyle(0xff7a1a, 1);
+      g.fillTriangle(x, y - h * 0.5, x - h * 0.32, y + h * 0.36, x + h * 0.32, y + h * 0.36);
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(x - h * 0.16, y - h * 0.05, h * 0.32, h * 0.12);
+      g.fillStyle(0xff7a1a, 1);
+      g.fillRoundedRect(x - h * 0.42, y + h * 0.32, h * 0.84, h * 0.12, h * 0.04);
+      label(x + cs * 0.3, y - cs * 0.3, String(c.until - this.state.moves), '#ffd2a8', 12);
+    }
+    // cadeado (ônibus trancado) e chave (ônibus que destranca)
+    for (const b of lv.buses) {
+      if (this.state.inLot[b.id] !== 1 || !isLocked(lv, this.state, b)) continue;
+      const c = this.busCenter(b);
+      g.fillStyle(0x1f2333, 0.75);
+      g.fillCircle(c.x, c.y, cs * 0.26);
+      Icons.lock(g, c.x, c.y + cs * 0.02, cs * 0.36, C.gold);
+      const key = lv.buses[b.lock];
+      if (this.state.inLot[key.id] === 1) {
+        const k = this.busCenter(key);
+        g.fillStyle(0x1f2333, 0.75);
+        g.fillCircle(k.x, k.y, cs * 0.24);
+        Icons.key(g, k.x, k.y, cs * 0.34, C.gold);
+      }
+    }
+  }
+
+  /** Revela ônibus cobertos cujo caminho ficou livre (troca a textura com um giro). */
+  revealHidden() {
+    for (const b of this.level.buses) {
+      if (!b.hidden || this.revealed.has(b.id) || !this.isPathClear(b)) continue;
+      this.revealed.add(b.id);
+      const img = this.busViews.get(b.id);
+      if (!img) continue;
+      this.tweens.add({
+        targets: img,
+        scaleX: 0,
+        duration: 140,
+        onComplete: () => {
+          img.destroy();
+          if (this.state.inLot[b.id] !== 1) return;
+          const fresh = this.makeLotBus(b);
+          fresh.setScale(0, 1);
+          this.tweens.add({ targets: fresh, scaleX: 1, duration: 140 });
+        },
+      });
+      Sound.reveal();
+      this.floatText(img.x, img.y, '!', '#ffffff');
+    }
   }
 
   /** Toque: converte a posição numa casa do estacionamento. */
@@ -340,6 +448,16 @@ export class GameScene extends Phaser.Scene {
       else if (e.type === 'exit') tEnd = Math.max(tEnd, this.animExit(e));
       else if (e.type === 'board' || e.type === 'depart') boardEvents.push(e);
     }
+    this.drawMechanics();
+    for (const e of events) {
+      if (e.type === 'spawn') this.time.delayedCall(tEnd * 0.6, () => this.animSpawn(e));
+      if (e.type === 'unlock') {
+        const v = this.busViews.get(e.bus);
+        if (v) this.time.delayedCall(tEnd * 0.5, () => (this.floatText(v.x, v.y - this.cell * 0.3, t('game.unlocked'), '#ffe28a'), Sound.reward()));
+      }
+    }
+    this.time.delayedCall(tEnd * 0.6 + 40, () => this.revealHidden());
+    const departs = boardEvents.filter((e) => e.type === 'depart').length;
     // embarques começam quando o ônibus chega à vaga
     let t0 = tEnd;
     const stagger = boardEvents.length > 16 ? A.boardStagger * 0.6 : A.boardStagger;
@@ -353,6 +471,13 @@ export class GameScene extends Phaser.Scene {
       }
     }
     tEnd = Math.max(tEnd, t0 + (boardEvents.length ? A.board + 60 : 0));
+    // combo: vários ônibus partindo com um toque só
+    if (departs >= 2)
+      this.time.delayedCall(t0, () => {
+        this.floatText(this.L.cx, this.zones.yRoad + this.zones.roadH * 0.5, t('game.combo', { n: departs }), '#ffe28a', 26);
+        Sound.combo(departs);
+        this.confetti.explode(20 + departs * 8, this.L.cx, this.zones.yRoad + this.zones.roadH * 0.5);
+      });
     this.time.delayedCall(tEnd + 20, () => {
       this.busy = false;
       this.refreshHud();
@@ -367,7 +492,7 @@ export class GameScene extends Phaser.Scene {
     const b = this.level.buses[e.bus];
     const img = this.busViews.get(e.bus);
     const { dx, dy } = DIRS[b.dir];
-    const dist = (e.dist + 0.22) * this.cell;
+    const dist = (e.blocker === BLOCK_LOCK ? 0.08 : e.dist + 0.22) * this.cell;
     const fwd = Math.max(A.bumpForwardMin, A.bumpForwardPerCell * (e.dist + 1));
     const ox = img.x;
     const oy = img.y;
@@ -380,7 +505,7 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         Sound.collision();
         Haptics.collision();
-        const blk = this.busViews.get(e.blocker);
+        const blk = this.busViews.get(e.blocker === BLOCK_LOCK ? e.key : e.blocker);
         if (blk) {
           const bx = blk.x;
           const by = blk.y;
@@ -388,11 +513,26 @@ export class GameScene extends Phaser.Scene {
           blk.setTint(0xffb0b0);
           this.time.delayedCall(260, () => blk.active && blk.clearTint());
         }
-        this.floatText(img.x, img.y - this.cell * 0.4, t('game.blocked'), '#ffdddd');
+        const msg = e.blocker === BLOCK_LOCK ? t('game.locked') : e.blocker === OCC_CONE ? t('game.cone') : t('game.blocked');
+        this.floatText(img.x, img.y - this.cell * 0.4, msg, '#ffdddd');
+        void OCC_GARAGE;
         this.tweens.add({ targets: img, x: ox, y: oy, duration: A.bumpBack, ease: 'Quad.easeOut' });
       },
     });
     return fwd + A.bumpBack;
+  }
+
+  animSpawn(e) {
+    const b = this.level.buses[e.bus];
+    const gar = this.level.garages[b.garage];
+    const v = this.makeLotBus(b);
+    const tx = v.x;
+    const ty = v.y;
+    v.setPosition(this.cellX(gar.x), this.cellY(gar.y)).setScale(0.3).setAlpha(0);
+    this.tweens.add({ targets: v, x: tx, y: ty, scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' });
+    Sound.spawn();
+    this.drawMechanics();
+    this.revealHidden();
   }
 
   animExit(e) {
@@ -472,9 +612,9 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  floatText(x, y, text, color) {
+  floatText(x, y, text, color, size = 15) {
     const tx = this.add
-      .text(x, y, text, { fontFamily: FONT, fontSize: `${15 * this.u}px`, fontStyle: 'bold', color, stroke: '#000000', strokeThickness: 4 * this.u })
+      .text(x, y, text, { fontFamily: FONT, fontSize: `${size * this.u}px`, fontStyle: 'bold', color, stroke: '#000000', strokeThickness: 4 * this.u })
       .setOrigin(0.5)
       .setDepth(70);
     this.tweens.add({ targets: tx, y: y - 26 * this.u, alpha: 0, duration: 650, onComplete: () => tx.destroy() });
@@ -861,6 +1001,7 @@ export class GameScene extends Phaser.Scene {
     Sound.lose();
     Haptics.collision();
     const slots = this.state.reason === 'slots';
+    const stuck = this.state.reason === 'stuck';
     const buttons = [];
     if (this.history.length) {
       const free = this.undos > 0;
@@ -907,11 +1048,45 @@ export class GameScene extends Phaser.Scene {
     buttons.push({ label: t('lose.home'), kind: 'secondary', onClick: (c) => (c(), (this.modalOpen = false), goTo(this, 'Menu')) });
     modal({
       tone: 'lose',
-      title: slots ? t('lose.titleSlots') : t('lose.titlePatience'),
-      text: slots ? t('lose.infoSlots') : t('lose.infoPatience'),
+      title: slots ? t('lose.titleSlots') : stuck ? t('lose.titleStuck') : t('lose.titlePatience'),
+      text: slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience'),
       buttons,
       closable: false,
     });
+  }
+
+  /** Primeira vez com uma mecânica: cartão explicando (uma por fase). */
+  showMechanicIntro() {
+    const next = (this.level.mechanics || []).find((m) => !Storage.data.seen.includes(m));
+    if (!next || this.modalOpen) return;
+    this.modalOpen = true;
+    Storage.update((d) => d.seen.push(next));
+    modal({
+      tone: 'challenge',
+      badge: t('mechanics.new'),
+      title: t(`mechanics.${next}.title`),
+      text: t(`mechanics.${next}.text`),
+      buttons: [{ label: t('mechanics.ok'), kind: 'ok', onClick: (c) => c() }],
+      onClose: () => {
+        this.modalOpen = false;
+        this.highlightMechanic(next);
+      },
+    });
+  }
+
+  /** Destaca na tela onde está a mecânica recém-apresentada. */
+  highlightMechanic(kind) {
+    const lv = this.level;
+    let pos = null;
+    if (kind === 'cones' && lv.cones?.length) pos = { x: this.cellX(lv.cones[0].x), y: this.cellY(lv.cones[0].y) };
+    if (kind === 'garage' && lv.garages?.length) pos = { x: this.cellX(lv.garages[0].x), y: this.cellY(lv.garages[0].y) };
+    const bus = kind === 'lock' ? lv.buses.find((b) => b.lock != null) : kind === 'hidden' ? lv.buses.find((b) => b.hidden && this.state.inLot[b.id] === 1) : null;
+    if (bus) pos = this.busCenter(bus);
+    if (!pos) return;
+    const ring = this.add.graphics().setDepth(46);
+    ring.lineStyle(4 * this.u, 0xffe28a, 1);
+    ring.strokeCircle(pos.x, pos.y, this.cell * 0.7);
+    this.tweens.add({ targets: ring, alpha: 0, duration: 450, yoyo: true, repeat: 3, onComplete: () => ring.destroy() });
   }
 
   showChallengeIntro() {

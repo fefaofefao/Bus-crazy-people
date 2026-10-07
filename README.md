@@ -57,6 +57,17 @@ Abra com **`?debug=1`** (ex.: `http://localhost:5173/?debug=1`). Ele nunca funci
 - **Vitória:** todos embarcaram. **Derrota:** todas as vagas ocupadas sem a cor do próximo passageiro.
 - **Passageiros prioritários** (com relógio): precisam embarcar antes de a paciência, contada em jogadas, chegar a zero.
 
+**Mecânicas que vão aparecendo** (todas determinísticas, então o solver continua provando que há solução; pesquisa e justificativas em `docs/PESQUISA_MECANICAS.md`):
+
+| Mecânica | Estreia | Regra |
+|---|---|---|
+| Ônibus coberto | fase 31 | a cor só aparece quando a frente fica livre |
+| Obra (cones) | fase 55 | casa bloqueada até a jogada N |
+| Cadeado e chave | fase 81 | só sai depois que o ônibus-chave sair |
+| Terminal | fase 111 | solta novos ônibus quando a saída fica livre |
+
+Cada mecânica estreia sozinha, com o cartão "Novidade!", e depois se mistura às outras. Há ainda o **Combo** (vários ônibus partindo com um toque) e a derrota "Trânsito travado" (nenhum ônibus consegue mais sair).
+
 **Anti-frustração:**
 - 1 desfazer grátis por fase;
 - desfazer extra, **vaga extra** (temporária) e **dica** (a próxima jogada certa, calculada pelo solver), todos via anúncio recompensado;
@@ -154,7 +165,7 @@ O artefato `bus-crazy-people-release` traz o `.aab`, que vai para o Play Console
 
 1. Crie o app: nome **Bus Crazy People**, idioma padrão pt-BR, **Jogo**, **Gratuito**.
 2. Preencha **Conteúdo do app** com as respostas de `STORE_LISTING.md`: segurança dos dados, anúncios, ID de publicidade, público-alvo 13+ e IARC.
-3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 6 capturas por idioma em pt-BR, en-US e es-419).
+3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 7 capturas por idioma em pt-BR, en-US e es-419).
 4. Envie o 1º AAB para **Teste interno** e aceite o **Play App Signing**.
 5. Depois do 1º AAB enviado, crie em **Monetizar → Produtos → Produtos no app** o produto **`remove_ads`**, do tipo único (não consumível), com preço, e **ative**.
 6. **Teste fechado (obrigatório para conta pessoal nova):** 12 ou mais testadores inscritos por **14 dias seguidos**. Depois disso, peça acesso à produção.

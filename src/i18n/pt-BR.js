@@ -39,6 +39,10 @@ export default {
     blocked: 'Bloqueado!',
     priorityTip: 'Com pressa! Embarque antes de a paciência acabar.',
     queueMore: '+{n}',
+    locked: 'Trancado!',
+    unlocked: 'Destrancado!',
+    cone: 'Obra!',
+    combo: 'Combo x{n}!',
   },
   tutorial: {
     t1: 'Toque num ônibus: se a frente estiver livre, ele vai para o ponto e os passageiros embarcam.',
@@ -61,6 +65,8 @@ export default {
     moves: { one: 'em {n} jogada', other: 'em {n} jogadas' },
   },
   lose: {
+    titleStuck: 'Trânsito travado!',
+    infoStuck: 'Nenhum ônibus consegue sair mais. Desfaça uma jogada ou reinicie.',
     titleSlots: 'Ponto lotado!',
     infoSlots: 'Todas as vagas ficaram ocupadas sem ônibus da cor do próximo passageiro.',
     titlePatience: 'Perdeu a paciência!',
@@ -70,6 +76,14 @@ export default {
     slotAd: 'Anúncio: + 1 vaga',
     restart: 'Reiniciar fase',
     home: 'Início',
+  },
+  mechanics: {
+    new: 'NOVIDADE',
+    ok: 'Bora!',
+    hidden: { title: 'Ônibus coberto', text: 'Ele está coberto com uma lona: a cor só aparece quando a frente dele ficar livre. Planeje com o que você já sabe!' },
+    cones: { title: 'Obra na pista', text: 'Os cones bloqueiam a casa até a obra acabar. O número mostra quantas jogadas faltam.' },
+    lock: { title: 'Cadeado e chave', text: 'O ônibus com cadeado só sai depois que o ônibus com a chave deixar o estacionamento.' },
+    garage: { title: 'Terminal', text: 'O terminal solta um novo ônibus sempre que a saída dele fica livre. O número mostra quantos ainda faltam.' },
   },
   boosters: {
     undoAd: 'Assistir anúncio para ganhar +1 desfazer?',
@@ -128,6 +142,7 @@ export default {
       'Ônibus bloqueado bate e volta – e isso conta como jogada.',
       'Você perde se todas as vagas lotarem sem ônibus da cor do próximo passageiro, ou se um passageiro com relógio não embarcar a tempo.',
       'Toda fase tem solução. Use Desfazer (1 grátis por fase), Dica e Vaga extra quando precisar.',
+      'Novidades aparecem pelo caminho: ônibus coberto (cor escondida), cadeado e chave, obra com cones e terminal que solta ônibus.',
     ],
     ok: 'Entendi',
   },

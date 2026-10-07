@@ -38,6 +38,10 @@ export default {
     blocked: '¡Bloqueado!',
     priorityTip: '¡Tiene prisa! Súbelo antes de que se le acabe la paciencia.',
     queueMore: '+{n}',
+    locked: '¡Con candado!',
+    unlocked: '¡Sin candado!',
+    cone: '¡Obras!',
+    combo: '¡Combo x{n}!',
   },
   tutorial: {
     t1: 'Toca un bus: si tiene el frente libre, va a la parada y los pasajeros suben.',
@@ -60,6 +64,8 @@ export default {
     moves: { one: 'en {n} jugada', other: 'en {n} jugadas' },
   },
   lose: {
+    titleStuck: '¡Atasco total!',
+    infoStuck: 'Ningún bus puede salir. Deshaz una jugada o reinicia.',
     titleSlots: '¡Parada llena!',
     infoSlots: 'Todas las plazas están ocupadas y ningún bus coincide con el próximo pasajero.',
     titlePatience: '¡Se acabó la paciencia!',
@@ -69,6 +75,14 @@ export default {
     slotAd: 'Anuncio: + 1 plaza',
     restart: 'Reiniciar nivel',
     home: 'Inicio',
+  },
+  mechanics: {
+    new: 'NOVEDAD',
+    ok: '¡Vamos!',
+    hidden: { title: 'Bus tapado', text: 'Está cubierto con una lona: su color solo aparece cuando su frente queda libre. ¡Planea con lo que ya sabes!' },
+    cones: { title: 'Obras en la vía', text: 'Los conos bloquean la casilla hasta que terminen las obras. El número muestra cuántas jugadas faltan.' },
+    lock: { title: 'Candado y llave', text: 'El bus con candado solo sale después de que el bus con la llave deje el estacionamiento.' },
+    garage: { title: 'Terminal', text: 'La terminal suelta un bus nuevo cada vez que su salida queda libre. El número muestra cuántos quedan.' },
   },
   boosters: {
     undoAd: '¿Ver un anuncio para ganar +1 deshacer?',
@@ -127,6 +141,7 @@ export default {
       'Un bus bloqueado choca y vuelve, y eso cuenta como jugada.',
       'Pierdes si todas las plazas se llenan sin un bus del color del próximo pasajero, o si un pasajero con reloj no sube a tiempo.',
       'Todos los niveles tienen solución. Usa Deshacer (1 gratis por nivel), Pista y Plaza extra cuando lo necesites.',
+      'Aparecen novedades por el camino: buses tapados (color oculto), candado y llave, obras con conos y terminales que sueltan buses.',
     ],
     ok: 'Entendido',
   },

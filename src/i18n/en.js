@@ -38,6 +38,10 @@ export default {
     blocked: 'Blocked!',
     priorityTip: 'In a hurry! Board them before their patience runs out.',
     queueMore: '+{n}',
+    locked: 'Locked!',
+    unlocked: 'Unlocked!',
+    cone: 'Roadwork!',
+    combo: 'Combo x{n}!',
   },
   tutorial: {
     t1: 'Tap a bus: if its front is clear, it drives to the stop and passengers get on.',
@@ -60,6 +64,8 @@ export default {
     moves: { one: 'in {n} move', other: 'in {n} moves' },
   },
   lose: {
+    titleStuck: 'Total gridlock!',
+    infoStuck: 'No bus can leave anymore. Undo a move or restart.',
     titleSlots: 'Stop is full!',
     infoSlots: 'Every spot is taken and none of the buses matches the next passenger.',
     titlePatience: 'Out of patience!',
@@ -69,6 +75,14 @@ export default {
     slotAd: 'Ad: + 1 spot',
     restart: 'Restart level',
     home: 'Home',
+  },
+  mechanics: {
+    new: 'NEW',
+    ok: "Let's go!",
+    hidden: { title: 'Covered bus', text: 'This bus is under a tarp: its color only shows once its front is clear. Plan with what you already know!' },
+    cones: { title: 'Roadwork', text: 'Cones block the spot until the roadwork is done. The number shows how many moves are left.' },
+    lock: { title: 'Lock and key', text: 'The bus with a padlock can only leave after the bus with the key has left the parking lot.' },
+    garage: { title: 'Bus terminal', text: 'The terminal releases a new bus whenever its exit is clear. The number shows how many are still inside.' },
   },
   boosters: {
     undoAd: 'Watch an ad to get +1 undo?',
@@ -127,6 +141,7 @@ export default {
       'A blocked bus bumps and comes back – and that counts as a move.',
       'You lose if every spot fills up with no bus matching the next passenger, or if a passenger with a clock does not board in time.',
       'Every level can be solved. Use Undo (1 free per level), Hint and Extra spot when you need them.',
+      'New things show up along the way: covered buses (hidden color), lock and key, roadwork cones and terminals that release buses.',
     ],
     ok: 'Got it',
   },

@@ -8,7 +8,7 @@ Imagens geradas por `scripts/store-assets.cjs`:
 |---|---|
 | Ícone 512×512 | `store/icon-512.png` |
 | Recurso gráfico 1024×500 | `store/feature-graphic-pt-BR.png`, `-en-US.png` e `-es-419.png` |
-| Capturas 1080×1920 (6 por idioma) | `store/screenshots/pt-BR/`, `en-US/` e `es-419/` |
+| Capturas 1080×1920 (7 por idioma) | `store/screenshots/pt-BR/`, `en-US/` e `es-419/` |
 
 ---
 
@@ -37,6 +37,9 @@ O ponto de ônibus está lotado e o estacionamento virou um nó! Toque nos ônib
 
 ⏱️ PASSAGEIROS COM PRESSA
 Alguns passageiros têm um relógio: embarque-os antes de a paciência acabar!
+
+🚧 SEMPRE TEM NOVIDADE
+Ônibus coberto com cor misteriosa, cadeado e chave, obras com cones e terminais que soltam mais ônibus. Cada novidade chega com uma fase só para você aprender. Faça combos partindo vários ônibus de uma vez!
 
 🇧🇷 CIDADE BRASILEIRA
 Ônibus urbanos coloridos, ponto de ônibus, calçadão de ondinhas e casinhas de todas as cores, com trilha sonora no clima de samba.
@@ -79,6 +82,9 @@ The bus stop is packed and the parking lot is a total jam! Tap the buses in the 
 ⏱️ PASSENGERS IN A HURRY
 Some passengers carry a clock: get them on board before they run out of patience!
 
+🚧 ALWAYS SOMETHING NEW
+Covered buses with a mystery color, lock and key, roadwork cones and terminals that release more buses. Each new twist comes with a level just for learning it. Chain combos by sending several buses off at once!
+
 🌴 A BRAZILIAN CITY
 Colorful city buses, a bus stop, a wavy-patterned sidewalk and houses in every color, with a samba-flavored soundtrack.
 
@@ -119,6 +125,9 @@ Puzzle de buses justo: ordena el estacionamiento y lleva a todos.
 
 ⏱️ PASAJEROS CON PRISA
 Algunos pasajeros llevan un reloj: ¡súbelos antes de que se les acabe la paciencia!
+
+🚧 SIEMPRE HAY NOVEDADES
+Buses tapados de color misterioso, candado y llave, obras con conos y terminales que sueltan más buses. Cada novedad llega con un nivel solo para aprenderla. ¡Haz combos enviando varios buses a la vez!
 
 🌴 UNA CIUDAD BRASILEÑA
 Buses urbanos de colores, parada de autobús, una vereda con dibujo de olas y casitas de todos los colores, con música con ritmo de samba.

@@ -48,6 +48,15 @@ levels.forEach((lv, i) => {
   if (challenge !== !!lv.challenge) fail(`fase ${id}: marcação de Desafio errada`);
 });
 
+// 4b. estreia das mecânicas: fase de estreia tem só a mecânica nova; nenhuma aparece antes dela
+const { GEN } = await import('./generator-config.js');
+const MKEY = { hidden: 'hidden', cones: 'cones', locks: 'lock', garages: 'garage' };
+for (const [k, cfg] of Object.entries(GEN.mechanics)) {
+  const lv = levels[cfg.intro - 1];
+  if (JSON.stringify(lv.mechanics) !== JSON.stringify([MKEY[k]])) fail(`fase ${cfg.intro}: deveria estrear só "${MKEY[k]}" (tem ${lv.mechanics})`);
+  for (const l of levels.slice(0, cfg.intro - 1)) if ((l.mechanics || []).includes(MKEY[k])) fail(`fase ${l.id}: "${MKEY[k]}" antes da estreia (${cfg.intro})`);
+}
+
 // 5. curva sem picos (só fases normais depois do tutorial)
 const normal = levels.filter((l) => l.id > 10 && !l.challenge);
 const MAX_JUMP = 9; // pontos de score acima do maior entre as 5 anteriores

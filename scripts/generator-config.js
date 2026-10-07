@@ -44,6 +44,16 @@ export const GEN = {
     scoreBonus: 10,
   },
 
+  // Mecânicas (ver src/core/engine.js). Cada uma estreia numa fase fixa (`intro`,
+  // só ela, em versão leve) e depois aparece com chance crescente (rampa até a 300).
+  // count = [mín, máx] por fase (cresce com a rampa).
+  mechanics: {
+    hidden: { intro: 31, from: 32, chance: [0.3, 0.55], count: [1, 4] },
+    cones: { intro: 55, from: 56, chance: [0.3, 0.5], count: [1, 3] },
+    locks: { intro: 81, from: 82, chance: [0.3, 0.5], count: [1, 2] },
+    garages: { intro: 111, from: 112, chance: [0.3, 0.5], count: [1, 1] },
+  },
+
   // Ajuste fino da curva: depois de escolhidas, as fases normais são reordenadas
   // em janelas deste tamanho (mantém a progressão de tamanho e remove serrilhado)
   smoothWindow: 9,

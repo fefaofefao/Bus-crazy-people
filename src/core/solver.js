@@ -4,8 +4,8 @@
 // estado inclui tudo o que importa (ônibus no estacionamento, vagas com a
 // lotação de cada ônibus, posição na fila e número de jogadas), se a busca
 // termina sem achar solução, a fase é impossível a partir daquele estado.
-// Batidas nunca ajudam (só gastam paciência), então o solver só considera
-// toques em ônibus com caminho livre – toda solução tem exatamente N toques.
+// Batidas só ajudam para "esperar" uma obra (cones) terminar; fora disso o solver
+// só considera toques em ônibus que saem.
 //
 // Ordenação dos candidatos (só acelera; não muda a resposta):
 //   1. ônibus da cor do passageiro da frente;
@@ -59,6 +59,19 @@ export function solve(level, { state = null, maxNodes = 300000 } = {}) {
       if (dfs(r.state)) return true;
       path.pop();
       if (capped) return false;
+    }
+    // Obra em andamento: "esperar" (tocar num ônibus que bate) também é uma jogada
+    // possível – a obra termina com o número de jogadas. Só vale se houver cone ativo.
+    if ((level.cones || []).some((c) => s.moves < c.until)) {
+      const legal = new Set(cands);
+      const waiter = level.buses.find((b) => s.inLot[b.id] === 1 && !legal.has(b.id));
+      if (waiter) {
+        const r = tap(level, s, waiter.id, occ);
+        path.push(waiter.id);
+        if (dfs(r.state)) return true;
+        path.pop();
+        if (capped) return false;
+      }
     }
     dead.add(key);
     return false;

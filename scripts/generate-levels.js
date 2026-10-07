@@ -13,7 +13,7 @@ import { solve } from '../src/core/solver.js';
 import { LEVEL_FORMAT, validateLevel } from '../src/core/engine.js';
 import { hashInts } from '../src/core/prng.js';
 
-export const PACK_VERSION = 1;
+export const PACK_VERSION = 2;
 
 const args = process.argv.slice(2);
 const countArg = args.indexOf('--count');
@@ -33,8 +33,31 @@ function paramsFor(n) {
   const tp = Math.min(1, Math.max(0, (eff - pri.from) / (GEN.total - pri.from)));
   const hasPri = eff >= pri.from && (rng % 1000) / 1000 < lerp(pri.chance[0], pri.chance[1], tp);
   const priCount = hasPri ? 1 + ((rng >>> 10) % Math.round(lerp(pri.max[0], pri.max[1], tp))) : 0;
+  // mecânicas
+  const mech = {};
+  let intro = null;
+  for (const [mi, [k, cfg]] of Object.entries(GEN.mechanics).entries()) {
+    if (n === cfg.intro) {
+      intro = k;
+      continue;
+    }
+    if (n < cfg.from) continue; // nunca antes da estreia (nem em Desafio)
+    const tm = Math.min(1, (eff - cfg.from) / (GEN.total - cfg.from));
+    const r = hashInts(GEN.baseSeed, n, 101 + mi * 17) % 1000;
+    if (r / 1000 < lerp(cfg.chance[0], cfg.chance[1], tm)) {
+      const max = Math.round(lerp(cfg.count[0], cfg.count[1], tm));
+      mech[k] = cfg.count[0] + ((r >>> 3) % (max - cfg.count[0] + 1));
+    }
+  }
+  if (intro) {
+    // fase de estreia: só a mecânica nova, em dose leve
+    for (const k of Object.keys(mech)) delete mech[k];
+    mech[intro] = intro === 'hidden' ? 2 : 1;
+  }
   return {
     challenge,
+    mech,
+    introMechanic: intro,
     cols: Math.round(lerp(R.cols[0], R.cols[1], t)),
     rows: Math.round(lerp(R.rows[0], R.rows[1], t)),
     buses: Math.round(lerp(R.buses[0], R.buses[1], t)),
@@ -45,7 +68,7 @@ function paramsFor(n) {
     typeWeights: { small: 1, medium: lerp(R.medium[0], R.medium[1], t), large: lerp(R.large[0], R.large[1], t) },
     scoreBlock: 1,
     scoreDepth: 0.5,
-    priority: priCount,
+    priority: intro ? 0 : priCount,
     prioritySlack: Math.round(lerp(pri.slack[0], pri.slack[1], tp)),
     maxRandomWin: lerp(GEN.maxRandomWin[0], GEN.maxRandomWin[1], t),
     target: lerp(R.targetScore[0], R.targetScore[1], t) + (challenge ? GEN.challenge.scoreBonus : 0),
@@ -81,9 +104,13 @@ function loadTutorial() {
 function generate(n) {
   const p = paramsFor(n);
   const cands = [];
-  for (let a = 0; a < GEN.maxAttemptsPerLevel && cands.length < GEN.candidatesPerLevel; a++) {
+  const near = () => cands.some((c) => Math.abs(c.meta.score - p.target) <= 5);
+  // pelo menos candidatesPerLevel; se nenhuma ficar perto da meta, continua (até 3x)
+  for (let a = 0; a < GEN.maxAttemptsPerLevel && (cands.length < GEN.candidatesPerLevel || (!near() && cands.length < GEN.candidatesPerLevel * 3)); a++) {
     const lv = generateLevel(n, p, hashInts(GEN.baseSeed, n, a));
-    if (lv) cands.push(lv);
+    if (!lv) continue;
+    if (p.introMechanic && !lv.mechanics.includes(p.introMechanic === 'locks' ? 'lock' : p.introMechanic === 'garages' ? 'garage' : p.introMechanic)) continue;
+    cands.push(lv);
   }
   if (!cands.length) throw new Error(`fase ${n}: nenhuma tentativa válida`);
   cands.sort((x, y) => Math.abs(x.meta.score - p.target) - Math.abs(y.meta.score - p.target) || x.meta.seed - y.meta.seed);
@@ -101,9 +128,16 @@ for (let n = GEN.firstGenerated; n <= total; n++) {
 
 // Suavização: reordena as fases normais (não tutorial, não Desafio) por pontuação
 // dentro de janelas, preservando as posições dos Desafios.
-const normalIdx = levels.map((l, i) => i).filter((i) => i >= 10 && !levels[i].challenge);
-for (let w = 0; w < normalIdx.length; w += GEN.smoothWindow) {
-  const idx = normalIdx.slice(w, w + GEN.smoothWindow);
+const introIds = new Set(Object.values(GEN.mechanics).map((m) => m.intro));
+const normalIdx = levels.map((l, i) => i).filter((i) => i >= 10 && !levels[i].challenge && !introIds.has(i + 1));
+// janelas nunca atravessam a estreia de uma mecânica (senão ela apareceria antes)
+const segments = [[]];
+for (const i of normalIdx) {
+  if ([...introIds].some((id) => id - 1 < i && segments.at(-1).some((j) => j < id - 1))) segments.push([]);
+  segments.at(-1).push(i);
+}
+const windows = segments.flatMap((seg) => Array.from({ length: Math.ceil(seg.length / GEN.smoothWindow) }, (_, k) => seg.slice(k * GEN.smoothWindow, (k + 1) * GEN.smoothWindow)));
+for (const idx of windows) {
   const sorted = idx.map((i) => levels[i]).sort((a, b) => a.meta.score - b.meta.score);
   idx.forEach((i, k) => (levels[i] = sorted[k]));
 }
@@ -122,7 +156,7 @@ for (let i = 0; i < levels.length; i += 10) {
   const ch = g.find((l) => l.challenge);
   rows.push(
     `${String(i + 1).padStart(3)}–${String(i + g.length).padStart(3)}  ônibus ${avg((l) => l.buses.length).padStart(4)}  cores ${avg((l) => new Set(l.buses.map((b) => b.color)).size)}  ` +
-      `score ${avg((l) => l.meta.score).padStart(5)}  guloso ${avg((l) => l.meta.greedyWin)}  prior ${norm.filter((l) => l.priority.length).length}` +
+      `score ${avg((l) => l.meta.score).padStart(5)}  guloso ${avg((l) => l.meta.greedyWin)}  prior ${norm.filter((l) => l.priority.length).length}  mec ${norm.map((l) => l.mechanics.map((m) => m[0]).join('')).filter(Boolean).join(',')}` +
       (ch ? `  | desafio ${ch.id}: score ${ch.meta.score}, vagas ${ch.slots}` : ''),
   );
 }

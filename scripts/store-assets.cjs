@@ -1,7 +1,7 @@
 // Gera as imagens da ficha da Play Store a partir do próprio jogo (Chromium/Playwright):
 //   store/icon-512.png
 //   store/feature-graphic-<idioma>.png  (1024×500)
-//   store/screenshots/<idioma>/NN.png   (1080×1920, 6 por idioma)
+//   store/screenshots/<idioma>/NN.png   (1080×1920, 7 por idioma)
 // Uso: npm run build && npx vite preview --port 4173 &  depois  node scripts/store-assets.cjs
 // Requer o Playwright (veja scripts/svg-to-png.cjs).
 
@@ -80,7 +80,8 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
     await go('Game', { level: 1 }); await shot();
     await go('Game', { level: 42 }); await playN(4); await shot();
     await go('Game', { level: 9 }); await shot();
-    await go('Game', { level: 160 }); await playN(5); await shot();
+    await go('Game', { level: 146 }); await playN(3); await shot();
+    await go('Game', { level: 125 }); await playN(2); await shot();
     await go('Levels', {}); await shot();
     await ctx.close();
     console.log('✓', L.store);

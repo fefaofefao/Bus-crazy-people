@@ -2,7 +2,7 @@
 // Uso: npm run test:engine
 
 import assert from 'node:assert/strict';
-import { initialState, tap, addSlot, validateLevel, replay, LEVEL_FORMAT } from '../src/core/engine.js';
+import { initialState, tap, addSlot, validateLevel, replay, LEVEL_FORMAT, garageSpawnPos } from '../src/core/engine.js';
 import { solve, nextMove } from '../src/core/solver.js';
 
 const L = (o) => ({ format: LEVEL_FORMAT, id: 0, challenge: false, tutorial: null, priority: [], mechanics: [], ...o, buses: o.buses.map((b, id) => ({ id, ...b })) });
@@ -133,6 +133,98 @@ test('solver prova que um estado sem saída não tem solução', () => {
   assert.deepEqual(solve(lv).path, [1, 0]);
   const dead = { ...lv, priority: [{ index: 4, patience: 1 }] };
   assert.equal(solve(dead).solvable, false);
+});
+
+
+// ---------------------------------------------------------------------------
+// Mecânicas
+// ---------------------------------------------------------------------------
+const two = (extra) =>
+  L({
+    cols: 4,
+    rows: 4,
+    slots: 3,
+    buses: [
+      { x: 0, y: 0, dir: 'up', type: 'small', color: 0 },
+      { x: 3, y: 0, dir: 'up', type: 'small', color: 1 },
+    ],
+    queue: [0, 0, 0, 0, 1, 1, 1, 1],
+    ...extra,
+  });
+
+test('cadeado: bate enquanto a chave não saiu; abre depois', () => {
+  const lv = two({});
+  lv.buses[0].lock = 1; // vermelho trancado; chave = azul
+  assert.deepEqual(validateLevel(lv), []);
+  let r = tap(lv, initialState(lv), 0);
+  assert.equal(r.events[0].type, 'bump');
+  assert.equal(r.events[0].key, 1);
+  r = tap(lv, r.state, 1);
+  assert.ok(r.events.some((e) => e.type === 'unlock' && e.bus === 0));
+  r = tap(lv, r.state, 0);
+  assert.equal(r.state.status, 'won');
+});
+
+test('cadeado: ciclo é rejeitado', () => {
+  const lv = two({});
+  lv.buses[0].lock = 1;
+  lv.buses[1].lock = 0;
+  assert.ok(validateLevel(lv).some((e) => e.includes('ciclo')));
+});
+
+test('obra: cone bloqueia até a jogada `until` e esperar (bater) faz o tempo passar', () => {
+  const lv = two({ cones: [{ x: 0, y: 0, until: 2 }] });
+  lv.buses[0] = { id: 0, x: 0, y: 2, dir: 'up', type: 'small', color: 0 };
+  assert.deepEqual(validateLevel(lv), []);
+  let r = tap(lv, initialState(lv), 0);
+  assert.equal(r.events[0].type, 'bump'); // cone na frente (jogada 1)
+  r = tap(lv, r.state, 1); // azul sai (jogada 2): obra termina
+  assert.ok(r.events.some((e) => e.type === 'cones'));
+  r = tap(lv, r.state, 0);
+  assert.equal(r.state.status, 'won');
+  // o solver também sabe esperar
+  const lv2 = { ...lv, buses: [lv.buses[0], { ...lv.buses[1], color: 0 }], queue: [0, 0, 0, 0, 0, 0, 0, 0], cones: [{ x: 0, y: 0, until: 3 }] };
+  const sol = solve(lv2);
+  assert.ok(sol.solvable);
+  assert.equal(replay(lv2, sol.path).status, 'won');
+});
+
+test('terminal: solta o próximo ônibus quando a casa fica livre', () => {
+  const g = { id: 0, x: 1, y: 3, dir: 'up' };
+  const p = garageSpawnPos(g, 'small'); // nasce em (1,1)-(1,2)
+  const lv = L({
+    cols: 3,
+    rows: 4,
+    slots: 3,
+    garages: [g],
+    buses: [
+      { ...p, type: 'small', color: 0, garage: 0 },
+      { ...p, type: 'small', color: 1, garage: 0 },
+    ],
+    queue: [0, 0, 0, 0, 1, 1, 1, 1],
+  });
+  assert.deepEqual(validateLevel(lv), []);
+  let s = initialState(lv);
+  assert.deepEqual([...s.inLot], [1, 2]);
+  const r = tap(lv, s, 0);
+  assert.ok(r.events.some((e) => e.type === 'spawn' && e.bus === 1));
+  assert.equal(tap(lv, r.state, 1).state.status, 'won');
+});
+
+test('travado: sem saída e sem obra para terminar = derrota', () => {
+  // vermelho aponta para o azul e vice-versa (impossível); qualquer toque perde por "stuck"
+  const lv = L({
+    cols: 4,
+    rows: 1,
+    slots: 3,
+    buses: [
+      { x: 1, y: 0, dir: 'right', type: 'small', color: 0 },
+      { x: 2, y: 0, dir: 'left', type: 'small', color: 1 },
+    ],
+    queue: [0, 0, 0, 0, 1, 1, 1, 1],
+  });
+  const r = tap(lv, initialState(lv), 0);
+  assert.equal(r.state.reason, 'stuck');
 });
 
 console.log(`✓ ${n} testes do motor passaram`);

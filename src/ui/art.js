@@ -76,12 +76,12 @@ export function drawSymbol(g, kind, x, y, s, color, alpha = 1) {
  * w = largura em px; len = comprimento em px. Rotacione a imagem para outras direções.
  * Devolve a chave da textura (gerada uma vez e reaproveitada).
  */
-export function busTexture(scene, { type, color, w, len, symbol }) {
+export function busTexture(scene, { type, color, w, len, symbol, hidden = false }) {
   w = Math.round(w);
   len = Math.round(len);
-  const key = `bus_${type}_${color}_${w}_${len}_${symbol ? 1 : 0}`;
+  const key = `bus_${type}_${hidden ? 'h' : color}_${w}_${len}_${symbol && !hidden ? 1 : 0}`;
   if (scene.textures.exists(key)) return key;
-  const base = COLORS[color].hex;
+  const base = hidden ? 0x8d96a8 : COLORS[color].hex;
   const dark = shade(base, 0.68);
   const light = shade(base, 1.18);
   const pad = Math.ceil(w * 0.08);
@@ -134,8 +134,21 @@ export function busTexture(scene, { type, color, w, len, symbol }) {
   // vidro traseiro
   g.fillStyle(0x1d2b3d, 0.85);
   g.fillRect(x0 + w * 0.22, y0 + len - w * 0.2, w * 0.56, w * 0.08);
-  // símbolo (modo daltônico)
-  if (symbol) {
+  // ônibus coberto: lona cinza com "?"
+  if (hidden) {
+    const cx = x0 + w / 2;
+    const cy = y0 + len / 2 + w * 0.08;
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(cx, cy, w * 0.3);
+    g.lineStyle(w * 0.08, 0x3b4252, 1);
+    g.beginPath();
+    g.arc(cx, cy - w * 0.06, w * 0.11, Math.PI * 1.05, Math.PI * 0.45, false);
+    g.strokePath();
+    g.fillStyle(0x3b4252, 1);
+    g.fillRect(cx - w * 0.035, cy + w * 0.02, w * 0.07, w * 0.08);
+    g.fillCircle(cx, cy + w * 0.17, w * 0.045);
+  } else if (symbol) {
+    // símbolo (modo daltônico)
     const cy = y0 + len / 2 + w * 0.1;
     g.fillStyle(0xffffff, 1);
     g.fillCircle(x0 + w / 2, cy, w * 0.28);

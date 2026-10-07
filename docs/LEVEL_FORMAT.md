@@ -39,9 +39,17 @@ Cada fase segue este formato:
 | `buses[].color` | índice 0–7 em `COLORS` (cada cor tem um símbolo do modo daltônico) |
 | `queue` | fila de passageiros (cor de cada um); o índice 0 é o primeiro |
 | `priority` | passageiro `index` precisa embarcar até a jogada `patience` (contada desde o início, batidas incluídas) |
-| `mechanics` | reservado para mecânicas futuras (ver `docs/ROADMAP.md`) |
+| `buses[].hidden` | **ônibus coberto**: a cor só aparece na tela quando o caminho dele fica livre (não muda as regras) |
+| `buses[].lock` | **cadeado**: id do ônibus-chave; este só sai depois que a chave sair do estacionamento (antes disso, tocar "bate") |
+| `buses[].garage` | **terminal**: id do terminal que solta este ônibus (na ordem do array); `x, y, dir` = posição onde ele nasce (`garageSpawnPos`) |
+| `cones` | **obra**: `[{ x, y, until }]` – a casa fica bloqueada enquanto o número de jogadas < `until` |
+| `garages` | **terminais**: `[{ id, x, y, dir }]` – casa fixa que bloqueia passagem e solta ônibus para `dir` quando há espaço |
+| `mechanics` | lista das mecânicas presentes (`hidden`, `lock`, `garage`, `cones`) – usada para o cartão "Novidade!" |
 | `solution` | ordem de toques que vence; gravada pelo gerador e conferida no teste |
 | `meta` | métricas de dificuldade (só informativas; o jogo não usa) |
+
+Estado do ônibus no motor: `inLot` = 1 (no estacionamento), 0 (já saiu) ou 2 (esperando no terminal).
+Derrota extra: `stuck` – nenhum ônibus pode sair e nenhuma obra vai terminar.
 
 **Regras de validade** (`validateLevel` em `src/core/engine.js`):
 - os ônibus ficam dentro da grade e não se sobrepõem;

@@ -16,7 +16,7 @@
 
 import { mulberry32 } from './prng.js';
 import { DIRS, DIR_KEYS, BUS_TYPES, busCells } from './rules.js';
-import { LEVEL_FORMAT, initialState, tap, legalExits, occupancy, validateLevel } from './engine.js';
+import { LEVEL_FORMAT, initialState, tap, legalExits, occupancy, validateLevel, scanPath, isLocked, spawnFromGarages, garageSpawnPos, OCC_FREE } from './engine.js';
 import { solve } from './solver.js';
 
 /** Monta o estacionamento. Devolve { buses (ordem de inserção), ok }. */
@@ -223,6 +223,7 @@ export function measure(level, { playouts = 160, seed = 12345 } = {}) {
     20 * (1 - greedyWin) +
     70 * trapRatio +
     3 * (level.priority?.length ?? 0) +
+    1.5 * (level.mechanics?.length ?? 0) +
     2.5 * Math.max(0, 5 - level.slots);
   const r2 = (x) => Math.round(x * 1000) / 1000;
   return { randomWin: r2(randomWin), greedyWin: r2(greedyWin), traps, trapRatio: r2(trapRatio), score: Math.round(score * 100) / 100 };
@@ -232,12 +233,89 @@ export function measure(level, { playouts = 160, seed = 12345 } = {}) {
  * Gera UMA fase a partir de parâmetros e semente. Retorna a fase (com solução
  * e métricas) ou null se a tentativa não servir.
  */
+/**
+ * Mecânicas (ver src/core/engine.js). p.mech = { hidden, cones, locks, garages }
+ * com a quantidade de cada uma. Ônibus dos terminais são acrescentados ao fim de buses.
+ */
+function addMechanics(rng, level, p) {
+  const m = p.mech || {};
+  const { cols, rows } = level;
+  const occ = () => {
+    const o = new Int16Array(cols * rows).fill(OCC_FREE);
+    for (const g of level.garages) o[g.y * cols + g.x] = -2;
+    for (const c of level.cones) o[c.y * cols + c.x] = -3;
+    for (const b of level.buses) if (b.garage == null) for (const c of busCells(b)) o[c.y * cols + c.x] = b.id;
+    return o;
+  };
+  const emptyCells = () => {
+    const o = occ();
+    const out = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (o[y * cols + x] === OCC_FREE) out.push({ x, y });
+    return out;
+  };
+  // terminais: ficam numa casa vazia e soltam 2–3 ônibus pequenos/médios
+  for (let g = 0; g < (m.garages || 0); g++) {
+    const cells = emptyCells();
+    for (let tries = 0; tries < 30 && cells.length; tries++) {
+      const c = cells[rng.int(0, cells.length - 1)];
+      const dir = DIR_KEYS[rng.int(0, 3)];
+      const n = rng.int(2, 3);
+      const types = Array.from({ length: n }, () => (rng.next() < 0.35 ? 'medium' : 'small'));
+      const gar = { id: level.garages.length, x: c.x, y: c.y, dir };
+      const ok = types.every((type) => busCells({ ...garageSpawnPos(gar, type), type }).every((q) => q.x >= 0 && q.y >= 0 && q.x < cols && q.y < rows));
+      if (!ok) continue;
+      level.garages.push(gar);
+      for (const type of types) level.buses.push({ id: level.buses.length, ...garageSpawnPos(gar, type), type, color: 0, garage: gar.id });
+      break;
+    }
+  }
+  // obras: cones em casas vazias, terminam numa jogada entre 2 e ~metade dos ônibus
+  for (let k = 0; k < (m.cones || 0); k++) {
+    const cells = emptyCells();
+    if (!cells.length) break;
+    const c = cells[rng.int(0, cells.length - 1)];
+    level.cones.push({ x: c.x, y: c.y, until: rng.int(2, Math.max(3, Math.floor(level.buses.length * 0.5))) });
+  }
+  // cadeados: um ônibus trancado por outro (a chave)
+  const lot = level.buses.filter((b) => b.garage == null);
+  for (let k = 0; k < (m.locks || 0) && lot.length > 3; k++) {
+    const a = lot[rng.int(0, lot.length - 1)];
+    const b = lot[rng.int(0, lot.length - 1)];
+    if (a === b || a.lock != null || b.lock != null || level.buses.some((x) => x.lock === a.id)) continue;
+    a.lock = b.id;
+  }
+  // cobertos: cor escondida até o caminho ficar livre
+  const pool = level.buses.filter((b) => b.lock == null);
+  for (let k = 0; k < (m.hidden || 0) && pool.length; k++) pool.splice(rng.int(0, pool.length - 1), 1)[0].hidden = true;
+}
+
+/**
+ * Ordem viável de saída do estacionamento (sem olhar a fila): simula as regras do
+ * lote (cadeados, cones por jogada, terminais) preferindo a ordem inversa de
+ * inserção, que "enterra" os ônibus. null = trava (fase descartada).
+ */
+function feasibleOrder(rng, level, rank) {
+  const s = initialState(level, 99);
+  const O = [];
+  const total = level.buses.length;
+  while (O.length < total) {
+    const occ = occupancy(level, s);
+    const free = level.buses.filter((b) => s.inLot[b.id] === 1 && !isLocked(level, s, b) && scanPath(level, occ, b).blockerId === -1);
+    if (!free.length) return null;
+    free.sort((a, b) => rank(b) - rank(a));
+    const pick = rng.next() < 0.8 ? free[0] : free[rng.int(0, free.length - 1)];
+    s.inLot[pick.id] = 0;
+    s.moves++;
+    O.push(pick.id);
+    spawnFromGarages(level, s, []);
+  }
+  return O;
+}
+
 export function generateLevel(id, p, seed) {
   const rng = mulberry32(seed);
   const placed = placeBuses(rng, p);
   if (!placed.ok) return null;
-  const buses = placed.buses;
-  assignColors(rng, buses, p);
   const level = {
     format: LEVEL_FORMAT,
     id,
@@ -246,15 +324,27 @@ export function generateLevel(id, p, seed) {
     slots: p.slots,
     challenge: !!p.challenge,
     tutorial: null,
-    buses: buses.map((b) => ({ id: b.id, x: b.x, y: b.y, dir: b.dir, type: b.type, color: b.color })),
+    buses: placed.buses.map((b) => ({ id: b.id, x: b.x, y: b.y, dir: b.dir, type: b.type, color: 0 })),
     queue: [],
     priority: [],
+    cones: [],
+    garages: [],
     mechanics: [],
   };
-  const O = buses.map((b) => b.id).reverse();
+  addMechanics(rng, level, p);
+  assignColors(rng, level.buses, p);
+  // ônibus de terminal: rank alto (saem assim que podem); os demais: ordem inversa de inserção
+  const O = feasibleOrder(rng, level, (b) => (b.garage != null ? 1000 - b.id : b.id));
+  if (!O) return null;
   const built = buildQueue(rng, level, O, p);
   if (!built) return null;
   level.queue = built.queue;
+  // limpa campos vazios e registra as mecânicas presentes
+  if (!level.cones.length) delete level.cones;
+  if (!level.garages.length) delete level.garages;
+  const has = (k) => level.buses.some((b) => b[k] != null && b[k] !== false);
+  level.mechanics = ['hidden', 'lock', 'garage'].filter(has);
+  if (level.cones) level.mechanics.push('cones');
 
   // prioritários: passageiros que embarcam "tarde" na ordem O (para dar tensão)
   const nPri = p.priority ?? 0;
