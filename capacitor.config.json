@@ -1,0 +1,17 @@
+{
+  "appId": "com.fsamplabs.buscrazypeople",
+  "appName": "Bus Crazy People",
+  "webDir": "dist",
+  "backgroundColor": "#2d3a4f",
+  "android": {
+    "backgroundColor": "#2d3a4f",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover",
+      "style": "DARK"
+    }
+  }
+}

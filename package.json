@@ -1,0 +1,38 @@
+{
+  "name": "bus-crazy-people",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Bus Crazy People – puzzle de ônibus justo (Phaser 3 + Vite + Capacitor)",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "levels:generate": "node scripts/generate-levels.js",
+    "test:levels": "node scripts/test-levels.js",
+    "test:engine": "node scripts/test-engine.js",
+    "test:ads": "node scripts/test-ads.js",
+    "test": "npm run test:engine && npm run test:levels && npm run test:ads && npm run test:i18n",
+    "test:i18n": "node scripts/test-i18n.js",
+    "cap:sync": "npm run build && node scripts/sync-admob-id.js && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "admob:sync": "node scripts/sync-admob-id.js",
+    "build:release": "VITE_RELEASE=1 VITE_TEST_ADS=${TEST_ADS:-0} vite build",
+    "admob:sync:release": "RELEASE=1 node scripts/sync-admob-id.js"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capgo/native-purchases": "^8.8.1",
+    "@fontsource/fredoka": "^5.3.0",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.2",
+    "vite": "^8.3.2"
+  }
+}

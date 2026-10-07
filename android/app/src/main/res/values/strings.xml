@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bus Crazy People</string>
+    <string name="title_activity_main">Bus Crazy People</string>
+    <string name="package_name">com.fsamplabs.buscrazypeople</string>
+    <string name="custom_url_scheme">com.fsamplabs.buscrazypeople</string>
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+</resources>

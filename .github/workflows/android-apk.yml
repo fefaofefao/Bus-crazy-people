@@ -1,0 +1,38 @@
+# Gera um APK de DEBUG a cada push (anúncios de TESTE do Google) e o disponibiliza
+# como artefato: aba Actions > execução > Artifacts > bus-crazy-people-debug-apk.
+name: Android APK (debug)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Testes (motor, 300 fases com solver, anúncios, idiomas)
+        run: npm test
+      - run: npm run build
+      - name: Copiar ID do AdMob (teste) para o Android
+        run: npm run admob:sync
+      - run: npx cap sync android
+      - name: Compilar APK de debug
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bus-crazy-people-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

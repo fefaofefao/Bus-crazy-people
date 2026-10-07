@@ -1,0 +1,6 @@
+{
+  "_leia": "IDs REAIS do AdMob (único lugar para trocar). Enquanto estiverem com XXXX, todos os builds usam os IDs de TESTE do Google. O build de release (Play Store) falha se ainda houver XXXX, a menos que você marque 'test_ads' ao rodar o workflow. Depois de editar, faça commit: o CI copia o appId para o AndroidManifest.",
+  "appId": "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX",
+  "interstitialId": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX",
+  "rewardedId": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
+}

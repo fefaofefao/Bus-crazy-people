@@ -1,0 +1,100 @@
+{
+  "_comment": "Fases 1-10 feitas à mão (tutorial). Uma regra nova por fase. Cores: 0 vermelho, 1 azul, 2 amarelo, 3 verde, 4 roxo. Textos em src/i18n (tutorial.tN). Validadas pelo solver em npm run test:levels.",
+  "levels": [
+    {
+      "id": 1, "cols": 3, "rows": 4, "slots": 5, "tutorial": { "text": "t1" },
+      "buses": [
+        { "x": 0, "y": 1, "dir": "up", "type": "small", "color": 0 },
+        { "x": 2, "y": 1, "dir": "up", "type": "small", "color": 0 }
+      ],
+      "queue": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "id": 2, "cols": 3, "rows": 4, "slots": 5, "tutorial": { "text": "t2" },
+      "buses": [
+        { "x": 0, "y": 1, "dir": "up", "type": "small", "color": 0 },
+        { "x": 1, "y": 1, "dir": "up", "type": "small", "color": 1 },
+        { "x": 2, "y": 1, "dir": "up", "type": "small", "color": 0 }
+      ],
+      "queue": [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
+    },
+    {
+      "id": 3, "cols": 3, "rows": 5, "slots": 5, "tutorial": { "text": "t3" },
+      "buses": [
+        { "x": 1, "y": 1, "dir": "right", "type": "small", "color": 0 },
+        { "x": 1, "y": 3, "dir": "up", "type": "small", "color": 1 }
+      ],
+      "queue": [0, 0, 0, 0, 1, 1, 1, 1]
+    },
+    {
+      "id": 4, "cols": 4, "rows": 5, "slots": 5, "tutorial": { "text": "t4" },
+      "buses": [
+        { "x": 1, "y": 1, "dir": "right", "type": "small", "color": 0 },
+        { "x": 1, "y": 3, "dir": "up", "type": "small", "color": 1 },
+        { "x": 3, "y": 3, "dir": "up", "type": "small", "color": 3 }
+      ],
+      "queue": [1, 1, 1, 1, 0, 0, 0, 0, 3, 3, 3, 3]
+    },
+    {
+      "id": 5, "cols": 4, "rows": 5, "slots": 5, "tutorial": { "text": "t5" },
+      "buses": [
+        { "x": 0, "y": 2, "dir": "up", "type": "medium", "color": 2 },
+        { "x": 1, "y": 2, "dir": "left", "type": "medium", "color": 3 },
+        { "x": 3, "y": 3, "dir": "up", "type": "small", "color": 0 }
+      ],
+      "queue": [2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0]
+    },
+    {
+      "id": 6, "cols": 5, "rows": 6, "slots": 5, "tutorial": { "text": "t6" },
+      "buses": [
+        { "x": 0, "y": 2, "dir": "up", "type": "large", "color": 1 },
+        { "x": 1, "y": 1, "dir": "left", "type": "small", "color": 0 },
+        { "x": 2, "y": 5, "dir": "left", "type": "medium", "color": 4 },
+        { "x": 3, "y": 3, "dir": "up", "type": "small", "color": 0 }
+      ],
+      "queue": [1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "id": 7, "cols": 4, "rows": 5, "slots": 2, "tutorial": { "text": "t7" },
+      "buses": [
+        { "x": 1, "y": 3, "dir": "up", "type": "small", "color": 3 },
+        { "x": 1, "y": 1, "dir": "right", "type": "small", "color": 0 },
+        { "x": 3, "y": 3, "dir": "up", "type": "small", "color": 1 }
+      ],
+      "queue": [3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1]
+    },
+    {
+      "id": 8, "cols": 4, "rows": 5, "slots": 3, "tutorial": { "text": "t8" },
+      "buses": [
+        { "x": 0, "y": 1, "dir": "up", "type": "small", "color": 0 },
+        { "x": 1, "y": 1, "dir": "up", "type": "small", "color": 1 },
+        { "x": 2, "y": 2, "dir": "up", "type": "medium", "color": 2 },
+        { "x": 1, "y": 4, "dir": "right", "type": "small", "color": 0 }
+      ],
+      "queue": [0, 1, 0, 1, 2, 0, 1, 0, 1, 2, 2, 2, 2, 2, 0, 0, 0, 0]
+    },
+    {
+      "id": 9, "cols": 4, "rows": 5, "slots": 4, "tutorial": { "text": "t9" },
+      "buses": [
+        { "x": 0, "y": 1, "dir": "up", "type": "small", "color": 0 },
+        { "x": 2, "y": 3, "dir": "up", "type": "small", "color": 1 },
+        { "x": 2, "y": 1, "dir": "right", "type": "small", "color": 3 }
+      ],
+      "queue": [0, 0, 0, 0, 1, 1, 1, 1, 3, 3, 3, 3],
+      "priority": [{ "index": 4, "patience": 4 }]
+    },
+    {
+      "id": 10, "cols": 5, "rows": 6, "slots": 3, "tutorial": { "text": "t10" },
+      "buses": [
+        { "x": 0, "y": 2, "dir": "up", "type": "medium", "color": 0 },
+        { "x": 1, "y": 1, "dir": "left", "type": "small", "color": 1 },
+        { "x": 2, "y": 3, "dir": "up", "type": "small", "color": 2 },
+        { "x": 2, "y": 5, "dir": "left", "type": "medium", "color": 3 },
+        { "x": 4, "y": 2, "dir": "up", "type": "small", "color": 0 },
+        { "x": 3, "y": 1, "dir": "up", "type": "small", "color": 1 }
+      ],
+      "queue": [1, 1, 1, 1, 2, 2, 2, 2, 0, 0, 0, 3, 3, 3, 0, 0, 0, 1, 1, 1, 1, 3, 3, 3, 0, 0, 0, 0],
+      "priority": [{ "index": 4, "patience": 3 }]
+    }
+  ]
+}
