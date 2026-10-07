@@ -50,7 +50,7 @@ export class GameScene extends Phaser.Scene {
     this.build(true);
     fadeIn(this);
 
-    if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.time.delayedCall(300, () => this.showChallengeIntro());
+    if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
 
     this.input.on('pointerdown', (p) => this.onPointer(p));
     const onResize = () => this.time.delayedCall(30, () => this.build(false));
@@ -159,6 +159,15 @@ export class GameScene extends Phaser.Scene {
       emitting: false,
     });
     this.confetti.setDepth(60);
+    this.dust = this.add.particles(0, 0, 'dot', {
+      speed: { min: 20 * u, max: 70 * u },
+      lifespan: { min: 250, max: 450 },
+      scale: { start: 0.25 * u, end: 0 },
+      alpha: { start: 0.5, end: 0 },
+      tint: 0xd8d2c4,
+      emitting: false,
+    });
+    this.dust.setDepth(29);
 
     this.hintBus = null;
     this.hintG = this.add.graphics().setDepth(40);
@@ -398,6 +407,7 @@ export class GameScene extends Phaser.Scene {
     const dur = Phaser.Math.Clamp(A.exitPerCell * cells, A.exitMin, A.exitMax);
     img.setDepth(30);
     Sound.exit();
+    this.dust?.explode(8, img.x - dx * this.cell * 0.6, img.y - dy * this.cell * 0.6);
     this.tweens.add({
       targets: img,
       x: img.x + dx * cells * this.cell,
@@ -417,6 +427,7 @@ export class GameScene extends Phaser.Scene {
     const v = this.queueViews.shift();
     const sv = this.slotViews[e.slot];
     if (v && sv?.bus) {
+      this.tweens.add({ targets: v, angle: v.x < sv.bus.x ? 12 : -12, duration: A.board / 2, yoyo: true });
       this.tweens.add({
         targets: v,
         x: sv.bus.x,
@@ -580,6 +591,9 @@ export class GameScene extends Phaser.Scene {
       c.priority = { patience: pri.patience, txt, badge };
     }
     c.idx = idx;
+    // balanço leve de quem espera na fila
+    const bob = this.tweens.add({ targets: g, y: -2.5 * this.u, duration: 520 + (idx % 5) * 70, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: (idx % 7) * 90 });
+    c.once('destroy', () => bob.remove());
     return c;
   }
 
