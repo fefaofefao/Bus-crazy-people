@@ -572,7 +572,7 @@ export class GameScene extends Phaser.Scene {
       const badge = this.add.graphics();
       badge.fillStyle(C.accent, 1);
       badge.fillRoundedRect(-13 * u, -this.qSize * 0.72 - 9 * u, 26 * u, 18 * u, 9 * u);
-      Icons.clock(badge, -6 * u, -this.qSize * 0.72, 11 * u, 0x1f2333);
+      Icons.clock(badge, -6 * u, -this.qSize * 0.72, 11 * u, 0xffffff);
       const txt = this.add
         .text(5 * u, -this.qSize * 0.72, '', { fontFamily: FONT, fontSize: `${12 * u}px`, fontStyle: 'bold', color: '#1f2333' })
         .setOrigin(0.5);
