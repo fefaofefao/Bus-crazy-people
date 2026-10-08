@@ -37,7 +37,7 @@ export async function openStore({ onClose } = {}) {
       bought = true;
       Sound.reward();
       toast(t(`store.${KEY[id]}.thanks`), 3000);
-    } else toast(r === 'error' ? t('settings.storeError') : t('settings.canceled'));
+    } else toast(r === 'pending' ? t('store.pending') : r === 'error' ? t('settings.storeError') : t('settings.canceled'), r === 'pending' ? 5000 : 2500);
     finish();
   };
 

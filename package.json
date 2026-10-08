@@ -1,7 +1,7 @@
 {
   "name": "bus-crazy-people",
   "private": true,
-  "version": "0.6.1",
+  "version": "0.6.2",
   "type": "module",
   "description": "Bus Crazy People – puzzle de ônibus justo (Phaser 3 + Vite + Capacitor)",
   "scripts": {
@@ -12,7 +12,7 @@
     "test:levels": "node scripts/test-levels.js",
     "test:engine": "node scripts/test-engine.js",
     "test:ads": "node scripts/test-ads.js",
-    "test": "npm run test:engine && npm run test:levels && npm run test:ads && npm run test:i18n && npm run test:progress",
+    "test": "npm run test:engine && npm run test:levels && npm run test:ads && npm run test:i18n && npm run test:progress && npm run test:purchases",
     "test:i18n": "node scripts/test-i18n.js",
     "cap:sync": "npm run build && node scripts/sync-admob-id.js && npx cap sync android",
     "cap:open": "npx cap open android",
@@ -20,7 +20,8 @@
     "build:release": "VITE_RELEASE=1 VITE_TEST_ADS=${TEST_ADS:-0} vite build",
     "admob:sync:release": "RELEASE=1 node scripts/sync-admob-id.js",
     "test:progress": "node scripts/test-progress.js",
-    "brand": "node scripts/make-brand.js"
+    "brand": "node scripts/make-brand.js",
+    "test:purchases": "node scripts/test-purchases.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

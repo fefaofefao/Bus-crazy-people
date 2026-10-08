@@ -150,6 +150,7 @@ export default {
     button: 'Tienda: vidas infinitas',
     allOwned: 'Ya lo tienes todo. ¡Gracias por el apoyo! 💛',
     allOwnedShort: 'Compras activas',
+    pending: 'Pago pendiente. En cuanto Google Play lo apruebe, la compra se activa (vuelve a abrir el juego).',
     ownedLives: 'Vidas infinitas',
     ownedAds: 'Sin anuncios',
     lives: { title: 'Vidas infinitas', desc: 'Juega todo lo que quieras: las vidas nunca se acaban. Compra única, para siempre.', thanks: '¡Vidas infinitas desbloqueadas! ♥ ∞' },

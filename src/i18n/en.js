@@ -150,6 +150,7 @@ export default {
     button: 'Shop: infinite lives',
     allOwned: 'You already have everything. Thanks for the support! 💛',
     allOwnedShort: 'Purchases active',
+    pending: 'Payment pending. As soon as Google Play approves it, your purchase unlocks (just reopen the game).',
     ownedLives: 'Infinite lives',
     ownedAds: 'No ads',
     lives: { title: 'Infinite lives', desc: 'Play as much as you want: lives never run out. One-time purchase, yours forever.', thanks: 'Infinite lives unlocked! ♥ ∞' },

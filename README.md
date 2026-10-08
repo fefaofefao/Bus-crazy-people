@@ -181,6 +181,7 @@ Dois produtos do tipo **único (não consumível)**, com Google Play Billing rea
 - A **Loja** abre em Ajustes → Compras e no botão "∞ Vidas infinitas" da tela "Sem vidas".
 - **Restaurar compras** fica na Loja e em Ajustes. Ao abrir o app, ele também confere as compras na conta Google (reinstalação, outro aparelho ou reembolso).
 - No navegador e no modo debug aparece uma compra **de teste** simulada. O painel de debug tem "Vidas infinitas" e "Anúncios removidos".
+- Casos tratados (testados com uma Google Play simulada em `npm run test:purchases`): compra aprovada, cancelada, **pagamento pendente** (boleto/Pix: libera quando aprovar), **"você já tem este item"** (restaura em vez de dar erro), reembolso e loja fora do ar (não tira o que o jogador já comprou).
 - Quem já tem "Vidas infinitas" e quer o combo paga o combo inteiro (a Google Play não tem "upgrade" para produtos únicos).
 
 ---
