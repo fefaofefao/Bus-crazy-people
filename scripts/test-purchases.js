@@ -54,7 +54,8 @@ function fakePlay({ owned = [], pending = [], next = 'ok', failQuery = false, fa
     async getProducts({ productIdentifiers }) {
       if (failProducts) throw err('Billing service unavailable');
       const price = { infinite_lives: 'R$ 9,99', infinite_lives_no_ads: 'R$ 14,99' };
-      return { products: productIdentifiers.map((id) => ({ identifier: id, priceString: price[id].replace('R$', 'BRL') })) };
+      const value = { infinite_lives: 9.99, infinite_lives_no_ads: 14.99 };
+      return { products: productIdentifiers.map((id) => ({ identifier: id, priceString: price[id].replace('R$', 'BRL'), price: value[id], currencyCode: 'BRL' })) };
     },
   };
   return api;
@@ -124,7 +125,7 @@ await test('pagamento pendente (boleto/Pix): avisa e libera quando aprovar, na p
 await test('"você já tem este item" (reinstalou sem restaurar): libera em vez de dar erro', async () => {
   const m = await manager(fakePlay({ owned: ['infinite_lives'] }));
   assert.equal(m.hasInfiniteLives(), false); // save novo, ainda não restaurado
-  assert.equal(await m.buy('infinite_lives'), true);
+  assert.equal(await m.buy('infinite_lives'), 'restored'); // liberado, sem contar como venda nova
   assert.equal(m.hasInfiniteLives(), true);
 });
 
@@ -166,8 +167,10 @@ await test('Google Play indisponível na compra: erro amigável, nada liberado',
 await test('preços vêm da Google Play (moeda local); se falhar, usa o preço padrão', async () => {
   const m = await manager(fakePlay());
   assert.deepEqual(await m.prices(), { infinite_lives: 'BRL 9,99', infinite_lives_no_ads: 'BRL 14,99' });
+  assert.deepEqual(m.priceInfo('infinite_lives_no_ads'), { text: 'BRL 14,99', value: 14.99, currency: 'BRL' });
   const m2 = await manager(fakePlay({ failProducts: true }));
   assert.deepEqual(await m2.prices(), { infinite_lives: 'R$ 9,99', infinite_lives_no_ads: 'R$ 14,99' });
+  assert.deepEqual(m2.priceInfo('infinite_lives'), { text: 'R$ 9,99', value: 9.99, currency: 'BRL' });
 });
 
 await test('produto desconhecido é recusado sem chamar a loja', async () => {

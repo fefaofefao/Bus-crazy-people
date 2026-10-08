@@ -2,9 +2,9 @@
 // Usada automaticamente no app Android; no navegador o AdManager usa o TestAdProvider.
 //
 // Contrato (o mesmo do TestAdProvider):
-//   init(): Promise<void>
-//   showInterstitial(): Promise<void>
-//   showRewarded(): Promise<{ rewarded: boolean, unavailable?: boolean }>
+//   init(): Promise<{ status, canRequestAds }>      resultado do fluxo de consentimento (UMP)
+//   showInterstitial(): Promise<boolean>
+//   showRewarded(): Promise<{ rewarded: boolean, shown?: boolean, unavailable?: boolean }>
 //   privacyOptionsRequired(): boolean / showPrivacyOptions(): Promise<void>
 //
 // Os IDs ficam em src/config.js (ads.admob). O ID do APP também precisa estar
@@ -80,6 +80,7 @@ export const AdMobProvider = {
     await AdMob.initialize({ initializeForTesting: testing, testingDevices: A.testDevices });
     // Consentimento (UMP): obrigatório para usuários do EEE/Reino Unido; o formulário
     // só aparece onde a lei exige.
+    let consent = { status: 'UNKNOWN', canRequestAds: true };
     try {
       let info = await AdMob.requestConsentInfo();
       if (!info.canRequestAds && info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) {
@@ -87,12 +88,14 @@ export const AdMobProvider = {
       }
       canRequestAds = info.canRequestAds;
       privacyRequired = info.privacyOptionsRequirementStatus === 'REQUIRED'; // enum não é exportado pelo plugin
+      consent = { status: info.status, canRequestAds: info.canRequestAds };
     } catch {
       canRequestAds = true; // sem UMP disponível: segue (o SDK aplica as regras padrão)
     }
     // pré-carrega para exibir sem espera
     prepare('interstitial');
     prepare('rewarded');
+    return consent; // o AdManager repassa ao analytics (src/analytics.ts)
   },
 
   /** Devolve true se o anúncio foi exibido. Sem anúncio pronto: false (o jogo segue). */
@@ -129,7 +132,9 @@ export const AdMobProvider = {
     }
     loaded.rewarded = false;
     let rewarded = false;
+    let shown = false;
     const rewardListener = AdMob.addListener(RewardAdPluginEvents.Rewarded, () => (rewarded = true));
+    const showedListener = AdMob.addListener(RewardAdPluginEvents.Showed, () => (shown = true));
     const end = once([
       [RewardAdPluginEvents.Dismissed, 'ok'],
       [RewardAdPluginEvents.FailedToShow, 'fail'],
@@ -142,8 +147,9 @@ export const AdMobProvider = {
       failed = true;
     }
     rewardListener.then((h) => h.remove()).catch(() => {});
+    showedListener.then((h) => h.remove()).catch(() => {});
     prepare('rewarded');
-    return { rewarded, unavailable: failed && !rewarded };
+    return { rewarded, shown: shown || rewarded, unavailable: failed && !rewarded };
   },
 
   /** O usuário precisa ter como rever o consentimento (botão em Configurações). */
@@ -156,8 +162,9 @@ export const AdMobProvider = {
       await AdMob.showPrivacyOptionsForm();
       const info = await AdMob.requestConsentInfo();
       canRequestAds = info.canRequestAds;
+      return { status: info.status, canRequestAds: info.canRequestAds };
     } catch {
-      /* ignora */
+      return null;
     }
   },
 };

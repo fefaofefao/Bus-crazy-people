@@ -172,7 +172,7 @@ Consigue una pista, una plaza extra o un deshacer extra viendo un anuncio, solo 
 
 ## Segurança dos dados (Data safety)
 
-O jogo não envia nada: o progresso e as preferências ficam só no aparelho. Quem coleta dados é o **SDK do Google AdMob** (Google Mobile Ads + UMP). As compras passam pela **Google Play**.
+O progresso e as preferências ficam só no aparelho. Quem coleta dados são o **SDK do Google AdMob** (Google Mobile Ads + UMP) e, a partir da v0.7.0, o **Google Analytics for Firebase** (estatísticas anônimas de uso; ligado só com consentimento onde o GDPR exige). As compras passam pela **Google Play**. Os tipos abaixo já cobrem o Firebase: ele só acrescenta a finalidade **Análise** onde ainda não havia.
 
 | Pergunta | Resposta |
 |---|---|
@@ -190,7 +190,7 @@ Para todos os tipos abaixo: **Coletado = Sim**, **Compartilhado = Sim**, **Proce
 | Informações e desempenho do app | **Registros de falhas** · **Diagnóstico** | Análise · Prevenção de fraudes, segurança e compliance |
 | IDs do dispositivo ou outros | **IDs do dispositivo ou outros** (ID de publicidade) | Publicidade ou marketing · Análise · Prevenção de fraudes, segurança e compliance |
 
-| Informações financeiras | **Histórico de compras** (só as compras "Vidas infinitas") | Funcionalidade do app. **Coletado = Sim, Compartilhado = Não**, obrigatório para quem compra. Escolha conservadora: o pagamento é da Google Play, mas o app consulta se a compra existe (Restaurar compras). |
+| Informações financeiras | **Histórico de compras** (só as compras "Vidas infinitas") | Funcionalidade do app · **Análise** (evento de compra no Firebase). **Coletado = Sim, Compartilhado = Não**, obrigatório para quem compra. Escolha conservadora: o pagamento é da Google Play, mas o app consulta se a compra existe (Restaurar compras). |
 
 **Não marque:** nome, e-mail, contatos, fotos, localização precisa ou dados de pagamento.
 

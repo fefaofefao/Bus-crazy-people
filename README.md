@@ -168,6 +168,10 @@ Regras do **intersticial** (`CONFIG.ads.interstitial` em `src/config.js`, testad
 
 Não há banners. O consentimento **UMP** (UE/Reino Unido) aparece antes de pedir anúncios, e o botão "Opções de privacidade (anúncios)" aparece em Ajustes quando o Google exige.
 
+### Analytics (Google Analytics for Firebase)
+
+Anônimo, ligado só depois do consentimento do UMP. Eventos, regras de consentimento e como configurar o `google-services.json` (secret `GOOGLE_SERVICES_JSON_BASE64` no CI): `docs/ANALYTICS.md`. Sem o arquivo o build funciona igual, só sem analytics.
+
 ### Compras (Play Billing): Vidas infinitas
 
 Dois produtos do tipo **único (não consumível)**, com Google Play Billing real via `@capgo/native-purchases`. O plugin reconhece a compra automaticamente. A lista fica em `CONFIG.purchases.products` (`src/config.js`).

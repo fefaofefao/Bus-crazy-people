@@ -73,7 +73,7 @@ export const TestAdProvider = {
       close = button(t('testAd.close'), 'secondary', () => {
         stop();
         ov.close();
-        resolve({ rewarded: finished });
+        resolve({ rewarded: finished, shown: true });
       });
       ov.box.appendChild(close);
     });

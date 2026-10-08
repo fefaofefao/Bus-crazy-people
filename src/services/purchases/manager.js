@@ -37,6 +37,9 @@ export function createPurchaseManager(provider, { native = false } = {}) {
     })
     .catch(() => {});
 
+  // último preço conhecido de cada produto (para o evento de analytics "purchase")
+  const priceCache = Object.fromEntries(PRODUCTS.map((p) => [p.id, { text: p.price, value: p.value, currency: p.currency }]));
+
   return {
     ready,
 
@@ -50,17 +53,22 @@ export function createPurchaseManager(provider, { native = false } = {}) {
 
     /** Preços da loja (moeda local); cai no preço de CONFIG se a loja não responder. */
     async prices() {
-      const out = Object.fromEntries(PRODUCTS.map((p) => [p.id, p.price]));
       try {
         await ready;
-        Object.assign(out, await provider.prices(PRODUCTS.map((p) => p.id)));
+        const found = await provider.prices(PRODUCTS.map((p) => p.id));
+        for (const [id, info] of Object.entries(found || {})) if (info?.text) priceCache[id] = info;
       } catch {
         /* fica o preço padrão */
       }
-      return out;
+      return Object.fromEntries(PRODUCTS.map((p) => [p.id, priceCache[p.id]?.text ?? p.price]));
     },
 
-    /** true | false (cancelou) | 'pending' (pagamento pendente) | 'error' */
+    /** Valor e moeda do produto (da loja, se já consultada; senão o padrão de CONFIG). */
+    priceInfo(id) {
+      return priceCache[id] ?? { text: '', value: 0, currency: '' };
+    },
+
+    /** true | 'restored' (já era dono) | false (cancelou) | 'pending' (pagamento pendente) | 'error' */
     async buy(id) {
       if (!this.isEnabled() || !PRODUCTS.some((p) => p.id === id)) return false;
       if (this.owns(id)) return true;
@@ -76,7 +84,7 @@ export function createPurchaseManager(provider, { native = false } = {}) {
         const ids = await provider.restore().catch(() => 'error');
         if (ids !== 'error' && ids.includes(id)) {
           apply(ids, false);
-          return true;
+          return 'restored'; // liberado, mas sem pagamento novo (não conta como venda)
         }
         return 'error';
       }

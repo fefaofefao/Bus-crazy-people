@@ -1,7 +1,7 @@
 {
   "name": "bus-crazy-people",
   "private": true,
-  "version": "0.6.2",
+  "version": "0.7.0",
   "type": "module",
   "description": "Bus Crazy People – puzzle de ônibus justo (Phaser 3 + Vite + Capacitor)",
   "scripts": {
@@ -12,7 +12,7 @@
     "test:levels": "node scripts/test-levels.js",
     "test:engine": "node scripts/test-engine.js",
     "test:ads": "node scripts/test-ads.js",
-    "test": "npm run test:engine && npm run test:levels && npm run test:ads && npm run test:i18n && npm run test:progress && npm run test:purchases",
+    "test": "npm run test:engine && npm run test:levels && npm run test:ads && npm run test:i18n && npm run test:progress && npm run test:purchases && npm run test:analytics",
     "test:i18n": "node scripts/test-i18n.js",
     "cap:sync": "npm run build && node scripts/sync-admob-id.js && npx cap sync android",
     "cap:open": "npx cap open android",
@@ -21,16 +21,19 @@
     "admob:sync:release": "RELEASE=1 node scripts/sync-admob-id.js",
     "test:progress": "node scripts/test-progress.js",
     "brand": "node scripts/make-brand.js",
-    "test:purchases": "node scripts/test-purchases.js"
+    "test:purchases": "node scripts/test-purchases.js",
+    "test:analytics": "node scripts/test-analytics.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
+    "@capacitor-firebase/analytics": "^8.5.2",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.2",
     "@capacitor/haptics": "^8.0.2",
     "@capgo/native-purchases": "^8.8.1",
     "@fontsource/fredoka": "^5.3.0",
     "@fontsource/lilita-one": "^5.3.0",
+    "firebase": "^12.19.0",
     "phaser": "^3.90.0"
   },
   "devDependencies": {

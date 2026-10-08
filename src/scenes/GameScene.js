@@ -21,6 +21,7 @@ import { busTexture, drawPassenger, shade, pruneBusTextures } from '../ui/art.js
 import { toast, modal, openHelp } from '../ui/dom.js';
 import { openStore } from '../ui/store.js';
 import { PurchaseManager } from '../services/PurchaseManager.js';
+import { track } from '../analytics.ts';
 import { Storage } from '../services/Storage.js';
 import { Progress } from '../services/Progress.js';
 import { Sound } from '../services/Sound.js';
@@ -37,6 +38,8 @@ const ROT = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 };
 export class GameScene extends Phaser.Scene {
   /** derrotas por fase nesta sessão (para a dica do Tião) */
   static losses = {};
+  /** tentativas por fase nesta sessão (analytics: level_end.attempts) */
+  static attempts = {};
   constructor() {
     super('Game');
   }
@@ -65,6 +68,11 @@ export class GameScene extends Phaser.Scene {
 
     this.exempt = Lives.exempt(this.levelId);
     this.lifeSpent = false;
+    // analytics: uma tentativa = do level_start até o level_end (win | lose | quit)
+    this.started = false;
+    this.endReported = false;
+    this.pendingLose = false;
+    if (this.exempt || Lives.has()) this.startAttempt();
     if (!this.exempt && !Lives.has()) this.showNoLives();
     else if (this.level.challenge && !Progress.isCompleted(this.levelId)) this.showChallengeIntro();
     else this.showMechanicIntro();
@@ -80,7 +88,24 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.scale.off('resize', onResize);
       window.removeEventListener('fds-debug-change', onDebug);
+      // saiu da fase: derrota confirmada (saiu da tela de derrota) ou desistência
+      this.reportEnd(this.pendingLose ? 'lose' : 'quit');
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Analytics da tentativa
+  // ---------------------------------------------------------------------------
+  startAttempt() {
+    GameScene.attempts[this.levelId] = (GameScene.attempts[this.levelId] ?? 0) + 1;
+    this.started = true;
+    track('level_start', { level: this.levelId, attempt: GameScene.attempts[this.levelId] });
+  }
+
+  reportEnd(result, extra = {}) {
+    if (!this.started || this.endReported) return;
+    this.endReported = true;
+    track('level_end', { level: this.levelId, result, moves_used: this.state.moves, attempts: GameScene.attempts[this.levelId] ?? 1, ...extra });
   }
 
   /** Botão voltar do Android: volta ao menu (o progresso já está salvo). */
@@ -1152,7 +1177,7 @@ export class GameScene extends Phaser.Scene {
   // Boosters
   // ===========================================================================
   /** Pergunta antes de abrir um anúncio recompensado; a recompensa só vem no callback. */
-  offerRewarded(question, grant) {
+  offerRewarded(question, grant, placement) {
     this.modalOpen = true;
     modal({
       title: question,
@@ -1162,11 +1187,11 @@ export class GameScene extends Phaser.Scene {
           kind: 'ad',
           onClick: async (close) => {
             close();
-            await AdManager.showRewarded(() => grant());
+            await AdManager.showRewarded(() => grant(), placement);
             this.modalOpen = false;
           },
         },
-        { label: t('boosters.cancel'), kind: 'secondary', onClick: (close) => close() },
+        { label: t('boosters.cancel'), kind: 'secondary', onClick: (close) => (track('rewarded_offer_declined', { placement }), close()) },
       ],
       onClose: () => this.time.delayedCall(10, () => (this.modalOpen = false)),
     });
@@ -1179,10 +1204,14 @@ export class GameScene extends Phaser.Scene {
       this.undos--;
       this.doUndo();
     } else
-      this.offerRewarded(t('boosters.undoAd'), () => {
-        toast(t('game.undoGot'));
-        this.doUndo();
-      });
+      this.offerRewarded(
+        t('boosters.undoAd'),
+        () => {
+          toast(t('game.undoGot'));
+          this.doUndo();
+        },
+        'undo',
+      );
   }
 
   doUndo() {
@@ -1201,13 +1230,13 @@ export class GameScene extends Phaser.Scene {
     const id = nextMove(this.level, this.state);
     // sem saída: avisa ANTES de oferecer anúncio (não cobra por uma dica inútil)
     if (id == null) return toast(t('game.noMove'), 3000);
-    this.offerRewarded(t('boosters.hintAd'), () => this.showHint(id));
+    this.offerRewarded(t('boosters.hintAd'), () => this.showHint(id), 'hint');
   }
 
   onSlot() {
     if (this.busy) return;
     if (this.extraSlots >= CONFIG.game.maxExtraSlotsPerLevel) return toast(t('game.slotMax'));
-    this.offerRewarded(t('boosters.slotAd'), () => this.grantSlot());
+    this.offerRewarded(t('boosters.slotAd'), () => this.grantSlot(), 'extra_slot');
   }
 
   grantSlot() {
@@ -1229,6 +1258,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Continuou a fase depois da derrota (desfazer / vaga extra): a vida volta. */
   recoverFromLoss() {
+    this.pendingLose = false; // continuou a fase: a tentativa segue
     if (this.lifeSpent) {
       Lives.refund();
       this.lifeSpent = false;
@@ -1243,6 +1273,7 @@ export class GameScene extends Phaser.Scene {
   showNoLives(afterLoss = false) {
     if (this.modalOpen && !afterLoss) return;
     this.modalOpen = true;
+    track('out_of_lives_shown', { level: this.levelId });
     const info = () => t('lives.info', { t: Lives.format(Lives.get().nextInMs) });
     let timer = null;
     const done = (close, play) => {
@@ -1262,7 +1293,7 @@ export class GameScene extends Phaser.Scene {
           label: t('lives.ad'),
           kind: 'ad',
           onClick: async (close) => {
-            const ok = await AdManager.showRewarded(() => Lives.refill());
+            const ok = await AdManager.showRewarded(() => Lives.refill(), 'refill_lives');
             if (ok) {
               Sound.reward();
               toast(t('lives.refilled'));
@@ -1279,7 +1310,7 @@ export class GameScene extends Phaser.Scene {
                   // abre a loja; se comprar, as vidas viram infinitas e o jogo segue
                   clearInterval(timer);
                   close();
-                  openStore({ onClose: () => (Lives.has() ? done(m.close, true) : ((this.modalOpen = false), this.showNoLives(afterLoss))) });
+                  openStore({ source: 'out_of_lives', onClose: () => (Lives.has() ? done(m.close, true) : ((this.modalOpen = false), this.showNoLives(afterLoss))) });
                 },
               },
             ]
@@ -1314,10 +1345,13 @@ export class GameScene extends Phaser.Scene {
     Sound.win();
     Haptics.success();
     this.confetti.explode(60, this.L.cx, this.zones.yRoad);
+    const firstWin = !Progress.isCompleted(this.levelId);
     Progress.complete(this.levelId);
     AdManager.registerWin(this.levelId);
     const happy = happyLines(this.state);
     const stars = starsFor(happy, this.lines.length);
+    this.reportEnd('win', { stars, happy_lines: happy });
+    if (this.levelId === CONFIG.lives.freeUntilLevel && firstWin && !Storage.data.skipped.includes(this.levelId)) track('tutorial_complete');
     const res = Achievements.recordWin({
       level: this.levelId,
       stars,
@@ -1325,6 +1359,7 @@ export class GameScene extends Phaser.Scene {
       hurried: (this.level.priority || []).length,
       mechanics: this.level.mechanics || [],
     });
+    for (const a of res.unlocked) track('unlock_achievement', { achievement_id: a.id });
     if (stars === 3) Sound.combo(3);
     const last = this.levelId >= LEVEL_COUNT;
     const go = async (close, target) => {
@@ -1368,9 +1403,11 @@ export class GameScene extends Phaser.Scene {
     const tip = GameScene.losses[this.levelId] >= 2 ? `\n\n${t('tips.prefix')} ${tips[(GameScene.losses[this.levelId] + this.levelId) % tips.length]}` : '';
     const fronts = [...new Set(frontColors(this.level, this.state).filter((c) => c >= 0))].map((c) => t('colors')[c]);
     const need = slots ? `\n${fronts.length > 1 ? t('lose.needColors', { colors: fronts.join(', ') }) : t('lose.needColor', { color: fronts[0] })}` : '';
+    this.pendingLose = true; // vira level_end "lose" quando sair da fase sem se recuperar
     if (!this.exempt && !this.lifeSpent) {
       Lives.consume();
       this.lifeSpent = true;
+      if (!Lives.infinite()) track('life_lost', { level: this.levelId });
     }
     const st = Lives.get();
     const lifeLine = this.exempt
@@ -1396,7 +1433,7 @@ export class GameScene extends Phaser.Scene {
               this.modalOpen = false;
               this.recoverFromLoss();
               this.doUndo();
-            });
+            }, 'lose_undo');
             if (!ok) {
               this.modalOpen = false;
               this.showLose();
@@ -1415,7 +1452,7 @@ export class GameScene extends Phaser.Scene {
             this.modalOpen = false;
             this.recoverFromLoss();
             this.grantSlot();
-          });
+          }, 'lose_extra_slot');
           if (!ok) {
             this.modalOpen = false;
             this.showLose();
@@ -1581,6 +1618,8 @@ export class GameScene extends Phaser.Scene {
           kind: 'secondary',
           onClick: (c) => {
             c();
+            track('challenge_skipped', { level: this.levelId });
+            if (this.levelId === CONFIG.lives.freeUntilLevel && !Progress.isCompleted(this.levelId) && !Storage.data.skipped.includes(this.levelId)) track('tutorial_complete');
             Progress.skip(this.levelId);
             toast(t('game.skipped'));
             goTo(this, 'Game', { level: Math.min(next, LEVEL_COUNT) });

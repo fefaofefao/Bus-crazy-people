@@ -15,6 +15,8 @@ public class MainActivity extends BridgeActivity {
         // (EdgeToEdge cria a janela; se fosse antes, a barra "Bus Crazy People" aparecia
         // no topo com a imagem da abertura esticada).
         setTheme(R.style.AppTheme_NoActionBar);
+        // Plugin do próprio app: lê o consentimento TCF gravado pelo UMP (src/analytics.ts)
+        registerPlugin(ConsentInfoPlugin.class);
         // Ponta a ponta em todas as versões do Android (no 15+ já é o padrão).
         // As áreas seguras chegam ao jogo pelo plugin SystemBars (capacitor.config.json).
         EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT));

@@ -9,7 +9,7 @@
 //       (Google: ITEM_ALREADY_OWNED – restaurar) · 'pending' = pagamento pendente
 //       (boleto/Pix: libera quando aprovar, na próxima abertura do app)
 //   restore(): Promise<string[] | 'error'>           ids dos produtos comprados
-//   prices(ids): Promise<{ id: preço formatado }>     preço na moeda local
+//   prices(ids): Promise<{ id: { text, value, currency } }>  preço na moeda local
 //
 // O plugin reconhece (acknowledge) a compra automaticamente – obrigatório em até
 // 3 dias, senão a Google reembolsa. restorePurchases() também reconhece compras
@@ -52,7 +52,8 @@ export function createPlayBillingProvider(api = NativePurchases, types = PURCHAS
     async prices(ids) {
       const { products } = await api.getProducts({ productIdentifiers: ids, productType: types.INAPP });
       const out = {};
-      for (const p of products || []) if (p?.identifier && p.priceString && !out[p.identifier]) out[p.identifier] = p.priceString;
+      for (const p of products || [])
+        if (p?.identifier && p.priceString && !out[p.identifier]) out[p.identifier] = { text: p.priceString, value: Number(p.price) || 0, currency: p.currencyCode || '' };
       return out;
     },
 

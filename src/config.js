@@ -78,8 +78,8 @@ export const CONFIG = {
   purchases: {
     enabled: true,
     products: [
-      { id: 'infinite_lives_no_ads', grants: ['lives', 'ads'], price: 'R$ 14,99' },
-      { id: 'infinite_lives', grants: ['lives'], price: 'R$ 9,99' },
+      { id: 'infinite_lives_no_ads', grants: ['lives', 'ads'], price: 'R$ 14,99', value: 14.99, currency: 'BRL' },
+      { id: 'infinite_lives', grants: ['lives'], price: 'R$ 9,99', value: 9.99, currency: 'BRL' },
     ],
   },
 

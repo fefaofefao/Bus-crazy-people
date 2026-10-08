@@ -1,7 +1,9 @@
 // =============================================================================
 // AdManager – ÚNICO ponto de contato do jogo com anúncios.
 // -----------------------------------------------------------------------------
-//   AdManager.showRewarded(onReward): Promise<boolean>
+//   AdManager.showRewarded(onReward, placement): Promise<boolean>
+//       placement = onde o anúncio foi oferecido (analytics): undo, hint, extra_slot,
+//       lose_undo, lose_extra_slot, refill_lives
 //       onReward() é chamado SOMENTE quando o SDK confirma a recompensa.
 //       Falhou/sem internet/fechou antes: mensagem amigável, nada é perdido.
 //   AdManager.registerWin(level)            -> conta vitórias (para o intersticial)
@@ -26,13 +28,17 @@ import { Music } from './Music.js';
 import { TestAdProvider } from './ads/TestAdProvider.js';
 import { AdMobProvider } from './ads/AdMobProvider.js';
 import { toast } from '../ui/dom.js';
+import { applyConsent, track } from '../analytics.ts';
 import { t } from '../i18n/index.js';
 
 let provider = Capacitor.isNativePlatform() ? AdMobProvider : TestAdProvider;
 
 let lastInterstitialAt = Date.now();
 let showing = false;
-let ready = Promise.resolve(provider.init()).catch(() => {});
+// Ao terminar o fluxo de consentimento (UMP) do provider, o analytics decide se liga.
+let ready = Promise.resolve(provider.init())
+  .then((consent) => applyConsent(consent ?? {}))
+  .catch(() => applyConsent({}));
 
 export const AdManager = {
   /** Intersticial (uso interno: o jogo chama maybeShowInterstitial). Devolve true se exibiu. */
@@ -58,7 +64,7 @@ export const AdManager = {
   },
 
   /** Recompensado: a recompensa só é entregue no callback de recompensa do SDK. */
-  async showRewarded(onReward) {
+  async showRewarded(onReward, placement = 'other') {
     if (PurchaseManager.isAdsRemoved() && CONFIG.ads.skipRewardedWhenAdsRemoved) {
       onReward?.();
       return true;
@@ -76,6 +82,11 @@ export const AdManager = {
       showing = false;
       Music.resume();
     }
+    // analytics (no resultado do callback do AdMob)
+    if (result?.shown || result?.rewarded) track('rewarded_ad_shown', { placement });
+    if (result?.rewarded) track('rewarded_ad_watched', { placement });
+    else if (result?.shown) track('rewarded_ad_declined', { placement }); // fechou antes de ganhar
+    else if (result?.unavailable) track('rewarded_ad_unavailable', { placement });
     if (result?.rewarded) {
       try {
         onReward?.();
@@ -104,7 +115,9 @@ export const AdManager = {
   async maybeShowInterstitial(level) {
     try {
       if (!this.shouldShowInterstitial(level)) return false;
-      return await this.showInterstitial();
+      const shown = await this.showInterstitial();
+      if (shown) track('interstitial_shown', { level });
+      return shown;
     } catch {
       return false;
     }
@@ -119,7 +132,8 @@ export const AdManager = {
   },
   async showPrivacyOptions() {
     try {
-      await provider.showPrivacyOptions?.();
+      const consent = await provider.showPrivacyOptions?.();
+      if (consent) await applyConsent(consent); // o jogador mudou a escolha: analytics acompanha
     } catch {
       /* ignora */
     }

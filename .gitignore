@@ -14,3 +14,5 @@ android/.idea/
 *.keystore
 keystore.properties
 prints/
+android/app/google-services.json
+GoogleService-Info.plist

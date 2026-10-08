@@ -10,8 +10,11 @@ apply plugin: 'com.android.application'
 // ---------------------------------------------------------------------------
 def env = System.getenv()
 def releaseKeystore = env['ANDROID_KEYSTORE_PATH']
-def appVersionCode = (env['VERSION_CODE'] ?: '1') as Integer
-def appVersionName = env['VERSION_NAME'] ?: '1.0.0'
+// versionCode: o maior entre o número da execução do CI (VERSION_CODE) e o mínimo desta
+// versão do código (VERSION_CODE_MIN). Suba o mínimo a cada versão enviada à Play.
+def VERSION_CODE_MIN = 3
+def appVersionCode = Math.max((env['VERSION_CODE'] ?: '0') as Integer, VERSION_CODE_MIN)
+def appVersionName = env['VERSION_NAME'] ?: '0.7.0'
 
 // applicationId DEFINITIVO: com.fsamplabs.buscrazypeople (a Play Store não permite trocar depois do 1º envio)
 android {
@@ -70,11 +73,13 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+// Firebase (Analytics): o plugin google-services só é aplicado se android/app/google-services.json
+// existir. Sem o arquivo o build NÃO quebra: o app funciona igual, só sem enviar analytics.
+// No CI o arquivo vem do secret GOOGLE_SERVICES_JSON_BASE64 (ver .github/workflows). Nunca commitar.
+def servicesJSON = file('google-services.json')
+if (servicesJSON.exists() && servicesJSON.text?.trim()) {
+    apply plugin: 'com.google.gms.google-services'
+    logger.lifecycle("google-services.json encontrado: Firebase Analytics ativo")
+} else {
+    logger.lifecycle("google-services.json ausente: build sem Firebase Analytics (o app funciona normalmente)")
 }

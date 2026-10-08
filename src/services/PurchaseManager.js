@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------
 //   PurchaseManager.products()                 lista de CONFIG.purchases.products
 //   PurchaseManager.prices(): Promise<{ id: '¤ preço' }>  preço da loja (moeda local)
-//   PurchaseManager.buy(id): Promise<true | false | 'pending' | 'error'>
+//   PurchaseManager.buy(id): Promise<true | 'restored' | false | 'pending' | 'error'>
 // Lógica em ./purchases/manager.js (testada em scripts/test-purchases.js).
 //   PurchaseManager.restorePurchases(): Promise<true | false | 'error'>
 //   PurchaseManager.owns(id) / isAdsRemoved() / hasInfiniteLives(): boolean

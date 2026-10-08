@@ -108,7 +108,7 @@ Página 2 – marque estes tipos:
 | Informações e desempenho do app → **Registros de falhas** | Sim | Sim | Obrigatório | Análise · Prevenção de fraudes, segurança e compliance |
 | Informações e desempenho do app → **Diagnóstico** | Sim | Sim | Obrigatório | Análise · Prevenção de fraudes, segurança e compliance |
 | IDs do dispositivo ou outros → **IDs do dispositivo ou outros** | Sim | Sim | Obrigatório | Publicidade ou marketing · Análise · Prevenção de fraudes, segurança e compliance |
-| Informações financeiras → **Histórico de compras** | Sim | **Não** | Obrigatório | Funcionalidade do app |
+| Informações financeiras → **Histórico de compras** | Sim | **Não** | Obrigatório | Funcionalidade do app · Análise |
 
 Em todos: **Processado de forma efêmera = Não**. Não marque nome, e-mail, contatos, fotos, localização precisa nem dados de pagamento.
 
