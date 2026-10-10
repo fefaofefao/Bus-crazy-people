@@ -270,7 +270,7 @@ docs/                       formato das fases, arte, roadmap, app-ads.txt
 STORE_LISTING.md            textos da loja + rascunho de Segurança dos dados
 ```
 
-Identidade visual (paleta, tipografia, mascote Seu Tião, logo, componentes): `docs/IDENTIDADE.md`. Para trocar a arte, veja `docs/ARTE.md`. Para as próximas versões (desafio diário, Play Games, novas mecânicas), veja `docs/ROADMAP.md`.
+Guia de tecnologia e boas práticas para outros jogos: `docs/GUIA_DESENVOLVIMENTO.md`. Identidade visual (paleta, tipografia, mascote Seu Tião, logo, componentes): `docs/IDENTIDADE.md`. Para trocar a arte, veja `docs/ARTE.md`. Para as próximas versões (desafio diário, Play Games, novas mecânicas), veja `docs/ROADMAP.md`.
 
 ## 6. Critérios de aceite do MVP
 
