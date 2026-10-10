@@ -47,7 +47,7 @@ export class MenuScene extends Phaser.Scene {
     g.fillStyle(C.curb, 1);
     g.fillRect(0, roadY + 36 * u, L.W, 6 * u);
     drawCalcadao(g, 0, roadY + 42 * u, L.W, L.H, u);
-    this.time.addEvent({ delay: 1100, loop: true, callback: () => this.spawnBus(L, u, roadY) });
+    this.time.addEvent({ delay: 2600, loop: true, callback: () => this.spawnBus(L, u, roadY) });
     this.spawnBus(L, u, roadY);
     this.animateScenery(L, u, horizon, roadY);
 
@@ -84,7 +84,7 @@ export class MenuScene extends Phaser.Scene {
     new Button(this, L.cx + third + 10 * u, rowY, t('menu.settings'), { ...small, width: third, icon: 'gear', color: C.buttonSecondary }, () => goTo(this, 'Settings'));
 
     // vidas (toque: mostra quando a próxima volta)
-    livesPill(this, L.cx, playY - 64 * u, u);
+    livesPill(this, L.cx, playY - 40 * u - 34 * u, u); // acima do Jogar, sem encostar (o Jogar pulsa)
 
     this.add
       .text(L.cx, L.bottom - 10 * u, `v${__APP_VERSION__} · fases v${LEVELS_VERSION} · FSamp Labs`, { fontFamily: DISPLAY, fontSize: `${11 * u}px`, color: C.inkCss })
@@ -111,8 +111,9 @@ export class MenuScene extends Phaser.Scene {
     });
     // motor ligado: tremidinha + respiração da suspensão
     this.time.delayedCall(820, () => {
-      this.tweens.add({ targets: bus, y: by - 1.6 * u, duration: 90, yoyo: true, repeat: -1 });
-      this.tweens.add({ targets: bus, scaleY: baseScale * 0.985, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      // (mais calmo: antes tremia a cada 90 ms)
+      this.tweens.add({ targets: bus, y: by - 1 * u, duration: 220, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.tweens.add({ targets: bus, scaleY: baseScale * 0.988, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       // letreiro flutua devagar
       this.tweens.add({ targets: logo.list.slice(1), y: '-=5', duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     });
@@ -123,7 +124,7 @@ export class MenuScene extends Phaser.Scene {
       callback: () => {
         const x = logo.x + bus.displayWidth * 0.36;
         const y = logo.y + by + bus.displayHeight * 0.44;
-        const puff = this.add.circle(x, y, 6 * u, 0xffffff, 0.7).setDepth(5);
+        const puff = this.add.circle(x, y, 6 * u, 0xffffff, 0.55).setDepth(-1); // atrás do letreiro
         this.tweens.add({ targets: puff, x: x + 26 * u, y: y - 10 * u, scale: 2.4, alpha: 0, duration: 1100, ease: 'Sine.easeOut', onComplete: () => puff.destroy() });
       },
     });
@@ -221,6 +222,7 @@ export class MenuScene extends Phaser.Scene {
     const y = roadY + (right ? 18 : -14) * u;
     const img = this.add.image(right ? -len : L.W + len, y, key).setRotation(right ? Math.PI / 2 : -Math.PI / 2);
     img.setDepth(-4);
-    this.tweens.add({ targets: img, x: right ? L.W + len : -len, duration: 4200 + Math.random() * 1800, onComplete: () => img.destroy() });
+    // trânsito calmo de orla: ~9–12 s para cruzar a tela (antes 4–6 s)
+    this.tweens.add({ targets: img, x: right ? L.W + len : -len, duration: 9000 + Math.random() * 3000, ease: 'Linear', onComplete: () => img.destroy() });
   }
 }

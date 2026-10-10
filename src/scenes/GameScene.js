@@ -14,7 +14,7 @@ import { Achievements } from '../services/Achievements.js';
 import { Lives } from '../services/Lives.js';
 import { getLevel, LEVEL_COUNT } from '../levels/index.js';
 import { getLayout, FONT, DISPLAY } from '../ui/layout.js';
-import { drawCalcadao } from '../ui/scenery.js';
+import { drawCalcadao, mix } from '../ui/scenery.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
 import { busTexture, drawPassenger, shade, pruneBusTextures } from '../ui/art.js';
@@ -235,7 +235,7 @@ export class GameScene extends Phaser.Scene {
     g.fillGradientStyle(C.sunsetTop, C.sunsetTop, C.sunsetMid, C.sunsetMid, 1);
     g.fillRect(0, 0, L.W, y1);
     // Pão de Açúcar ao fundo
-    g.fillStyle(C.hill, 0.55);
+    g.fillStyle(mix(C.hill, C.sunsetMid, 0.45), 1); // opaco: os dois morros não "vazam" um no outro
     const hill = (cx, w, h) => {
       const pts = [];
       for (let i = 0; i <= 20; i++) {

@@ -458,33 +458,68 @@ body {
   color: #4a5578;
   font-weight: 600;
 }
+/* Botões das janelas: mesma pele "bala de goma" do Button do jogo (src/ui/buttonSkin.js):
+   contorno azul-marinho, lábio 3D na própria cor, degradê contínuo e brilho suave.
+   Cada variante só troca --c (a cor do botão). */
 .fds-btn {
+  --c: var(--blue);
+  position: relative;
+  isolation: isolate; /* o brilho fica atrás do texto */
+  overflow: hidden;
   font-family: 'Lilita One', Fredoka, sans-serif;
   font-weight: 400;
   font-size: 21px;
   letter-spacing: 0.3px;
   border: 3px solid var(--ink);
   border-radius: 18px;
-  background: var(--blue);
-  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 5px 0 var(--ink);
+  background-color: var(--c);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c) 78%, #fff) 0%,
+    color-mix(in srgb, var(--c) 96%, #fff) 45%,
+    color-mix(in srgb, var(--c) 90%, #000) 100%
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -5px 0 color-mix(in srgb, var(--c) 68%, #000),
+    0 4px 0 var(--ink),
+    0 8px 12px rgba(27, 35, 64, 0.3);
   text-shadow: -1.5px -1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px 1.5px 0 var(--ink);
   margin-top: 14px;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+/* brilho que some aos poucos (sem borda dura) */
+.fds-btn::before {
+  content: '';
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  top: 6%;
+  height: 50%;
+  border-radius: 14px 14px 10px 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 60%, rgba(255, 255, 255, 0));
+  pointer-events: none;
+  z-index: -1;
 }
 .fds-btn:active {
   transform: translateY(3px);
-  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 2px 0 var(--ink);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 color-mix(in srgb, var(--c) 68%, #000),
+    0 1px 0 var(--ink),
+    0 3px 6px rgba(27, 35, 64, 0.3);
 }
 .fds-btn.secondary {
-  background: #3a4670;
+  --c: #3a4670;
 }
 .fds-btn.ok {
-  background: var(--green);
+  --c: var(--green);
 }
 .fds-btn.ad {
-  background: var(--orange);
+  --c: var(--orange);
 }
 .fds-btn.danger {
-  background: #e5484d;
+  --c: #e5484d;
 }
 .fds-modal .fds-box {
   border-top: 4px solid var(--ink);

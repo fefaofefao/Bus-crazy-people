@@ -107,10 +107,12 @@ export class LevelsScene extends Phaser.Scene {
       } else if (isNext) Icons.play(badge, 0, tile * 0.26, 14 * u, 0xffffff);
       btn.add(badge);
       if (ch) {
+        // anel dourado do Desafio: contorna o botão inteiro (corpo + base 3D), sem cortar a borda
         const hb = this.add.graphics();
-        hb.lineStyle(3 * u, C.accent, 1);
-        hb.strokeRoundedRect(-tile / 2 + 1.5 * u, -tile / 2 + 1.5 * u, tile - 3 * u, tile - 3 * u, 17 * u);
-        btn.add(hb);
+        const m = 4 * u;
+        hb.lineStyle(3.5 * u, C.accent, 1);
+        hb.strokeRoundedRect(-tile / 2 - m, -tile / 2 - m, tile + m * 2, tile * 1.11 + m * 2, 22 * u);
+        btn.addAt(hb, 0);
         if (!completed) {
           const st = this.add.text(0, tile * 0.27, '★', { fontFamily: FONT, fontSize: `${15 * u}px`, color: '#ffe28a' }).setOrigin(0.5);
           btn.add(st);

@@ -6,6 +6,23 @@ import { FONT, DISPLAY } from './layout.js';
 import { Icons } from './icons.js';
 import { Sound } from '../services/Sound.js';
 import { Haptics } from '../services/Haptics.js';
+import { drawButtonSkin } from './buttonSkin.js';
+
+/** Textura da pele do botão (cache por tamanho/cor/estado). Devolve { key, pad }. */
+function skinTexture(scene, w, h, color, radius, pressed) {
+  const W = Math.round(w);
+  const H = Math.round(h);
+  const pad = Math.ceil(Math.max(6, h * 0.22));
+  const key = `btnskin_${W}_${H}_${color}_${Math.round(radius)}_${pressed ? 1 : 0}`;
+  if (!scene.textures.exists(key)) {
+    const tex = scene.textures.createCanvas(key, W + pad * 2, Math.ceil(H * 1.15) + pad * 2);
+    const ctx = tex.getContext();
+    ctx.translate(pad, pad);
+    drawButtonSkin(ctx, W, H, color, { radius, pressed, ink: CONFIG.colors.inkCss, scale: Math.max(1, h / 58) });
+    tex.refresh();
+  }
+  return { key, pad };
+}
 
 /**
  * Botão grande com cantos arredondados.
@@ -21,7 +38,7 @@ export class Button extends Phaser.GameObjects.Container {
     this.opts.textColor ??= CONFIG.colors.buttonText;
     this.onClick = onClick;
     this.enabled = true;
-    this.bg = scene.add.graphics();
+    this.bg = scene.add.image(0, 0, '__DEFAULT').setOrigin(0, 0);
     this.iconG = scene.add.graphics();
     this.label = scene.add
       .text(0, 0, label, {
@@ -46,11 +63,13 @@ export class Button extends Phaser.GameObjects.Container {
     this.on('pointerdown', () => {
       if (!this.enabled) return;
       this.pressed = true;
-      scene.tweens.add({ targets: this, scale: 0.95, duration: CONFIG.anim.buttonPress });
+      this.draw(); // pele "apertada": o corpo afunda no lábio
+      scene.tweens.add({ targets: this, scale: 0.97, duration: CONFIG.anim.buttonPress });
     });
     const release = (fire) => {
       if (!this.pressed) return;
       this.pressed = false;
+      this.draw();
       scene.tweens.add({ targets: this, scale: 1, duration: CONFIG.anim.buttonPress });
       if (fire && this.enabled) {
         Sound.button();
@@ -66,21 +85,12 @@ export class Button extends Phaser.GameObjects.Container {
   draw() {
     const { width: w, height: h, color, radius, icon, iconArg, badge } = this.opts;
     const alpha = this.enabled ? 1 : 0.45;
-    this.bg.clear();
-    // estilo "adesivo": sombra dura azul-marinho, contorno grosso e brilho no topo
-    const ink = CONFIG.colors.ink;
-    const ow = Math.max(2, Math.min(w, h) * 0.06);
-    const r = Math.min(radius, h / 2);
-    this.bg.fillStyle(ink, alpha);
-    this.bg.fillRoundedRect(-w / 2, -h / 2 + h * 0.1, w, h, r);
-    this.bg.fillStyle(ink, alpha);
-    this.bg.fillRoundedRect(-w / 2, -h / 2, w, h, r);
-    this.bg.fillStyle(color, alpha);
-    this.bg.fillRoundedRect(-w / 2 + ow, -h / 2 + ow, w - ow * 2, h - ow * 2, Math.max(2, r - ow));
-    this.bg.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(18).color, alpha);
-    this.bg.fillRoundedRect(-w / 2 + ow, h / 2 - ow - h * 0.16, w - ow * 2, h * 0.16, { tl: 0, tr: 0, bl: Math.max(2, r - ow), br: Math.max(2, r - ow) });
-    this.bg.fillStyle(0xffffff, 0.22 * alpha);
-    this.bg.fillRoundedRect(-w / 2 + ow * 2.2, -h / 2 + ow * 1.6, w - ow * 4.4, h * 0.2, Math.max(2, (r - ow) * 0.6));
+    // pele "bala de goma" (src/ui/buttonSkin.js): contorno azul-marinho, lábio 3D na
+    // própria cor, degradê contínuo e brilho que some aos poucos
+    const pressed = !!this.pressed;
+    const { key, pad } = skinTexture(this.scene, w, h, color, Math.min(radius, h / 2), pressed);
+    this.bg.setTexture(key).setPosition(-w / 2 - pad, -h / 2 - pad).setAlpha(alpha);
+    const dy = pressed ? Math.round(h * 0.07) : 0; // conteúdo desce junto com o corpo
 
     // ícone + texto centralizados juntos
     const fs = this.opts.fontSize;
@@ -95,7 +105,8 @@ export class Button extends Phaser.GameObjects.Container {
       Icons[icon](this.iconG, startX + iconSize / 2, 0, iconSize, iconColor, iconArg);
     }
     this.label.setX(startX + (icon ? iconSize + gap : 0) + textW / 2);
-    this.label.setY(-h * 0.02);
+    this.label.setY(-h * 0.02 + dy);
+    this.iconG.setY(dy);
     this.iconG.setAlpha(this.enabled ? 1 : 0.6);
 
     // selo à direita
@@ -112,6 +123,7 @@ export class Button extends Phaser.GameObjects.Container {
       this.badgeG.fillCircle(bx, by, r * 0.92);
       this.badgeT.setColor(CONFIG.colors.inkCss);
       this.badgeT.setPosition(bx, by - r * 0.04);
+      this.badgeG.setY(0);
     }
   }
 

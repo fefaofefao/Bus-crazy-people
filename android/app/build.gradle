@@ -12,9 +12,9 @@ def env = System.getenv()
 def releaseKeystore = env['ANDROID_KEYSTORE_PATH']
 // versionCode: o maior entre o número da execução do CI (VERSION_CODE) e o mínimo desta
 // versão do código (VERSION_CODE_MIN). Suba o mínimo a cada versão enviada à Play.
-def VERSION_CODE_MIN = 3
+def VERSION_CODE_MIN = 4
 def appVersionCode = Math.max((env['VERSION_CODE'] ?: '0') as Integer, VERSION_CODE_MIN)
-def appVersionName = env['VERSION_NAME'] ?: '0.7.0'
+def appVersionName = env['VERSION_NAME'] ?: '0.7.1'
 
 // applicationId DEFINITIVO: com.fsamplabs.buscrazypeople (a Play Store não permite trocar depois do 1º envio)
 android {

@@ -4,6 +4,12 @@ import { CONFIG } from '../config.js';
 
 const C = CONFIG.colors;
 
+/** Mistura duas cores 0xRRGGBB (t = 0 -> a, 1 -> b). Cores opacas evitam sobreposições aparentes. */
+export function mix(a, b, t) {
+  const ch = (s) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t) << s;
+  return ch(16) | ch(8) | ch(0);
+}
+
 /**
  * Céu de pôr do sol com raios girando, Pão de Açúcar e mar.
  * horizon = y (px) da linha do mar. Devolve { rays } para animar.
@@ -35,14 +41,19 @@ export function drawSunset(scene, L, horizon, { rays = true } = {}) {
     rayG = scene.add.image(L.cx, horizon * 0.72, key).setDepth(-9).setDisplaySize(R * 2, R * 2);
     scene.tweens.add({ targets: rayG, angle: 360, duration: 90000, repeat: -1 });
   }
-  // sol
+  // sol (opaco, com halo suave) – fica atrás dos morros
   const s = scene.add.graphics().setDepth(-8);
-  s.fillStyle(0xfff1b8, 0.9);
-  s.fillCircle(L.cx + L.W * 0.18, horizon * 0.78, L.W * 0.13);
-  // Pão de Açúcar e morros
+  const sx = L.cx + L.W * 0.18;
+  const sy = horizon * 0.78;
+  const sr = L.W * 0.13;
+  s.fillStyle(0xfff1b8, 0.18);
+  s.fillCircle(sx, sy, sr * 1.35);
+  s.fillStyle(0xfff1b8, 1);
+  s.fillCircle(sx, sy, sr);
+  // Pão de Açúcar e morros: cores OPACAS (antes eram translúcidos e um aparecia através do outro)
   const m = scene.add.graphics().setDepth(-7);
-  m.fillStyle(C.hill, 0.85);
-  const hill = (x, w, h) => {
+  const hill = (x, w, h, color) => {
+    m.fillStyle(color, 1);
     const pts = [];
     for (let i = 0; i <= 24; i++) {
       const t = i / 24;
@@ -51,9 +62,11 @@ export function drawSunset(scene, L, horizon, { rays = true } = {}) {
     pts.push({ x: x + w / 2, y: horizon + 2 }, { x: x - w / 2, y: horizon + 2 });
     m.fillPoints(pts, true);
   };
-  hill(L.W * 0.08, L.W * 0.5, L.W * 0.18);
-  hill(L.W * 0.8, L.W * 0.32, L.W * 0.36); // Pão de Açúcar
-  hill(L.W * 0.62, L.W * 0.22, L.W * 0.17); // Morro da Urca
+  const far = mix(C.hill, C.sunsetLow, 0.28); // mais longe = mais "enevoado"
+  const near = mix(C.hill, C.sunsetLow, 0.12);
+  hill(L.W * 0.08, L.W * 0.5, L.W * 0.18, far);
+  hill(L.W * 0.8, L.W * 0.32, L.W * 0.36, far); // Pão de Açúcar
+  hill(L.W * 0.62, L.W * 0.22, L.W * 0.17, near); // Morro da Urca (na frente)
   // bondinho
   m.lineStyle(Math.max(1, L.W * 0.003), C.ink, 0.6);
   m.lineBetween(L.W * 0.62, horizon - L.W * 0.17, L.W * 0.8, horizon - L.W * 0.36);
