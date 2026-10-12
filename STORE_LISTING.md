@@ -9,6 +9,7 @@ Imagens geradas por `scripts/store-assets.cjs`:
 | Ícone 512×512 | `store/icon-512.png` |
 | Recurso gráfico 1024×500 | `store/feature-graphic-pt-BR.png`, `-en-US.png` e `-es-419.png` |
 | Capturas 1080×1920 (8 por idioma) | `store/screenshots/pt-BR/`, `en-US/` e `es-419/` |
+| Capturas promocionais com cenário e título (8 por idioma) — **use estas na ficha** | `store/promo/pt-BR/`, `en-US/` e `es-419/` (gerar de novo: `node scripts/make-store-promo.mjs`) |
 
 ---
 
