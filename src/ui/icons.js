@@ -329,6 +329,20 @@ export const Icons = {
     for (const dx of [-0.12, 0, 0.12]) g.fillRect(x + dx * s - s * 0.025, y - s * 0.1, s * 0.05, s * 0.44);
   },
 
+  /** Sino (aviso de vidas cheias); riscado quando desligado. */
+  bell(g, x, y, s, color, on = true) {
+    g.fillStyle(color, 1);
+    g.fillCircle(x, y - s * 0.12, s * 0.27);
+    g.fillRect(x - s * 0.27, y - s * 0.12, s * 0.54, s * 0.3);
+    g.fillRoundedRect(x - s * 0.4, y + s * 0.14, s * 0.8, s * 0.12, s * 0.06);
+    g.fillCircle(x, y - s * 0.42, s * 0.07);
+    g.fillCircle(x, y + s * 0.34, s * 0.09);
+    if (!on) {
+      g.lineStyle(s * 0.1, color, 1);
+      g.lineBetween(x - s * 0.42, y - s * 0.42, x + s * 0.42, y + s * 0.42);
+    }
+  },
+
   clock(g, x, y, s, color) {
     g.fillStyle(color, 1);
     g.fillCircle(x, y, s * 0.46);

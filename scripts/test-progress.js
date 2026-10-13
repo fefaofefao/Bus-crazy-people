@@ -117,4 +117,51 @@ test('compras: vidas infinitas não acabam; combo também tira anúncios; zerar 
   assert.equal(Storage.data.adsRemoved, true);
 });
 
+{
+  globalThis.document ??= { documentElement: {} }; // i18n marca o idioma da página
+  const { Offers, localDay } = await import('../src/services/Offers.js');
+  const { fullAt } = await import('../src/services/Notify.js');
+  test('oferta de vidas infinitas: 3ª derrota do dia, uma vez por dia, nunca para quem já tem', () => {
+    const d1 = new Date(2026, 9, 13, 10, 0);
+    const d1late = new Date(2026, 9, 13, 23, 59);
+    const d2 = new Date(2026, 9, 14, 0, 1);
+    assert.equal(localDay(d1), '2026-10-13');
+    Offers.recordLoss(d1);
+    Offers.recordLoss(d1);
+    assert.equal(Offers.shouldOffer(d1), false);
+    Offers.recordLoss(d1late);
+    assert.equal(Offers.shouldOffer(d1late), true);
+    Offers.markOffered(d1late);
+    assert.equal(Offers.shouldOffer(d1late), false);
+    Offers.recordLoss(d1late);
+    assert.equal(Offers.shouldOffer(d1late), false); // só uma vez por dia
+    assert.equal(Offers.shouldOffer(d2), false); // dia novo zera
+    for (let k = 0; k < 3; k++) Offers.recordLoss(d2);
+    assert.equal(Storage.data.daily.losses, 3);
+    assert.equal(Offers.shouldOffer(d2), true);
+    Storage.update((d) => (d.infiniteLives = true));
+    assert.equal(Offers.shouldOffer(d2), false);
+    Storage.update((d) => (d.daily = 'lixo'));
+    assert.deepEqual(Storage.data.daily, { day: '', losses: 0, offered: false });
+  });
+  test('aviso de vidas: horário em que as 3 vidas enchem; desligado por padrão', () => {
+    assert.equal(Storage.data.settings.notify, false);
+    const realNow = Date.now;
+    const T = 1_800_000_000_000;
+    Date.now = () => T;
+    const min = 60 * 1000;
+    assert.equal(fullAt(T), 0); // cheias
+    Lives.consume(); // 2 vidas: enche em 20 min
+    assert.equal(fullAt(T), T + 20 * min);
+    Lives.consume();
+    Lives.consume(); // 0 vidas: enche em 60 min
+    assert.equal(fullAt(T), T + 60 * min);
+    Date.now = () => T + 25 * min; // 1 vida voltou, a próxima em 15 min
+    assert.equal(fullAt(T + 25 * min), T + 60 * min);
+    Storage.update((d) => (d.infiniteLives = true));
+    assert.equal(fullAt(T + 25 * min), 0);
+    Date.now = realNow;
+  });
+}
+
 console.log(`✓ ${n} testes de estrelas e conquistas passaram (${LIST.length} conquistas)`);

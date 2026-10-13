@@ -16,6 +16,7 @@ import { LevelsScene } from './scenes/LevelsScene.js';
 import { AchievementsScene } from './scenes/AchievementsScene.js';
 import { initDebug } from './debug.js';
 import { initBackButton } from './services/BackButton.js';
+import { Notify } from './services/Notify.js';
 
 const parent = document.getElementById('game');
 
@@ -99,3 +100,4 @@ window.addEventListener('orientationchange', onResize);
 window.__game = game; // útil para depuração no console
 initDebug(game);
 initBackButton(game);
+Notify.init();

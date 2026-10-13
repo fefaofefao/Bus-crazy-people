@@ -521,6 +521,10 @@ body {
 .fds-btn.danger {
   --c: #e5484d;
 }
+/* oferta da loja (vidas infinitas) – rosa-carnaval */
+.fds-btn.store {
+  --c: #ff4f8b;
+}
 .fds-modal .fds-box {
   border-top: 4px solid var(--ink);
   position: relative;

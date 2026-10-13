@@ -190,6 +190,17 @@ export default {
     challenge: 'Challenge',
     locked: 'Beat the previous level to unlock.',
   },
+  notify: {
+    channel: 'Lives',
+    title: 'Your lives are back! 🚌',
+    body: 'All 3 lives are full. The bus stop is waiting for you!',
+    ask: 'Notify me when they’re back',
+    on: 'Done! We’ll let you know when your lives are full.',
+    denied: 'Notifications are blocked. Allow them in Android settings to get the alert.',
+  },
+  offers: {
+    thirdLoss: 'Rough day in traffic? With Infinite lives you play without waiting. One-time purchase, yours forever.',
+  },
   settings: {
     title: 'Settings',
     preferences: 'PREFERENCES',
@@ -204,6 +215,8 @@ export default {
     colorblindOn: 'Colorblind mode: On',
     colorblindOff: 'Colorblind mode: Off',
     language: 'Language: {name}',
+    notifyOn: 'Lives alert: On',
+    notifyOff: 'Lives alert: Off',
     restore: 'Restore purchases',
     reset: 'Reset progress',
     resetConfirm: 'Erase all level progress? Language, settings and purchases are kept.',

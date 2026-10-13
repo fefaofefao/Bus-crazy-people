@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -46,4 +47,10 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- ID de publicidade (AdMob). Obrigatório declarar no Android 13+ e no Play Console -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+    <!-- Notificação local "Suas vidas voltaram!" (opcional; o jogador permite no Android 13+).
+         Alarme EXATO não é necessário (a Play restringe essa permissão): o plugin
+         @capacitor/local-notifications a declara, então ela é removida aqui e o
+         aviso usa o agendamento aproximado do Android. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
 </manifest>

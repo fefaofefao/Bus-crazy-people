@@ -191,6 +191,17 @@ export default {
     challenge: 'Desafio',
     locked: 'Complete a fase anterior para liberar.',
   },
+  notify: {
+    channel: 'Vidas',
+    title: 'Suas vidas voltaram! 🚌',
+    body: 'As 3 vidas estão cheias. O ponto de ônibus está esperando por você!',
+    ask: 'Avise quando voltarem',
+    on: 'Pronto! Avisamos quando as vidas encherem.',
+    denied: 'Notificações bloqueadas. Permita nas configurações do Android para receber o aviso.',
+  },
+  offers: {
+    thirdLoss: 'Dia difícil no trânsito? Com Vidas infinitas você joga sem esperar. Compra única, vale para sempre.',
+  },
   settings: {
     title: 'Ajustes',
     preferences: 'PREFERÊNCIAS',
@@ -205,6 +216,8 @@ export default {
     colorblindOn: 'Modo daltônico: Ligado',
     colorblindOff: 'Modo daltônico: Desligado',
     language: 'Idioma: {name}',
+    notifyOn: 'Aviso de vidas: Ligado',
+    notifyOff: 'Aviso de vidas: Desligado',
     restore: 'Restaurar compras',
     reset: 'Zerar progresso',
     resetConfirm: 'Apagar todo o progresso das fases? Idioma, ajustes e compras são mantidos.',

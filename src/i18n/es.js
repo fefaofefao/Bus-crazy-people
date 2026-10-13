@@ -190,6 +190,17 @@ export default {
     challenge: 'Desafío',
     locked: 'Supera el nivel anterior para desbloquearlo.',
   },
+  notify: {
+    channel: 'Vidas',
+    title: '¡Tus vidas volvieron! 🚌',
+    body: 'Las 3 vidas están llenas. ¡La parada de autobús te espera!',
+    ask: 'Avísame cuando vuelvan',
+    on: '¡Listo! Te avisamos cuando las vidas estén llenas.',
+    denied: 'Notificaciones bloqueadas. Permítelas en los ajustes de Android para recibir el aviso.',
+  },
+  offers: {
+    thirdLoss: '¿Día difícil en el tráfico? Con Vidas infinitas juegas sin esperar. Compra única, para siempre.',
+  },
   settings: {
     title: 'Ajustes',
     preferences: 'PREFERENCIAS',
@@ -204,6 +215,8 @@ export default {
     colorblindOn: 'Modo daltónico: Activado',
     colorblindOff: 'Modo daltónico: Desactivado',
     language: 'Idioma: {name}',
+    notifyOn: 'Aviso de vidas: Activado',
+    notifyOff: 'Aviso de vidas: Desactivado',
     restore: 'Restaurar compras',
     reset: 'Borrar progreso',
     resetConfirm: '¿Borrar todo el progreso de los niveles? Se mantienen idioma, ajustes y compras.',

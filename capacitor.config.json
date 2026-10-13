@@ -12,6 +12,10 @@
       "insetsHandling": "native",
       "initialViewportFitValueHint": "cover",
       "style": "DARK"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_bus",
+      "iconColor": "#FFC72C"
     }
   }
 }

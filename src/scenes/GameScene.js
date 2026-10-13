@@ -20,6 +20,8 @@ import { Icons } from '../ui/icons.js';
 import { busTexture, drawPassenger, shade, pruneBusTextures } from '../ui/art.js';
 import { toast, modal, openHelp } from '../ui/dom.js';
 import { openStore } from '../ui/store.js';
+import { Offers } from '../services/Offers.js';
+import { Notify } from '../services/Notify.js';
 import { PurchaseManager } from '../services/PurchaseManager.js';
 import { track } from '../analytics.ts';
 import { Storage } from '../services/Storage.js';
@@ -68,6 +70,7 @@ export class GameScene extends Phaser.Scene {
 
     this.exempt = Lives.exempt(this.levelId);
     this.lifeSpent = false;
+    this.loseOffer = false; // oferta de vidas infinitas nesta derrota (3ª do dia)
     // analytics: uma tentativa = do level_start até o level_end (win | lose | quit)
     this.started = false;
     this.endReported = false;
@@ -1315,6 +1318,19 @@ export class GameScene extends Phaser.Scene {
               },
             ]
           : []),
+        ...(Notify.available() && !Notify.enabled()
+          ? [
+              {
+                label: `🔔 ${t('notify.ask')}`,
+                kind: 'secondary',
+                onClick: async (close, btn) => {
+                  const ok = await Notify.enable('out_of_lives');
+                  toast(ok ? t('notify.on') : t('notify.denied'));
+                  if (ok) btn?.remove();
+                },
+              },
+            ]
+          : []),
         { label: t('lives.back'), kind: 'secondary', onClick: (close) => (done(close, false), goTo(this, 'Levels')) },
       ],
       closable: false,
@@ -1340,6 +1356,101 @@ export class GameScene extends Phaser.Scene {
     else if (this.state.status === 'lost') this.showLose();
   }
 
+  /**
+   * Comemoração antes da janela de vitória: as estrelas caem uma a uma no topo
+   * da tela, com som e confete (as não conquistadas ficam cinza). Um toque pula.
+   */
+  celebrate(stars, caption, done) {
+    const L = this.L;
+    const u = L.u;
+    const D = 500; // acima do HUD
+    const objs = [];
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      this.tweens.add({ targets: objs, alpha: 0, duration: 180, onComplete: () => objs.forEach((o) => o.destroy()) });
+      done();
+    };
+    const dim = this.add.rectangle(0, 0, L.W, L.H, C.ink, 0).setOrigin(0).setDepth(D).setInteractive();
+    dim.on('pointerup', finish);
+    objs.push(dim);
+    this.tweens.add({ targets: dim, fillAlpha: 0.5, duration: 220 });
+    const y = L.top + Math.min(L.usableH * 0.26, 210 * u);
+    const sizes = [78, 98, 78].map((v) => v * u);
+    const xs = [-92, 0, 92].map((dx) => L.cx + dx * u);
+    const ys = [y + 12 * u, y - 6 * u, y + 12 * u];
+    for (let k = 0; k < 3; k++) {
+      const slot = this.add.image(xs[k], ys[k], this.starTexture(sizes[k], false)).setDepth(D + 1).setScale(0);
+      objs.push(slot);
+      this.tweens.add({ targets: slot, scale: 1, duration: 240, delay: 80 + k * 60, ease: 'Back.Out' });
+    }
+    const txt = this.add
+      .text(L.cx, y + 78 * u, caption, { fontFamily: DISPLAY, fontSize: `${24 * u}px`, color: '#ffffff', stroke: C.inkCss, strokeThickness: 7 * u, align: 'center' })
+      .setOrigin(0.5)
+      .setDepth(D + 1)
+      .setAlpha(0);
+    objs.push(txt);
+    this.tweens.add({ targets: txt, alpha: 1, y: y + 70 * u, duration: 260, delay: 200 });
+    for (let k = 0; k < stars; k++) {
+      const st = this.add.image(xs[k], ys[k] - 40 * u, this.starTexture(sizes[k], true)).setDepth(D + 2).setScale(2.4).setAlpha(0).setAngle(-40);
+      objs.push(st);
+      this.tweens.add({
+        targets: st,
+        scale: 1,
+        alpha: 1,
+        angle: 0,
+        y: ys[k],
+        duration: 300,
+        delay: 420 + k * 380,
+        ease: 'Back.Out',
+        onComplete: () => {
+          if (finished) return;
+          Sound.star(k);
+          Haptics.tap();
+          this.confetti.setDepth(D + 3);
+          this.confetti.explode(14 + k * 6, xs[k], ys[k]);
+          this.tweens.add({ targets: st, scale: 1.12, duration: 110, yoyo: true });
+          if (k === 2) Sound.combo(3);
+        },
+      });
+    }
+    this.time.delayedCall(420 + Math.max(stars, 1) * 380 + 650, finish);
+  }
+
+  /** Textura de estrela com contorno (cache por tamanho e cor). */
+  starTexture(size, on) {
+    const key = `cstar_${Math.round(size)}_${on ? 1 : 0}`;
+    if (this.textures.exists(key)) return key;
+    const pad = Math.ceil(size * 0.12);
+    const w = Math.ceil(size + pad * 2);
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    const pts = (cx, cy, r) => {
+      const out = [];
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI) / 5;
+        const rr = i % 2 ? r * 0.48 : r;
+        out.push(new Phaser.Geom.Point(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr));
+      }
+      return out;
+    };
+    const c = w / 2;
+    const r = size / 2;
+    g.fillStyle(C.ink, 1);
+    g.fillPoints(pts(c, c + size * 0.06, r + size * 0.07), true); // sombra
+    g.lineStyle(size * 0.1, C.ink, 1);
+    g.strokePoints(pts(c, c, r), true, true);
+    g.fillStyle(on ? C.accent : 0x6b7593, 1);
+    g.fillPoints(pts(c, c, r), true);
+    if (on) {
+      g.fillStyle(0xffffff, 0.45);
+      g.fillPoints(pts(c - size * 0.08, c - size * 0.1, r * 0.32), true); // brilho
+    }
+    g.generateTexture(key, w, w);
+    g.destroy();
+    return key;
+  }
+
   showWin() {
     this.modalOpen = true;
     Sound.win();
@@ -1360,7 +1471,6 @@ export class GameScene extends Phaser.Scene {
       mechanics: this.level.mechanics || [],
     });
     for (const a of res.unlocked) track('unlock_achievement', { achievement_id: a.id });
-    if (stars === 3) Sound.combo(3);
     const last = this.levelId >= LEVEL_COUNT;
     const go = async (close, target) => {
       close();
@@ -1381,15 +1491,18 @@ export class GameScene extends Phaser.Scene {
     ];
     if (res.newBest) lines.push(t('win.newBest'));
     for (const a of res.unlocked) lines.push(`🏆 ${t('achievements.unlocked')}: ${t(`achievements.${a.id}.title`)}`);
-    modal({
-      tone: 'win',
-      badge: this.level.challenge ? t('game.challenge') : null,
-      stars,
-      title: last ? t('win.lastLevel') : this.level.challenge ? t('win.titleChallenge') : t('win.title'),
-      text: lines.join('\n'),
-      buttons,
-      closable: false,
-    });
+    const caption = happy === this.lines.length ? t('win.perfect') : t('win.happy', { a: happy, b: this.lines.length });
+    this.celebrate(stars, caption, () =>
+      modal({
+        tone: 'win',
+        badge: this.level.challenge ? t('game.challenge') : null,
+        stars,
+        title: last ? t('win.lastLevel') : this.level.challenge ? t('win.titleChallenge') : t('win.title'),
+        text: lines.join('\n'),
+        buttons,
+        closable: false,
+      }),
+    );
   }
 
   showLose() {
@@ -1407,8 +1520,17 @@ export class GameScene extends Phaser.Scene {
     if (!this.exempt && !this.lifeSpent) {
       Lives.consume();
       this.lifeSpent = true;
-      if (!Lives.infinite()) track('life_lost', { level: this.levelId });
+      if (!Lives.infinite()) {
+        track('life_lost', { level: this.levelId });
+        Offers.recordLoss();
+        // 3ª derrota do dia: oferece vidas infinitas (uma vez por dia)
+        if (PurchaseManager.isEnabled() && Offers.shouldOffer()) {
+          Offers.markOffered();
+          this.loseOffer = true;
+        }
+      }
     }
+    const offer = this.loseOffer && !Lives.infinite();
     const st = Lives.get();
     const lifeLine = this.exempt
       ? `\n\n${t('lives.free')}`
@@ -1470,12 +1592,28 @@ export class GameScene extends Phaser.Scene {
         this.restart();
       },
     });
+    if (offer) {
+      buttons.push({
+        label: `∞ ${t('store.lives.title')}`,
+        kind: 'store',
+        onClick: (c) => {
+          c();
+          openStore({
+            source: 'third_loss',
+            onClose: () => {
+              this.modalOpen = false;
+              this.showLose();
+            },
+          });
+        },
+      });
+    }
     buttons.push({ label: t('lose.home'), kind: 'secondary', onClick: (c) => (c(), (this.modalOpen = false), goTo(this, 'Menu')) });
     modal({
       tone: 'lose',
       mascot: true,
       title: slots ? t('lose.titleSlots') : stuck ? t('lose.titleStuck') : t('lose.titlePatience'),
-      text: (slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience')) + need + lifeLine + tip,
+      text: (slots ? t('lose.infoSlots') : stuck ? t('lose.infoStuck') : t('lose.infoPatience')) + need + lifeLine + (offer ? `\n\n${t('offers.thirdLoss')}` : tip),
       buttons,
       closable: false,
     });

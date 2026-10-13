@@ -35,11 +35,12 @@ Anônimo: sem login, sem user id, sem dados pessoais. Código em `src/analytics.
 | `rewarded_ad_unavailable` | `placement` | não havia anúncio (sem rede/sem estoque) |
 | `rewarded_offer_declined` | `placement` | tocou "Agora não" na oferta |
 | `interstitial_shown` | `level` | intersticial exibido (saída da vitória) |
-| `iap_offer_viewed` | `product_id`, `source` (`settings`/`out_of_lives`) | loja aberta, um por produto à venda |
+| `iap_offer_viewed` | `product_id`, `source` (`settings`/`out_of_lives`/`third_loss`) | loja aberta, um por produto à venda (`third_loss`: oferta na 3ª derrota do dia) |
 | `purchase` | `product_id`, `value`, `currency`, `items[]` | compra aprovada (evento padrão do Firebase) |
 | `ads_removed` | `product_id` | comprou o combo sem anúncios |
 | `purchase_failed` | `product_id`, `reason` (`canceled`/`pending`/`error`) | compra não concluída |
 | `purchase_restored` | `found` (0/1) | botão Restaurar compras |
+| `notify_opt_in` | `source` (`settings`/`out_of_lives`), `granted` (0/1) | ligou o aviso de vidas (e se o Android permitiu) |
 | `unlock_achievement` | `achievement_id` | conquista desbloqueada (evento padrão) |
 
 `placement`: `undo`, `hint`, `extra_slot`, `lose_undo`, `lose_extra_slot`, `refill_lives`.

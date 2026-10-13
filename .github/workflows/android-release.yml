@@ -30,8 +30,8 @@ jobs:
       TEST_ADS: ${{ inputs.test_ads && '1' || '0' }}
       VITE_TEST_ADS: ${{ inputs.test_ads && '1' || '0' }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -93,7 +93,7 @@ jobs:
           cp android/app/build/outputs/bundle/release/app-release.aab "out/bus-crazy-people-$V-${{ github.run_number }}$SUF.aab"
           cp android/app/build/outputs/apk/release/app-release.apk "out/bus-crazy-people-$V-${{ github.run_number }}$SUF.apk"
           ls -la out
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bus-crazy-people-release
           path: out/

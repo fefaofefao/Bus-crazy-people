@@ -19,7 +19,7 @@ const defaults = () => ({
   adsRemoved: false, // compra "Vidas infinitas + sem anúncios"
   infiniteLives: false, // compra "Vidas infinitas" (ou o combo)
   winsSinceInterstitial: 0, // vitórias desde o último intersticial
-  settings: { sound: true, music: true, vibration: true, colorblind: false },
+  settings: { sound: true, music: true, vibration: true, colorblind: false, notify: false }, // notify: aviso "vidas cheias" (services/Notify.js)
   language: null, // null = ainda não escolheu (mostra a tela de idioma no primeiro acesso)
   seen: [], // mecânicas já apresentadas (cartão "Novidade!")
   lives: CONFIG.lives.max, // vidas (ver services/Lives.js)
@@ -28,8 +28,9 @@ const defaults = () => ({
   achievements: [], // ids das conquistas desbloqueadas (src/services/Achievements.js)
   // contadores das conquistas
   stats: { perfectStreak: 0, bestStreak: 0, maxCombo: 0, hurried: 0, mechanicsWon: [] },
-  // reservado para a v1.1 (desafio diário, Play Games): não usado no MVP
-  daily: {},
+  // contador do dia (data local AAAA-MM-DD): derrotas que gastaram vida e se a
+  // oferta de vidas infinitas já apareceu hoje (services/Offers.js)
+  daily: { day: '', losses: 0, offered: false },
 });
 
 const isInt = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
@@ -60,7 +61,11 @@ function sanitize(raw) {
     for (const k of ['perfectStreak', 'bestStreak', 'maxCombo', 'hurried']) if (isInt(raw.stats[k], 0, 1e7)) d.stats[k] = raw.stats[k];
     if (Array.isArray(raw.stats.mechanicsWon)) d.stats.mechanicsWon = [...new Set(raw.stats.mechanicsWon.filter((x) => typeof x === 'string' && x.length <= 20))];
   }
-  if (raw.daily && typeof raw.daily === 'object' && !Array.isArray(raw.daily)) d.daily = raw.daily;
+  if (raw.daily && typeof raw.daily === 'object') {
+    if (typeof raw.daily.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.daily.day)) d.daily.day = raw.daily.day;
+    if (isInt(raw.daily.losses, 0, 1e6)) d.daily.losses = raw.daily.losses;
+    if (isBool(raw.daily.offered)) d.daily.offered = raw.daily.offered;
+  }
   return d;
 }
 

@@ -12,6 +12,7 @@ import { PurchaseManager } from '../services/PurchaseManager.js';
 import { AdManager } from '../services/AdManager.js';
 import { Haptics } from '../services/Haptics.js';
 import { Music } from '../services/Music.js';
+import { Notify } from '../services/Notify.js';
 import { t, getLanguage, LANGUAGES } from '../i18n/index.js';
 
 const C = CONFIG.colors;
@@ -33,8 +34,8 @@ export class SettingsScene extends Phaser.Scene {
     const L = getLayout(this);
     const u = L.u;
     const bw = Math.min(L.usableW - 40 * u, 340 * u);
-    const bh = 46 * u;
-    const gap = 54 * u;
+    let bh = 46 * u;
+    let gap = 54 * u;
     const opts = (color, icon, extra) => ({ width: bw, height: bh, fontSize: 17 * u, radius: 16 * u, color, icon, iconSize: 21 * u, ...extra });
     const section = (y, text) =>
       this.add.text(L.cx - bw / 2 + 6 * u, y, text, { fontFamily: FONT, fontSize: `${13 * u}px`, fontStyle: 'bold', color: C.textDim }).setOrigin(0, 0.5);
@@ -47,7 +48,14 @@ export class SettingsScene extends Phaser.Scene {
 
     const showPurchases = PurchaseManager.isEnabled();
     const showAdPrivacy = AdManager.privacyOptionsRequired();
-    const rows = 5 + (showPurchases ? 2 : 0) + 2 + (showAdPrivacy ? 1 : 0);
+    const showNotify = Notify.available();
+    const rows = 5 + (showNotify ? 1 : 0) + (showPurchases ? 2 : 0) + 2 + (showAdPrivacy ? 1 : 0);
+    // telas baixas (ex.: 360×640 com todas as opções do app): aperta o espaçamento
+    const fit = (L.bottom - 30 * u - (topY + 44 * u) - 3 * 34 * u) / rows;
+    if (fit < gap) {
+      gap = fit;
+      bh = Math.min(bh, gap - 6 * u);
+    }
     const contentH = rows * gap + 3 * 34 * u;
     let y = Math.max(topY + 44 * u, L.top + (L.usableH - contentH) / 2 + 10 * u);
 
@@ -69,6 +77,16 @@ export class SettingsScene extends Phaser.Scene {
     y += gap;
     const cb = toggle('colorblind', 'eye');
     y += gap;
+    let notify = null;
+    if (showNotify) {
+      // aviso "vidas cheias": ligar pede a permissão do Android 13+
+      notify = new Button(this, L.cx, y, '', opts(C.button, 'bell'), async () => {
+        if (Notify.enabled()) Notify.disable();
+        else if (!(await Notify.enable('settings'))) toast(t('notify.denied'));
+        if (this.scene.isActive()) refresh();
+      });
+      y += gap;
+    }
     const langName = LANGUAGES.find((l) => l.code === getLanguage())?.name ?? '';
     new Button(this, L.cx, y, t('settings.language', { name: langName }), opts(C.button, 'globe'), () => goTo(this, 'Language', { from: 'Settings' }));
 
@@ -135,6 +153,10 @@ export class SettingsScene extends Phaser.Scene {
       set(music, st.music, 'settings.musicOn', 'settings.musicOff');
       set(vib, st.vibration, 'settings.vibrationOn', 'settings.vibrationOff');
       set(cb, st.colorblind, 'settings.colorblindOn', 'settings.colorblindOff');
+      if (notify) {
+        notify.label.setText(t(Notify.enabled() ? 'settings.notifyOn' : 'settings.notifyOff'));
+        notify.setOpts({ color: Notify.enabled() ? C.button : C.buttonSecondary, iconArg: Notify.enabled() });
+      }
       if (store) {
         const all = PurchaseManager.products().every((p) => PurchaseManager.owns(p.id));
         store.label.setText(all ? t('store.allOwnedShort') : t('store.button'));

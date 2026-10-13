@@ -83,6 +83,12 @@ export const CONFIG = {
     ],
   },
 
+  // Oferta de vidas infinitas na tela de derrota (services/Offers.js): uma vez por
+  // dia, a partir da N-ésima derrota do dia que gastou vida.
+  offers: {
+    lossesPerDay: 3,
+  },
+
   // ---------------------------------------------------------------------------
   // Animações (ms)
   // ---------------------------------------------------------------------------
