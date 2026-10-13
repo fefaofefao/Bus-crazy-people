@@ -47,8 +47,10 @@ const game = new Phaser.Game({
   backgroundColor: CONFIG.colors.ink,
   // Resolução física; o tamanho na tela é 100% do #game (CSS)
   scale: { mode: Phaser.Scale.NONE, width: s.w, height: s.h, zoom: s.cssW / s.w },
-  // roundPixels: imagens e textos em pixel inteiro (sem meio-pixel borrado)
-  render: { antialias: true, antialiasGL: true, roundPixels: true },
+  // roundPixels: imagens e textos em pixel inteiro (sem meio-pixel borrado).
+  // pixelArt: false OBRIGATÓRIO: com scale.zoom ≠ 1 o Phaser liga pixelArt sozinho, o que
+  // desliga a suavização (antialias/MSAA) e deixa contornos, ícones e o logo serrilhados.
+  render: { antialias: true, antialiasGL: true, roundPixels: true, pixelArt: false },
   // windowEvents: false => toques nas sobreposições HTML (anúncio, compra, debug) não chegam ao jogo
   input: { activePointers: 3, windowEvents: false },
   scene: [BootScene, LanguageScene, MenuScene, LevelsScene, AchievementsScene, GameScene, SettingsScene],

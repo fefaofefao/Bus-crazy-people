@@ -15,11 +15,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // SVGs da marca rasterizados no tamanho certo para telas densas
+    // SVGs da marca rasterizados no tamanho em que aparecem (u já está em pixels físicos).
+    // Rasterizar muito maior e reduzir na tela serrilha os contornos (sem mipmaps).
     const L = getLayout(this);
-    const px = (n) => Math.round(n * L.u * 1.3);
-    if (!this.textures.exists('bus-front')) this.load.svg('bus-front', 'brand/bus-front.svg', { width: px(300), height: px(340) });
-    if (!this.textures.exists('tiao')) this.load.svg('tiao', 'brand/tiao.svg', { width: px(120), height: px(120) });
+    const px = (n) => Math.round(n * L.u);
+    if (!this.textures.exists('bus-front')) this.load.svg('bus-front', 'brand/bus-front.svg', { width: px(160), height: px(181) }); // logo: 150–160u
+    if (!this.textures.exists('tiao')) this.load.svg('tiao', 'brand/tiao.svg', { width: px(56), height: px(56) }); // dica do Tião: 52u
   }
 
   create() {

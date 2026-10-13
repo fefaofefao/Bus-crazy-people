@@ -166,11 +166,11 @@ Consigue una pista, una plaza extra o un deshacer extra viendo un anuncio, solo 
 - **en-US:** First release: 300 levels, colorblind mode and 3 languages.
 - **es-419:** Primera versión: 300 niveles, modo daltónico y 3 idiomas.
 
-## Notas da versão 0.8.0
+## Notas da versão 1.0.0
 
-- **pt-BR:** Novo mapa de fases: a linha de ônibus atravessa a cidade! Estrelas comemoradas na vitória, aviso opcional quando as vidas voltarem e melhorias de desempenho.
-- **en-US:** New level map: the bus line crosses the city! Stars celebrated on every win, optional alert when your lives are back, and performance improvements.
-- **es-419:** ¡Nuevo mapa de niveles: la línea de autobús cruza la ciudad! Estrellas celebradas en cada victoria, aviso opcional cuando vuelvan tus vidas y mejoras de rendimiento.
+- **pt-BR:** Versão 1.0! Novo mapa de fases: a linha de ônibus atravessa a cidade. Estrelas comemoradas na vitória, aviso opcional quando as vidas voltarem, gráficos mais nítidos e botões novos.
+- **en-US:** Version 1.0! New level map: the bus line crosses the city. Stars celebrated on every win, optional alert when your lives are back, sharper graphics and new buttons.
+- **es-419:** ¡Versión 1.0! Nuevo mapa de niveles: la línea de autobús cruza la ciudad. Estrellas celebradas en cada victoria, aviso opcional cuando vuelvan tus vidas, gráficos más nítidos y botones nuevos.
 
 ---
 

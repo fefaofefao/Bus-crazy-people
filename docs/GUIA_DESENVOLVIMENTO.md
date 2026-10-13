@@ -234,6 +234,7 @@ Detalhes em `docs/IDENTIDADE.md`. Princípios reaproveitáveis:
   - degradê contínuo, brilho que some aos poucos, base 3D na própria cor, sombra suave e estado apertado;
   - desenhada uma vez em canvas e **cacheada como textura** por tamanho, cor e estado;
   - o CSS das janelas HTML imita a mesma pele com `color-mix`.
+- **Nitidez (armadilha do Phaser):** com `scale.zoom` diferente de 1 (canvas em pixels físicos), o Phaser liga `pixelArt` sozinho e **desliga a suavização** (sem MSAA, filtro "vizinho mais próximo"): contornos, ícones e o logo ficam serrilhados. Declare `render: { pixelArt: false, antialias: true, antialiasGL: true }`. Rasterize SVGs no tamanho em que aparecem (reduzir muito, sem mipmaps, também serrilha).
 - **Formas opacas** em cenários sobrepostos: translucidez em formas que se cruzam gera "bordas fantasmas".
 - **Movimento calmo** em telas de descanso (menu): animações lentas e respirando. Rapidez fica para feedback de ação.
 - **Juice com propósito:**
