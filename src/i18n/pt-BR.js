@@ -90,6 +90,7 @@ export default {
     undo: 'Desfazer última jogada',
     undoAd: 'Anúncio: desfazer',
     slotAd: 'Anúncio: + 1 vaga',
+    slotFree: '+ 1 vaga ({n} guardada)',
     restart: 'Reiniciar fase',
     home: 'Início',
   },
@@ -190,6 +191,22 @@ export default {
     range: 'Fases {a}–{b}',
     challenge: 'Desafio',
     locked: 'Complete a fase anterior para liberar.',
+  },
+  daily: {
+    title: 'Presente do dia!',
+    info: 'Dia {n} de 7. Volte amanhã para continuar a sequência: o dia 7 é um baú!',
+    day: 'Dia {n}',
+    double: 'Dobrar presente',
+    claim: 'Pegar',
+  },
+  items: {
+    hint: { one: 'dica', other: 'dicas' },
+    undo: { one: 'desfazer', other: 'desfazer' },
+    slot: { one: 'vaga extra', other: 'vagas extras' },
+    lives: 'vidas cheias',
+  },
+  districts: {
+    complete: 'Bairro concluído: {name}!',
   },
   notify: {
     channel: 'Vidas',

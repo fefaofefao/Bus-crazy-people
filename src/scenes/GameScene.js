@@ -21,6 +21,10 @@ import { busTexture, drawPassenger, shade, pruneBusTextures } from '../ui/art.js
 import { toast, modal, openHelp } from '../ui/dom.js';
 import { openStore } from '../ui/store.js';
 import { Offers } from '../services/Offers.js';
+import { Inventory } from '../services/Inventory.js';
+import { Districts } from '../services/Districts.js';
+import { Review } from '../services/Review.js';
+import { itemsText } from '../ui/items.js';
 import { Notify } from '../services/Notify.js';
 import { PurchaseManager } from '../services/PurchaseManager.js';
 import { track } from '../analytics.ts';
@@ -348,7 +352,7 @@ export class GameScene extends Phaser.Scene {
         fontStyle: '600',
         color: C.textDark,
         align: 'center',
-        wordWrap: { width: w - 64 * u },
+        wordWrap: { width: w - 64 * u, useAdvancedWrap: true }, // avançado: quebra também texto sem espaços (japonês)
         lineSpacing: 1 * u,
       })
       .setOrigin(0.5);
@@ -705,8 +709,13 @@ export class GameScene extends Phaser.Scene {
       this.tweens.add({ targets: sv.bus, scale: 1, duration: 90 });
       Sound.board(e.seat);
     });
-    // a fila anda
+    // a fila anda; o próximo da fila dá um pulinho (só um tween, leve)
     this.shiftQueue(e.line ?? 0, e.passenger + 1, true);
+    const nxt = row?.views[0];
+    if (nxt) {
+      const y0 = nxt.y;
+      this.tweens.add({ targets: nxt, y: y0 - 5 * this.u, duration: 110, delay: A.board * 0.5, yoyo: true, ease: 'Sine.easeOut', onComplete: () => nxt.active && nxt.setY(y0) });
+    }
   }
 
   /** Fila(s) perdendo a paciência: carinha muda, fila treme, resmungo e estrelas caem. */
@@ -1119,10 +1128,17 @@ export class GameScene extends Phaser.Scene {
         Icons.star(this.starsG, sx, y, sz, k < n ? C.gold : 0x55627d);
       }
     }
+    // ajudas guardadas (presente diário / bairro): azul com o número; sem elas, ▶ anúncio
     if (this.undoBtn) {
       const free = this.undos > 0;
-      this.undoBtn.setOpts({ badge: free ? this.undos : '▶', color: free ? C.button : C.buttonAd });
+      const inv = Inventory.count('undo');
+      this.undoBtn.setOpts({ badge: free ? this.undos : inv > 0 ? inv : '▶', color: free || inv > 0 ? C.button : C.buttonAd });
       this.undoBtn.setEnabled(this.history.length > 0);
+    }
+    for (const [btn, kind] of [[this.hintBtn, 'hint'], [this.slotBtn, 'slot']]) {
+      if (!btn) continue;
+      const inv = Inventory.count(kind);
+      btn.setOpts({ badge: inv > 0 ? inv : '▶', color: inv > 0 ? C.button : C.buttonAd });
     }
     this.slotBtn?.setEnabled(this.extraSlots < CONFIG.game.maxExtraSlotsPerLevel);
     this.refreshQueueExtras();
@@ -1206,7 +1222,8 @@ export class GameScene extends Phaser.Scene {
     if (this.undos > 0) {
       this.undos--;
       this.doUndo();
-    } else
+    } else if (Inventory.use('undo')) this.doUndo();
+    else
       this.offerRewarded(
         t('boosters.undoAd'),
         () => {
@@ -1233,12 +1250,17 @@ export class GameScene extends Phaser.Scene {
     const id = nextMove(this.level, this.state);
     // sem saída: avisa ANTES de oferecer anúncio (não cobra por uma dica inútil)
     if (id == null) return toast(t('game.noMove'), 3000);
+    if (Inventory.use('hint')) {
+      this.showHint(id);
+      return this.refreshHud();
+    }
     this.offerRewarded(t('boosters.hintAd'), () => this.showHint(id), 'hint');
   }
 
   onSlot() {
     if (this.busy) return;
     if (this.extraSlots >= CONFIG.game.maxExtraSlotsPerLevel) return toast(t('game.slotMax'));
+    if (Inventory.use('slot')) return this.grantSlot();
     this.offerRewarded(t('boosters.slotAd'), () => this.grantSlot(), 'extra_slot');
   }
 
@@ -1392,6 +1414,13 @@ export class GameScene extends Phaser.Scene {
       .setAlpha(0);
     objs.push(txt);
     this.tweens.add({ targets: txt, alpha: 1, y: y + 70 * u, duration: 260, delay: 200 });
+    // Seu Tião comemora (uma imagem e dois tweens: leve em qualquer celular)
+    if (this.textures.exists('tiao')) {
+      const tiao = this.add.image(L.cx, y + 150 * u, 'tiao').setDisplaySize(64 * u, 64 * u).setDepth(D + 1).setAlpha(0);
+      objs.push(tiao);
+      this.tweens.add({ targets: tiao, alpha: 1, y: y + 136 * u, duration: 260, delay: 260, ease: 'Back.Out' });
+      this.tweens.add({ targets: tiao, angle: { from: -8, to: 8 }, duration: 260, delay: 520, yoyo: true, repeat: 3, ease: 'Sine.easeInOut' });
+    }
     for (let k = 0; k < stars; k++) {
       const st = this.add.image(xs[k], ys[k] - 40 * u, this.starTexture(sizes[k], true)).setDepth(D + 2).setScale(2.4).setAlpha(0).setAngle(-40);
       objs.push(st);
@@ -1458,6 +1487,8 @@ export class GameScene extends Phaser.Scene {
     this.confetti.explode(60, this.L.cx, this.zones.yRoad);
     const firstWin = !Progress.isCompleted(this.levelId);
     Progress.complete(this.levelId);
+    const district = Districts.checkReward(this.levelId); // bairro concluído agora? (dá ajudas)
+    if (district) track('district_complete', { district: district.index + 1 });
     AdManager.registerWin(this.levelId);
     const happy = happyLines(this.state);
     const stars = starsFor(happy, this.lines.length);
@@ -1474,8 +1505,10 @@ export class GameScene extends Phaser.Scene {
     const last = this.levelId >= LEVEL_COUNT;
     const go = async (close, target) => {
       close();
+      // avaliação da Play (1 vez, 3 estrelas): nesse caso, sem intersticial desta vez
+      if (target === 'next' && Review.shouldAsk({ level: this.levelId, stars })) await Review.ask();
       // intersticial: só aqui, ao sair da tela de vitória, e se as regras permitirem
-      await AdManager.maybeShowInterstitial(this.levelId);
+      else await AdManager.maybeShowInterstitial(this.levelId);
       this.modalOpen = false;
       if (target === 'next') goTo(this, 'Game', { level: this.levelId + 1 });
       else if (target === 'retry') goTo(this, 'Game', { level: this.levelId });
@@ -1490,6 +1523,7 @@ export class GameScene extends Phaser.Scene {
       `${this.state.mood.map((m) => ['😠', '😟', '😊'][m]).join(' ')}  ${happy === this.lines.length ? t('win.perfect') : t('win.happy', { a: happy, b: this.lines.length })}`,
     ];
     if (res.newBest) lines.push(t('win.newBest'));
+    if (district) lines.push(`🏙️ ${t('districts.complete', { name: district.name })}`, `🎁 ${itemsText(district.reward)}`);
     for (const a of res.unlocked) lines.push(`🏆 ${t('achievements.unlocked')}: ${t(`achievements.${a.id}.title`)}`);
     const caption = happy === this.lines.length ? t('win.perfect') : t('win.happy', { a: happy, b: this.lines.length });
     this.celebrate(stars, caption, () =>
@@ -1539,14 +1573,15 @@ export class GameScene extends Phaser.Scene {
       : `\n\n♥ ${t('lives.lost', { n: st.lives })}${st.lives === 0 ? ' ' + t('lives.nextShort', { t: Lives.format(st.nextInMs) }) : ''}`;
     const buttons = [];
     if (this.history.length) {
-      const free = this.undos > 0;
+      const free = this.undos > 0 || Inventory.count('undo') > 0;
       buttons.push({
         label: free ? t('lose.undo') : t('lose.undoAd'),
         kind: free ? '' : 'ad',
         onClick: async (close) => {
           close();
           if (free) {
-            this.undos--;
+            if (this.undos > 0) this.undos--;
+            else Inventory.use('undo');
             this.modalOpen = false;
             this.recoverFromLoss();
             this.doUndo();
@@ -1565,11 +1600,17 @@ export class GameScene extends Phaser.Scene {
       });
     }
     if (slots && this.extraSlots < CONFIG.game.maxExtraSlotsPerLevel) {
+      const owned = Inventory.count('slot') > 0;
       buttons.push({
-        label: t('lose.slotAd'),
-        kind: 'ad',
+        label: owned ? t('lose.slotFree', { n: Inventory.count('slot') }) : t('lose.slotAd'),
+        kind: owned ? '' : 'ad',
         onClick: async (close) => {
           close();
+          if (owned && Inventory.use('slot')) {
+            this.modalOpen = false;
+            this.recoverFromLoss();
+            return this.grantSlot();
+          }
           const ok = await AdManager.showRewarded(() => {
             this.modalOpen = false;
             this.recoverFromLoss();

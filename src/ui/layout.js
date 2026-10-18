@@ -4,9 +4,9 @@
 import { CONFIG } from '../config.js';
 
 // Fredoka (fonte embutida, licença OFL) com fontes do sistema como reserva
-export const FONT = "Fredoka, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+export const FONT = "Fredoka, 'MPlusJa', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 // Fonte de títulos e botões (Lilita One, licença OFL): pesada e arredondada, cara de letreiro de ônibus
-export const DISPLAY = "'Lilita One', Fredoka, system-ui, sans-serif";
+export const DISPLAY = "'Lilita One', Fredoka, 'MPlusJa', system-ui, sans-serif";
 
 let renderRatio = null; // pixels do canvas por px CSS (definido pelo main.js)
 

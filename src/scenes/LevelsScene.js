@@ -12,6 +12,8 @@ import { livesPill } from '../ui/livesPill.js';
 import { Button, fadeIn, goTo } from '../ui/widgets.js';
 import { Icons } from '../ui/icons.js';
 import { busTexture } from '../ui/art.js';
+import { mix } from '../ui/scenery.js';
+import { Districts } from '../services/Districts.js';
 import { Music } from '../services/Music.js';
 import { toast } from '../ui/dom.js';
 import { Progress } from '../services/Progress.js';
@@ -69,7 +71,7 @@ export class LevelsScene extends Phaser.Scene {
       const top = y0 + r * rowGap + 22 * u;
       const h = rowGap - 44 * u;
       if (h < 12 * u) continue;
-      g.fillStyle(0x222b4f, 1);
+      g.fillStyle(mix(0x222b4f, Districts.color(this.page), 0.12), 1); // quarteirões com a cor do bairro
       g.fillRoundedRect(gx0 + 6 * u, top, gw - 12 * u, h, 12 * u);
       // casinhas e árvores
       const n = 7;
@@ -217,8 +219,20 @@ export class LevelsScene extends Phaser.Scene {
     }
 
     const navY = L.bottom - navH / 2 - 16 * u;
+    // bairro desta página (nome, cor e ✓ quando todas as fases foram vencidas)
+    const dColor = Districts.color(this.page);
+    const done = Districts.isComplete(this.page);
     this.add
-      .text(L.cx, navY, t('levels.range', { a: first, b: Math.min(first + PER_PAGE - 1, LEVEL_COUNT) }), { fontFamily: DISPLAY, fontSize: `${17 * u}px`, color: C.textDim })
+      .text(L.cx, navY - 11 * u, `${done ? '✓ ' : ''}${Districts.name(this.page)}`, {
+        fontFamily: DISPLAY,
+        fontSize: `${21 * u}px`,
+        color: '#' + dColor.toString(16).padStart(6, '0'),
+        stroke: C.inkCss,
+        strokeThickness: 5 * u,
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(L.cx, navY + 14 * u, t('levels.range', { a: first, b: Math.min(first + PER_PAGE - 1, LEVEL_COUNT) }), { fontFamily: DISPLAY, fontSize: `${14 * u}px`, color: C.textDim })
       .setOrigin(0.5);
     const nav = (dx, label, enabled, page) => {
       const b = new Button(this, L.cx + dx, navY, label, { width: 64 * u, height: 56 * u, fontSize: 30 * u, radius: 18 * u, color: C.buttonSecondary }, () =>

@@ -164,4 +164,49 @@ test('compras: vidas infinitas não acabam; combo também tira anúncios; zerar 
   });
 }
 
+{
+  const { DailyReward } = await import('../src/services/DailyReward.js');
+  const { Inventory } = await import('../src/services/Inventory.js');
+  const { Districts } = await import('../src/services/Districts.js');
+  test('presente diário: sequência de 7 dias, um por dia, pular um dia recomeça, dobrar dá 2x', () => {
+    const day = (d) => new Date(2026, 9, d, 12, 0);
+    assert.equal(DailyReward.status(day(1)).available, true);
+    assert.equal(DailyReward.status(day(1)).day, 1);
+    const got = DailyReward.claim(1, day(1));
+    assert.equal(got.hint, 1);
+    assert.equal(Inventory.count('hint'), 1);
+    assert.equal(DailyReward.claim(1, day(1)), null); // só 1 por dia
+    assert.equal(DailyReward.status(day(2)).day, 2);
+    DailyReward.claim(2, day(2)); // dia 2 dobrado: 2 desfazer
+    assert.equal(Inventory.count('undo'), 2);
+    for (let d = 3; d <= 7; d++) DailyReward.claim(1, day(d));
+    assert.equal(Storage.data.reward.streak, 7);
+    assert.equal(Lives.get().lives, 3); // baú do dia 7 enche as vidas
+    assert.equal(DailyReward.status(day(8)).day, 1); // depois do 7, volta ao 1
+    DailyReward.claim(1, day(8));
+    assert.equal(DailyReward.status(day(10)).day, 1); // pulou o dia 9: recomeça
+  });
+  test('ajudas guardadas: usar gasta 1; sem ajuda, use() devolve false', () => {
+    Inventory.add({ hint: 2 });
+    assert.equal(Inventory.use('hint'), true);
+    assert.equal(Inventory.use('hint'), true);
+    assert.equal(Inventory.use('hint'), false);
+    Storage.update((d) => (d.items = { hint: -5, undo: 'x', slot: 2 }));
+    assert.deepEqual(Storage.data.items, { hint: 0, undo: 0, slot: 2 });
+  });
+  test('bairros: 20 fases por bairro; recompensa uma única vez ao completar todas', () => {
+    assert.equal(Districts.of(1), 0);
+    assert.equal(Districts.of(20), 0);
+    assert.equal(Districts.of(21), 1);
+    assert.equal(Districts.name(0), 'Centro');
+    Storage.update((d) => (d.completed = Array.from({ length: 19 }, (_, i) => i + 1)));
+    assert.equal(Districts.checkReward(19), null);
+    Storage.update((d) => d.completed.push(20));
+    const r = Districts.checkReward(20);
+    assert.equal(r.name, 'Centro');
+    assert.equal(Inventory.count('hint'), CONFIG.districts.reward.hint);
+    assert.equal(Districts.checkReward(20), null); // não repete
+  });
+}
+
 console.log(`✓ ${n} testes de estrelas e conquistas passaram (${LIST.length} conquistas)`);

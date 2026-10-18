@@ -21,25 +21,26 @@ const shade = (hex, f) => {
   return `rgb(${c.join(',')})`;
 };
 
-const LANGS = ['pt-BR', 'en-US', 'es-419'];
+const LANGS = (process.env.ONLY ?? 'pt-BR,en-US,es-419,de-DE,fr-FR,ja-JP').split(',');
 const OUT = 'store/promo';
 const SHOT = (lang, shot) => `store/screenshots/${lang}/${shot}.png`;
 const font = (p) => b64(`node_modules/@fontsource/${p}`);
 const FONTS_CSS = `
   @font-face{font-family:Body;font-weight:700;src:url(data:font/woff2;base64,${font('fredoka/files/fredoka-latin-700-normal.woff2')})}
-  @font-face{font-family:Title;font-weight:400;src:url(data:font/woff2;base64,${font('lilita-one/files/lilita-one-latin-400-normal.woff2')})}`;
+  @font-face{font-family:Title;font-weight:400;src:url(data:font/woff2;base64,${font('lilita-one/files/lilita-one-latin-400-normal.woff2')})}
+  @font-face{font-family:JA;font-weight:100 900;src:url(data:font/woff2;base64,${b64('public/fonts/mplus-rounded-ja.woff2')})}`;
 const TITLE = { ink: '#2a1a4a', outline: '#fff', weight: 400, size: 136 };
 
 // [captura, cenário, textos por idioma: [linha pequena, linha grande]]
 const SLIDES = [
-  ['01', 0, { 'pt-BR': ['Puzzle de ônibus', 'Leve todo mundo!'], 'en-US': ['Bus puzzle', 'Get everyone aboard!'], 'es-419': ['Puzzle de autobuses', '¡Llévalos a todos!'] }],
-  ['02', 1, { 'pt-BR': ['Fácil de aprender', 'Toque no ônibus!'], 'en-US': ['Easy to learn', 'Tap a bus!'], 'es-419': ['Fácil de aprender', '¡Toca un autobús!'] }],
-  ['03', 2, { 'pt-BR': ['Combine as cores', 'Todos a bordo!'], 'en-US': ['Match the colors', 'All aboard!'], 'es-419': ['Combina los colores', '¡Todos a bordo!'] }],
-  ['04', 3, { 'pt-BR': ['Passageiro com pressa', 'Corra contra o tempo!'], 'en-US': ['Passengers in a hurry', 'Beat the clock!'], 'es-419': ['Pasajeros con prisa', '¡Contra el reloj!'] }],
-  ['05', 4, { 'pt-BR': ['Cones e obstáculos', 'Novos desafios!'], 'en-US': ['Cones and obstacles', 'New challenges!'], 'es-419': ['Conos y obstáculos', '¡Nuevos desafíos!'] }],
-  ['06', 5, { 'pt-BR': ['Estacionamento lotado', 'Libere o caminho!'], 'en-US': ['Packed parking lot', 'Clear the way!'], 'es-419': ['Estacionamiento lleno', '¡Abre el camino!'] }],
-  ['07', 6, { 'pt-BR': ['300 fases', 'Ganhe 3 estrelas!'], 'en-US': ['300 levels', 'Earn 3 stars!'], 'es-419': ['300 niveles', '¡Gana 3 estrellas!'] }],
-  ['08', 7, { 'pt-BR': ['Desbloqueie', 'Conquistas!'], 'en-US': ['Unlock', 'Achievements!'], 'es-419': ['Desbloquea', '¡Logros!'] }],
+  ['01', 0, { 'pt-BR': ['Puzzle de ônibus', 'Leve todo mundo!'], 'en-US': ['Bus puzzle', 'Get everyone aboard!'], 'es-419': ['Puzzle de autobuses', '¡Llévalos a todos!'], 'de-DE': ['Bus-Puzzle', 'Alle einsteigen!'], 'fr-FR': ['Casse-tête de bus', 'Tout le monde à bord !'], 'ja-JP': ['バスパズル', 'みんなを乗せよう！'] }],
+  ['02', 1, { 'pt-BR': ['Fácil de aprender', 'Toque no ônibus!'], 'en-US': ['Easy to learn', 'Tap a bus!'], 'es-419': ['Fácil de aprender', '¡Toca un autobús!'], 'de-DE': ['Leicht zu lernen', 'Tipp auf den Bus!'], 'fr-FR': ['Facile à apprendre', 'Touche un bus !'], 'ja-JP': ['かんたん操作', 'バスをタップ！'] }],
+  ['03', 2, { 'pt-BR': ['Combine as cores', 'Todos a bordo!'], 'en-US': ['Match the colors', 'All aboard!'], 'es-419': ['Combina los colores', '¡Todos a bordo!'], 'de-DE': ['Farben sortieren', 'Alle an Bord!'], 'fr-FR': ['Trie les couleurs', 'Tous à bord !'], 'ja-JP': ['色をそろえて', '乗車完了！'] }],
+  ['04', 3, { 'pt-BR': ['Passageiro com pressa', 'Corra contra o tempo!'], 'en-US': ['Passengers in a hurry', 'Beat the clock!'], 'es-419': ['Pasajeros con prisa', '¡Contra el reloj!'], 'de-DE': ['Eilige Fahrgäste', 'Gegen die Uhr!'], 'fr-FR': ['Passagers pressés', 'Contre la montre !'], 'ja-JP': ['急ぐ乗客', '時間との勝負！'] }],
+  ['05', 4, { 'pt-BR': ['Cones e obstáculos', 'Novos desafios!'], 'en-US': ['Cones and obstacles', 'New challenges!'], 'es-419': ['Conos y obstáculos', '¡Nuevos desafíos!'], 'de-DE': ['Hütchen und Hindernisse', 'Neue Rätsel!'], 'fr-FR': ['Cônes et obstacles', 'Nouveaux défis !'], 'ja-JP': ['コーンや障害物', '新しい難関！'] }],
+  ['06', 5, { 'pt-BR': ['Estacionamento lotado', 'Libere o caminho!'], 'en-US': ['Packed parking lot', 'Clear the way!'], 'es-419': ['Estacionamiento lleno', '¡Abre el camino!'], 'de-DE': ['Parkplatz voll', 'Mach den Weg frei!'], 'fr-FR': ['Parking bondé', 'Libère le passage !'], 'ja-JP': ['満車の駐車場', '道をあけよう！'] }],
+  ['07', 6, { 'pt-BR': ['300 fases', 'Ganhe 3 estrelas!'], 'en-US': ['300 levels', 'Earn 3 stars!'], 'es-419': ['300 niveles', '¡Gana 3 estrellas!'], 'de-DE': ['300 Level', 'Hol dir 3 Sterne!'], 'fr-FR': ['300 niveaux', 'Gagne 3 étoiles !'], 'ja-JP': ['300レベル', '星3つを目指せ！'] }],
+  ['08', 7, { 'pt-BR': ['Desbloqueie', 'Conquistas!'], 'en-US': ['Unlock', 'Achievements!'], 'es-419': ['Desbloquea', '¡Logros!'], 'de-DE': ['Schalte frei', 'Erfolge!'], 'fr-FR': ['Débloque des', 'Succès !'], 'ja-JP': ['集めよう', '実績！'] }],
 ];
 
 const SCENES = [
@@ -133,7 +134,7 @@ function page(lang, [shot, sceneIdx, texts]) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
   ${FONTS_CSS}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{width:1080px;height:1920px;overflow:hidden;position:relative;font-family:Body;background:linear-gradient(180deg,${sc.sky[0]} 0%,${sc.sky[1]} 62%)}
+  body{width:1080px;height:1920px;overflow:hidden;position:relative;font-family:Body,JA;background:linear-gradient(180deg,${sc.sky[0]} 0%,${sc.sky[1]} 62%)}
   .rays{position:absolute;left:50%;top:330px;width:2600px;height:2600px;margin:-1300px 0 0 -1300px;
     background:repeating-conic-gradient(${sc.rays ?? 'rgba(255,255,255,.16)'} 0 7deg,rgba(255,255,255,0) 7deg 18deg);
     -webkit-mask:radial-gradient(circle,#000 0,#000 25%,transparent 55%);mask:radial-gradient(circle,#000 0,#000 25%,transparent 55%)}
@@ -141,8 +142,8 @@ function page(lang, [shot, sceneIdx, texts]) {
   .fl{position:absolute;filter:drop-shadow(0 10px 12px rgba(0,0,0,.3))}
   .title{position:absolute;top:70px;left:40px;right:40px;text-align:center;z-index:5}
   .t1,.t2{display:block;white-space:nowrap;line-height:1.08;letter-spacing:1px}
-  .t1{font-family:Body;font-weight:700;font-size:96px;color:#fff;-webkit-text-stroke:14px ${TITLE.ink};paint-order:stroke fill;text-shadow:0 8px 0 ${TITLE.ink}}
-  .t2{font-family:Title;font-weight:${TITLE.weight};font-size:${TITLE.size}px;margin-top:6px;position:relative}
+  .t1{font-family:Body,JA;font-weight:700;font-size:96px;color:#fff;-webkit-text-stroke:14px ${TITLE.ink};paint-order:stroke fill;text-shadow:0 8px 0 ${TITLE.ink}}
+  .t2{font-family:Title,JA;font-weight:${TITLE.weight};font-size:${TITLE.size}px;margin-top:6px;position:relative}
   .t2 .s{position:absolute;inset:0;color:${TITLE.ink};-webkit-text-stroke:22px ${TITLE.ink};transform:translateY(10px)}
   .t2 .o{position:absolute;inset:0;color:${TITLE.outline};-webkit-text-stroke:22px ${TITLE.outline}}
   .t2 .f{position:relative;background:linear-gradient(180deg,${sc.title[0]} 15%,${sc.title[1]} 85%);-webkit-background-clip:text;background-clip:text;color:transparent}

@@ -10,7 +10,7 @@ import { CONFIG } from '../config.js';
 
 const SCHEMA = 1; // versão do formato do arquivo de save (ponto de migração em load())
 // Idiomas aceitos (mantenha igual a src/i18n/index.js)
-const LANGUAGE_CODES = ['pt-BR', 'en', 'es'];
+const LANGUAGE_CODES = ['pt-BR', 'en', 'es', 'de', 'fr', 'ja'];
 
 const defaults = () => ({
   schema: SCHEMA,
@@ -31,6 +31,12 @@ const defaults = () => ({
   // contador do dia (data local AAAA-MM-DD): derrotas que gastaram vida e se a
   // oferta de vidas infinitas já apareceu hoje (services/Offers.js)
   daily: { day: '', losses: 0, offered: false },
+  // ajudas guardadas (presente diário, bairro concluído): usadas antes de pedir anúncio
+  items: { hint: 0, undo: 0, slot: 0 },
+  // presente diário (services/DailyReward.js): último dia pego e o dia da sequência (1–7)
+  reward: { day: '', streak: 0 },
+  districts: [], // bairros (páginas do mapa) já recompensados
+  reviewAsked: false, // pedido de avaliação da Play já feito
 });
 
 const isInt = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
@@ -66,6 +72,15 @@ function sanitize(raw) {
     if (isInt(raw.daily.losses, 0, 1e6)) d.daily.losses = raw.daily.losses;
     if (isBool(raw.daily.offered)) d.daily.offered = raw.daily.offered;
   }
+  if (raw.items && typeof raw.items === 'object') {
+    for (const k of Object.keys(d.items)) if (isInt(raw.items[k], 0, 999)) d.items[k] = raw.items[k];
+  }
+  if (raw.reward && typeof raw.reward === 'object') {
+    if (typeof raw.reward.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.reward.day)) d.reward.day = raw.reward.day;
+    if (isInt(raw.reward.streak, 0, 7)) d.reward.streak = raw.reward.streak;
+  }
+  d.districts = intList(raw.districts, 1000);
+  if (isBool(raw.reviewAsked)) d.reviewAsked = raw.reviewAsked;
   return d;
 }
 
@@ -119,6 +134,8 @@ export const Storage = {
       this.data.settings = { ...old.settings };
       this.data.adsRemoved = old.adsRemoved;
       this.data.infiniteLives = old.infiniteLives;
+      this.data.items = { ...old.items }; // ajudas já ganhas e a sequência do presente diário ficam
+      this.data.reward = { ...old.reward };
     }
     this.save();
   },

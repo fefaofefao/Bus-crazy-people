@@ -89,6 +89,7 @@ export default {
     undo: 'Undo last move',
     undoAd: 'Ad: undo',
     slotAd: 'Ad: + 1 spot',
+    slotFree: '+ 1 spot ({n} saved)',
     restart: 'Restart level',
     home: 'Home',
   },
@@ -189,6 +190,22 @@ export default {
     range: 'Levels {a}–{b}',
     challenge: 'Challenge',
     locked: 'Beat the previous level to unlock.',
+  },
+  daily: {
+    title: 'Daily gift!',
+    info: 'Day {n} of 7. Come back tomorrow to keep your streak: day 7 is a treasure chest!',
+    day: 'Day {n}',
+    double: 'Double gift',
+    claim: 'Collect',
+  },
+  items: {
+    hint: { one: 'hint', other: 'hints' },
+    undo: { one: 'undo', other: 'undos' },
+    slot: { one: 'extra spot', other: 'extra spots' },
+    lives: 'full lives',
+  },
+  districts: {
+    complete: 'Neighborhood complete: {name}!',
   },
   notify: {
     channel: 'Lives',

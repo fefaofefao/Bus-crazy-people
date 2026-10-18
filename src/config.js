@@ -89,6 +89,25 @@ export const CONFIG = {
     lossesPerDay: 3,
   },
 
+  // Presente diário (services/DailyReward.js): dia 1 a 7 da sequência. Aparece no
+  // menu depois do tutorial (a partir de `fromLevel` fases vencidas).
+  dailyReward: {
+    fromLevel: 3,
+    days: [{ hint: 1 }, { undo: 1 }, { hint: 2 }, { slot: 1 }, { undo: 2 }, { hint: 3 }, { hint: 3, undo: 2, slot: 1, lives: true }],
+  },
+
+  // Pedido de avaliação da Play (services/Review.js): 1 vez, vitória com 3 estrelas a partir desta fase.
+  review: { fromLevel: 15 },
+
+  // Bairros: cada página de 20 fases do mapa é um bairro; concluir todas as fases
+  // dele dá estas ajudas (uma vez).
+  districts: {
+    perPage: 20,
+    reward: { hint: 2, undo: 1, slot: 1 },
+    names: ['Centro', 'Lapa', 'Santa Teresa', 'Glória', 'Flamengo', 'Botafogo', 'Urca', 'Copacabana', 'Ipanema', 'Leblon', 'Gávea', 'Jardim Botânico', 'Tijuca', 'Maracanã', 'Barra'],
+    colors: [0xffc72c, 0xff4f8b, 0x2fc46a, 0x2e9bff, 0xff7a3d, 0xa259ff, 0x22c3d6, 0xffd166, 0xff6fb5, 0x7fd3ff, 0x9be15d, 0x3ddc97, 0xffa94d, 0x5aa9ff, 0xff8fab],
+  },
+
   // ---------------------------------------------------------------------------
   // Animações (ms)
   // ---------------------------------------------------------------------------

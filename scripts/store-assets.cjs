@@ -12,7 +12,12 @@ const LANGS = [
   { code: 'pt-BR', store: 'pt-BR', tag: 'Organize o estacionamento e leve todo mundo!', sub: '300 fases · 3 estrelas · 18 conquistas' },
   { code: 'en', store: 'en-US', tag: 'Clear the parking lot and get everyone on board!', sub: '300 levels · 3 stars · 18 achievements' },
   { code: 'es', store: 'es-419', tag: '¡Ordena el estacionamiento y lleva a todos!', sub: '300 niveles · 3 estrellas · 18 logros' },
+  { code: 'de', store: 'de-DE', tag: 'Räum den Parkplatz und bring alle an Bord!', sub: '300 Level · 3 Sterne · 18 Erfolge' },
+  { code: 'fr', store: 'fr-FR', tag: 'Libère le parking et fais monter tout le monde !', sub: '300 niveaux · 3 étoiles · 18 succès' },
+  { code: 'ja', store: 'ja-JP', tag: '駐車場を整理して、みんなを乗せよう！', sub: '300レベル · 星3つ · 実績18' },
 ];
+// Só alguns idiomas: ONLY=de-DE,fr-FR node scripts/store-assets.cjs
+const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
 const URL = process.env.GAME_URL || 'http://localhost:4173/';
 
 (async () => {
@@ -28,14 +33,14 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
     await page.close();
   }
 
-  for (const L of LANGS) {
+  for (const L of LANGS.filter((l) => !ONLY || ONLY.includes(l.store))) {
     // recurso gráfico 1024×500 (identidade: pôr do sol, raios, ônibus do Tião, Lilita One)
     const bus = readFileSync('public/brand/bus-front.svg', 'utf8').replace('width="600" height="680"', 'width="330" height="374"');
     const fg = await browser.newPage({ viewport: { width: 1024, height: 500 } });
     const rays = Array.from({ length: 18 }, (_, i) => `<div style="position:absolute;left:300px;top:320px;width:1400px;height:90px;margin-top:-45px;transform-origin:0 50%;transform:rotate(${i * 20}deg);background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,0));clip-path:polygon(0 50%,100% 0,100% 100%)"></div>`).join('');
     const stroke = '-webkit-text-stroke:8px #1b2340;paint-order:stroke fill;';
-    await fg.setContent(`<html><head><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Fredoka:wght@600&display=swap" rel="stylesheet"></head>
-      <body style="margin:0;width:1024px;height:500px;overflow:hidden;background:linear-gradient(#ffd166,#ff8a4c 60%,#ff4f8b);position:relative;font-family:'Lilita One',sans-serif">
+    await fg.setContent(`<html><head><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Fredoka:wght@600&family=M+PLUS+Rounded+1c:wght@800&display=swap" rel="stylesheet"></head>
+      <body style="margin:0;width:1024px;height:500px;overflow:hidden;background:linear-gradient(#ffd166,#ff8a4c 60%,#ff4f8b);position:relative;font-family:'Lilita One','M PLUS Rounded 1c',sans-serif">
       ${rays}
       <div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:#1b2340"></div>
       <div style="position:absolute;left:0;right:0;bottom:70px;height:10px;background:#e7d3ad;border-top:4px solid #1b2340"></div>
@@ -43,7 +48,7 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
       <div style="position:absolute;left:430px;top:58px;width:560px;transform:rotate(-4deg)">
         <div style="font-size:96px;line-height:.95;color:#fff;${stroke}text-shadow:0 8px 0 #1b2340">BUS CRAZY</div>
         <div style="display:inline-block;margin-top:10px;padding:2px 26px 8px;background:#ff4f8b;border:5px solid #1b2340;border-radius:18px;box-shadow:0 7px 0 #1b2340;font-size:74px;line-height:1;color:#ffc72c;${stroke}">PEOPLE</div>
-        <div style="font-family:Fredoka,sans-serif;font-weight:600;font-size:28px;color:#1b2340;margin-top:22px">${L.tag}</div>
+        <div style="font-family:Fredoka,'M PLUS Rounded 1c',sans-serif;font-weight:600;font-size:28px;color:#1b2340;margin-top:22px">${L.tag}</div>
         <div style="display:inline-block;margin-top:12px;padding:6px 16px;background:#1b2340;border-radius:12px;font-size:24px;color:#ffc72c">${L.sub}</div>
       </div></body></html>`);
     await fg.waitForTimeout(1200);
@@ -55,7 +60,7 @@ const URL = process.env.GAME_URL || 'http://localhost:4173/';
     mkdirSync(dir, { recursive: true });
     const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, locale: L.code });
     await ctx.addInitScript((lang) => {
-      localStorage.setItem('busCrazyPeople.save', JSON.stringify({ language: lang, completed: Array.from({ length: 41 }, (_, i) => i + 1), stars: Object.fromEntries(Array.from({ length: 41 }, (_, i) => [i + 1, 1 + ((i * 7) % 3 === 0 ? 1 : 2) % 3 + ((i % 4) ? 1 : 0)].map((v, j) => (j ? Math.min(3, v) : v)))), achievements: ['first_ride', 'perfect', 'levels_25', 'challenge_1', 'combo_3'], settings: { music: false, sound: false } }));
+      localStorage.setItem('busCrazyPeople.save', JSON.stringify({ language: lang, completed: Array.from({ length: 41 }, (_, i) => i + 1), stars: Object.fromEntries(Array.from({ length: 41 }, (_, i) => [i + 1, 1 + ((i * 7) % 3 === 0 ? 1 : 2) % 3 + ((i % 4) ? 1 : 0)].map((v, j) => (j ? Math.min(3, v) : v)))), achievements: ['first_ride', 'perfect', 'levels_25', 'challenge_1', 'combo_3'], settings: { music: false, sound: false }, reward: { day: (() => { const d = new Date(); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; })(), streak: 3 } }));
     }, L.code);
     const p = await ctx.newPage();
     await p.goto(URL);

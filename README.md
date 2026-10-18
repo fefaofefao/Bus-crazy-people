@@ -23,7 +23,7 @@ npm run dev          # http://localhost:5173 (use o modo celular do DevTools)
 
 | Comando | O que faz |
 |---|---|
-| `npm test` | testa tudo: motor (regras), as 300 fases com o solver, regras de anúncio e os 3 idiomas |
+| `npm test` | testa tudo: motor (regras), as 300 fases com o solver, regras de anúncio e os 6 idiomas |
 | `npm run test:levels` | valida o pacote de fases: estrutura, solução gravada, solver independente, Desafios e curva sem picos |
 | `npm run levels:generate` | regera `levels/levels.json` (cerca de 2–3 min) |
 | `npm run build` | versão web em `dist/` |
@@ -232,7 +232,7 @@ O artefato `bus-crazy-people-release` traz o `.aab`, que vai para o Play Console
 
 1. Crie o app: nome **Bus Crazy People**, idioma padrão pt-BR, **Jogo**, **Gratuito**.
 2. Preencha **Conteúdo do app** com as respostas de `STORE_LISTING.md`: segurança dos dados, anúncios, ID de publicidade, público-alvo 13+ e IARC.
-3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 8 capturas por idioma em pt-BR, en-US e es-419).
+3. Preencha a **Ficha da loja** com os textos de `STORE_LISTING.md` e as imagens de `store/` (ícone, recurso gráfico e 8 capturas por idioma em pt-BR, en-US, es-419, de-DE, fr-FR e ja-JP).
 4. Envie o 1º AAB para **Teste interno** e aceite o **Play App Signing**.
 5. Depois do 1º AAB enviado, crie em **Monetizar → Produtos → Produtos no app** os produtos **`infinite_lives`** (R$ 9,99) e **`infinite_lives_no_ads`** (R$ 14,99), do tipo único (não consumível), e **ative** os dois. Antes, cadastre o **perfil de pagamentos** (Configuração → Perfil de pagamentos). Para testar sem pagar, adicione os testadores em **Configuração → Testes de licença**.
 6. **Teste fechado (obrigatório para conta pessoal nova):** 12 ou mais testadores inscritos por **14 dias seguidos**. Depois disso, peça acesso à produção.
@@ -263,9 +263,9 @@ src/
                             Progress, Sound, Music, Haptics, BackButton
   ui/                       art (ônibus/passageiros/símbolos), scenery (pôr do sol), icons, logo, widgets, dom
   i18n/                     pt-BR (padrão), en, es
-public/privacy/index.html   política de privacidade (3 idiomas)
+public/privacy/index.html   política de privacidade (6 idiomas)
 scripts/                    gerador, testes, ícones, imagens da loja, sync do AdMob
-store/                      ícone 512, recursos gráficos e capturas (3 idiomas)
+store/                      ícone 512, recursos gráficos e capturas (6 idiomas)
 docs/                       formato das fases, arte, roadmap, app-ads.txt
 STORE_LISTING.md            textos da loja + rascunho de Segurança dos dados
 ```

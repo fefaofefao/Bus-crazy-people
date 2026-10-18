@@ -1,16 +1,19 @@
-// Confere se pt-BR, en e es têm exatamente as mesmas chaves, sem textos vazios,
+// Confere se pt-BR, en, es, de, fr e ja têm exatamente as mesmas chaves, sem textos vazios,
 // e se os parâmetros {x} batem entre os idiomas.
 // Uso: npm run test:i18n
 
 import pt from '../src/i18n/pt-BR.js';
 import en from '../src/i18n/en.js';
 import es from '../src/i18n/es.js';
+import de from '../src/i18n/de.js';
+import fr from '../src/i18n/fr.js';
+import ja from '../src/i18n/ja.js';
 
 const flat = (o, p = '') =>
   Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' && !Array.isArray(v) ? flat(v, `${p}${k}.`) : [[`${p}${k}`, v]]));
 const ref = new Map(flat(pt));
 const errors = [];
-for (const [name, lang] of [['en', en], ['es', es]]) {
+for (const [name, lang] of [['en', en], ['es', es], ['de', de], ['fr', fr], ['ja', ja]]) {
   const m = new Map(flat(lang));
   for (const [k, v] of ref) {
     if (!m.has(k)) {
@@ -30,4 +33,4 @@ if (errors.length) {
   console.error(errors.join('\n'));
   process.exit(1);
 }
-console.log(`✓ ${ref.size} textos presentes nos 3 idiomas`);
+console.log(`✓ ${ref.size} textos presentes nos 6 idiomas`);

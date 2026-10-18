@@ -89,6 +89,7 @@ export default {
     undo: 'Deshacer última jugada',
     undoAd: 'Anuncio: deshacer',
     slotAd: 'Anuncio: + 1 plaza',
+    slotFree: '+ 1 plaza ({n} guardada)',
     restart: 'Reiniciar nivel',
     home: 'Inicio',
   },
@@ -189,6 +190,22 @@ export default {
     range: 'Niveles {a}–{b}',
     challenge: 'Desafío',
     locked: 'Supera el nivel anterior para desbloquearlo.',
+  },
+  daily: {
+    title: '¡Regalo del día!',
+    info: 'Día {n} de 7. Vuelve mañana para seguir la racha: ¡el día 7 es un cofre!',
+    day: 'Día {n}',
+    double: 'Duplicar regalo',
+    claim: 'Recoger',
+  },
+  items: {
+    hint: { one: 'pista', other: 'pistas' },
+    undo: { one: 'deshacer', other: 'deshacer' },
+    slot: { one: 'plaza extra', other: 'plazas extra' },
+    lives: 'vidas llenas',
+  },
+  districts: {
+    complete: '¡Barrio completado: {name}!',
   },
   notify: {
     channel: 'Vidas',

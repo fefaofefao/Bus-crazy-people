@@ -41,9 +41,12 @@ Anônimo: sem login, sem user id, sem dados pessoais. Código em `src/analytics.
 | `purchase_failed` | `product_id`, `reason` (`canceled`/`pending`/`error`) | compra não concluída |
 | `purchase_restored` | `found` (0/1) | botão Restaurar compras |
 | `notify_opt_in` | `source` (`settings`/`out_of_lives`), `granted` (0/1) | ligou o aviso de vidas (e se o Android permitiu) |
+| `daily_reward` | `day` (1–7), `doubled` (0/1) | pegou o presente diário (dobrado = com anúncio) |
+| `district_complete` | `district` (1–15) | concluiu todas as fases de um bairro do mapa |
+| `review_prompt` | – | pediu a avaliação da Play (1 vez, vitória com 3 estrelas a partir da fase 15) |
 | `unlock_achievement` | `achievement_id` | conquista desbloqueada (evento padrão) |
 
-`placement`: `undo`, `hint`, `extra_slot`, `lose_undo`, `lose_extra_slot`, `refill_lives`.
+`placement`: `undo`, `hint`, `extra_slot`, `lose_undo`, `lose_extra_slot`, `refill_lives`, `daily_double`.
 
 Observação: o Firebase também registra sozinho `in_app_purchase` (Google Play). Para receita, use **um** dos dois nos relatórios (o nosso `purchase` traz `product_id`).
 

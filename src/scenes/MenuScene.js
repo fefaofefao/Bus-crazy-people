@@ -17,6 +17,9 @@ import { livesPill } from '../ui/livesPill.js';
 import { LEVELS_VERSION, LEVEL_COUNT } from '../levels/index.js';
 import { Music } from '../services/Music.js';
 import { t } from '../i18n/index.js';
+import { Storage } from '../services/Storage.js';
+import { DailyReward } from '../services/DailyReward.js';
+import { openDailyReward } from '../ui/daily.js';
 
 const C = CONFIG.colors;
 
@@ -91,6 +94,10 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setAlpha(0.55);
     void Icons;
+
+    // presente diário: depois do tutorial, uma vez por dia
+    if (Storage.data.completed.length >= CONFIG.dailyReward.fromLevel && DailyReward.status().available)
+      this.time.delayedCall(700, () => this.scene.isActive() && !document.querySelector('.fds-overlay') && openDailyReward());
 
     const onResize = () => this.time.delayedCall(30, () => this.scene.restart());
     this.scale.on('resize', onResize);

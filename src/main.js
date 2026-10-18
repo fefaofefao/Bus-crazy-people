@@ -34,7 +34,7 @@ function measure() {
 
 // Espera a fonte carregar antes de desenhar textos (no máximo 2 s)
 const fontsReady = Promise.race([
-  Promise.all(['500 20px Fredoka', '700 20px Fredoka', '400 20px "Lilita One"'].map((f) => document.fonts.load(f))),
+  Promise.all([...['500 20px Fredoka', '700 20px Fredoka', '400 20px "Lilita One"'].map((f) => document.fonts.load(f)), document.fonts.load('800 20px MPlusJa', 'あ')]),
   new Promise((r) => setTimeout(r, 2000)),
 ]).catch(() => {});
 

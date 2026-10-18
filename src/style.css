@@ -1,3 +1,11 @@
+/* Japonês: M PLUS Rounded 1c só com os caracteres do jogo (scripts/make-ja-font.mjs).
+   Entra depois das fontes latinas: o navegador usa esta só para kana/kanji. */
+@font-face {
+  font-family: 'MPlusJa';
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/mplus-rounded-ja.woff2') format('woff2');
+}
 :root {
   --bg: #2d3a4f;
   --panel: #24304a;
@@ -26,7 +34,7 @@ body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: Fredoka, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: Fredoka, 'MPlusJa', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   overscroll-behavior: none;
   touch-action: none;
   user-select: none;
@@ -448,7 +456,7 @@ body {
   box-shadow: 0 8px 0 var(--ink), 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 .fds-box h2 {
-  font-family: 'Lilita One', Fredoka, sans-serif;
+  font-family: 'Lilita One', Fredoka, 'MPlusJa', sans-serif;
   font-weight: 400;
   font-size: 30px;
   letter-spacing: 0.3px;
@@ -466,7 +474,7 @@ body {
   position: relative;
   isolation: isolate; /* o brilho fica atrás do texto */
   overflow: hidden;
-  font-family: 'Lilita One', Fredoka, sans-serif;
+  font-family: 'Lilita One', Fredoka, 'MPlusJa', sans-serif;
   font-weight: 400;
   font-size: 21px;
   letter-spacing: 0.3px;
@@ -533,7 +541,7 @@ body {
   background: linear-gradient(#fff3dc, #ffe8b8);
 }
 .fds-modal-badge {
-  font-family: 'Lilita One', Fredoka, sans-serif;
+  font-family: 'Lilita One', Fredoka, 'MPlusJa', sans-serif;
   font-weight: 400;
   border: 3px solid var(--ink);
   background: var(--pink);
@@ -658,4 +666,43 @@ body {
   .fds-toast {
     zoom: 1.6;
   }
+}
+
+/* Presente diário: 7 dias (o 7º é o baú, mais largo) */
+.fds-daily {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 4px 0 10px;
+}
+.fds-day {
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 4px 2px 6px;
+  text-align: center;
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  font-size: 18px;
+  line-height: 1.15;
+}
+.fds-day small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.75;
+}
+.fds-day b {
+  font-size: 13px;
+}
+.fds-day.big {
+  grid-column: span 2;
+  background: #ffe28a;
+}
+.fds-day.today {
+  background: var(--yellow);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 0 0 3px #fff, 0 5px 0 var(--ink);
+}
+.fds-day.done {
+  opacity: 0.45;
 }

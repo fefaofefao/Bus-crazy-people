@@ -7,9 +7,9 @@ Imagens geradas por `scripts/store-assets.cjs`:
 | Item | Arquivo |
 |---|---|
 | Ícone 512×512 | `store/icon-512.png` |
-| Recurso gráfico 1024×500 | `store/feature-graphic-pt-BR.png`, `-en-US.png` e `-es-419.png` |
-| Capturas 1080×1920 (8 por idioma) | `store/screenshots/pt-BR/`, `en-US/` e `es-419/` |
-| Capturas promocionais com cenário e título (8 por idioma) — **use estas na ficha** | `store/promo/pt-BR/`, `en-US/` e `es-419/` (gerar de novo: `node scripts/make-store-promo.mjs`) |
+| Recurso gráfico 1024×500 | `store/feature-graphic-<idioma>.png` (pt-BR, en-US, es-419, de-DE, fr-FR, ja-JP) |
+| Capturas 1080×1920 (8 por idioma) | `store/screenshots/<idioma>/` |
+| Capturas promocionais com cenário e título (8 por idioma) — **use estas na ficha** | `store/promo/<idioma>/` (gerar de novo: `node scripts/make-store-promo.mjs`) |
 
 ---
 
@@ -48,9 +48,12 @@ Alguns passageiros têm um relógio: embarque-os antes de a paciência acabar!
 🇧🇷 CIDADE BRASILEIRA
 Ônibus urbanos coloridos, ponto de ônibus, calçadão de ondinhas e casinhas de todas as cores, com trilha sonora no clima de samba.
 
+🎁 PRESENTE DIÁRIO E BAIRROS DO RIO
+Volte todo dia para ganhar dicas, desfazer e vagas extras, com um baú no 7º dia seguido. O mapa é uma linha de ônibus que atravessa 15 bairros, do Centro à Barra: conclua cada bairro para ganhar mais ajudas.
+
 ♿ PARA TODO MUNDO
 • Modo daltônico: cada cor tem também um símbolo próprio.
-• Português, inglês e espanhol.
+• 6 idiomas: português, inglês, espanhol, alemão, francês e japonês.
 • Funciona 100% offline.
 
 💡 AJUDINHAS OPCIONAIS
@@ -95,9 +98,12 @@ Covered buses with a mystery color, lock and key, roadwork cones and terminals t
 🌴 A BRAZILIAN CITY
 Colorful city buses, a bus stop, a wavy-patterned sidewalk and houses in every color, with a samba-flavored soundtrack.
 
+🎁 DAILY GIFT AND RIO NEIGHBORHOODS
+Come back every day for free hints, undos and extra spots, with a treasure chest on day 7 of your streak. The map is a bus line crossing 15 neighborhoods of Rio: complete each one to earn more helpers.
+
 ♿ FOR EVERYONE
 • Colorblind mode: every color also has its own symbol.
-• English, Portuguese and Spanish.
+• 6 languages: English, Portuguese, Spanish, German, French and Japanese.
 • Works 100% offline.
 
 💡 OPTIONAL HELPERS
@@ -142,15 +148,171 @@ Buses tapados de color misterioso, candado y llave, obras con conos y terminales
 🌴 UNA CIUDAD BRASILEÑA
 Buses urbanos de colores, parada de autobús, una vereda con dibujo de olas y casitas de todos los colores, con música con ritmo de samba.
 
+🎁 REGALO DIARIO Y BARRIOS DE RÍO
+Vuelve cada día para ganar pistas, deshacer y plazas extra, con un cofre en el 7.º día seguido. El mapa es una línea de autobús que cruza 15 barrios de Río: completa cada uno para ganar más ayudas.
+
 ♿ PARA TODOS
 • Modo daltónico: cada color tiene además su propio símbolo.
-• Español, portugués e inglés.
+• 6 idiomas: español, portugués, inglés, alemán, francés y japonés.
 • Funciona 100 % sin conexión.
 
 💡 AYUDAS OPCIONALES
 Consigue una pista, una plaza extra o un deshacer extra viendo un anuncio, solo si quieres. Los anuncios aparecen solo en pausas naturales, nunca en medio del nivel, y hay dos compras únicas: "Vidas infinitas" y "Vidas infinitas + sin anuncios" (que también desactiva los intersticiales).
 
 ¿Listo para ordenar este lío de buses?
+
+---
+
+## Deutsch: de-DE
+
+**Titel:** Bus Crazy People: Bus Puzzle
+
+**Kurzbeschreibung:**
+Bus Jam Puzzle: Parkplatz räumen, Farben sortieren und alle einsteigen lassen!
+
+**Vollständige Beschreibung:**
+
+Die Haltestelle ist voll und auf dem Parkplatz geht nichts mehr – Stau! Tippe die Busse in der richtigen Reihenfolge an, bring jeden Fahrgast in den Bus seiner Farbe und bring den Verkehr wieder ins Rollen. Ein entspannendes Bus Jam Puzzle und Denkspiel für zwischendurch – mit kniffligen Leveln für echte Logik-Fans.
+
+🚌 SO WIRD GESPIELT
+• Tippe auf einen Bus: Ist die Front frei, fährt er aus der Parklücke zur Haltestelle.
+• Drei Schlangen warten: Der Erste jeder Schlange steigt automatisch in den Bus seiner Farbe.
+• Ein voller Bus fährt hupend ab und macht den Platz frei.
+• Vorsicht: Sind alle Plätze belegt, ohne dass die Farbe passt, ist das Level vorbei!
+
+⭐ 3 STERNE UND 18 ERFOLGE
+Wer zu lange wartet, wird ungeduldig 😟 und dann sauer 😠. Halte alle 3 Schlangen glücklich für 3 Sterne! Sammle Erfolge für perfekte Serien, Kombos und geschaffte Herausforderungen.
+
+✅ KNIFFLIG, ABER FAIR
+• Alle 300 Level sind garantiert lösbar – vom Computer geprüft, ganz ohne Booster.
+• Die Schwierigkeit steigt stetig und ohne unfaire Sprünge: Die letzten Level fordern deine Planung.
+• Freiwillige Herausforderung alle 10 Level: spielen oder überspringen.
+• 1 Zug zurück gratis in jedem Level, Neustart immer sofort und kostenlos.
+
+🎁 TAGESGESCHENK UND STADTVIERTEL
+Schau jeden Tag vorbei und hol dir gratis Tipps, Züge zurück und Extra-Plätze – am 7. Tag in Folge wartet eine Schatztruhe. Die Levelkarte ist eine Buslinie durch 15 Viertel von Rio de Janeiro: Schließe jedes Viertel ab und erhalte Extra-Hilfen.
+
+⏱️ EILIGE FAHRGÄSTE
+Manche Fahrgäste haben eine Uhr: Lass sie einsteigen, bevor ihre Geduld endet!
+
+🚧 IMMER WAS NEUES
+Abgedeckte Busse mit geheimer Farbe, Schloss und Schlüssel, Baustellen mit Hütchen und Busbahnhöfe, die neue Busse losschicken. Jede Neuheit bekommt ihr eigenes Lernlevel. Schick mit einem Tipp mehrere Busse für eine Kombo los!
+
+♿ FÜR ALLE
+• Farbenblind-Modus: Jede Farbe hat zusätzlich ein eigenes Symbol.
+• Komplett auf Deutsch und in 5 weiteren Sprachen.
+• Offline spielbar – ohne WLAN, ideal für unterwegs.
+
+💡 FREIWILLIGE HILFEN
+Tipp, Extra-Platz oder zusätzliches Zurück per Werbung – nur wenn du willst. Werbung erscheint nur in natürlichen Pausen, nie mitten im Level. Zwei Einmalkäufe: „Unendliche Leben“ und „Unendliche Leben + keine Werbung“.
+
+Bereit, das Bus-Chaos zu lösen?
+
+---
+
+## Français: fr-FR
+
+**Titre :** Bus Crazy People : casse-tête
+
+**Description courte :**
+Jeu de bus : libère le parking, trie les couleurs, fais monter tout le monde !
+
+**Description complète :**
+
+L’arrêt de bus est bondé et le parking est complètement bloqué : c’est l’embouteillage ! Touche les bus dans le bon ordre, fais monter chaque passager dans le bus de sa couleur et remets la ville en mouvement. Un jeu de bus casse-tête relaxant, un vrai jeu de logique pour faire travailler tes méninges.
+
+🚌 COMMENT JOUER
+• Touche un bus : si l’avant est libre, il quitte sa place de parking et va à l’arrêt.
+• Trois files attendent : le premier de chaque file monte tout seul dans le bus de sa couleur.
+• Un bus plein part en klaxonnant et libère sa place.
+• Attention : si toutes les places sont prises sans la bonne couleur, le niveau est perdu !
+
+⭐ 3 ÉTOILES ET 18 SUCCÈS
+Trop attendre rend impatient 😟 puis fâché 😠. Termine avec les 3 files heureuses pour gagner 3 étoiles ! Débloque des succès pour les séries parfaites, les combos et les défis réussis.
+
+✅ DIFFICILE MAIS JUSTE
+• Les 300 niveaux ont une solution garantie, vérifiée par ordinateur, sans aucun bonus.
+• Une difficulté qui monte sans pics injustes : les derniers niveaux testent vraiment ta stratégie.
+• Un défi facultatif tous les 10 niveaux : joue-le ou passe-le.
+• 1 annulation gratuite par niveau, et recommencer est toujours gratuit et immédiat.
+
+🎁 CADEAU DU JOUR ET QUARTIERS DE RIO
+Reviens chaque jour pour gagner des indices, des annulations et des places en plus, avec un coffre au 7e jour d’affilée. La carte est une ligne de bus qui traverse 15 quartiers de Rio de Janeiro : termine chaque quartier pour gagner encore plus d’aides.
+
+⏱️ PASSAGERS PRESSÉS
+Certains passagers ont une horloge : fais-les monter avant que leur patience s’épuise !
+
+🚧 TOUJOURS DU NOUVEAU
+Bus bâchés à la couleur mystère, cadenas et clé, travaux avec cônes et gares routières qui lâchent de nouveaux bus. Chaque nouveauté a son niveau pour apprendre. Fais partir plusieurs bus d’un coup pour des combos !
+
+♿ POUR TOUT LE MONDE
+• Mode daltonien : chaque couleur a aussi son propre symbole.
+• Entièrement en français, plus 5 autres langues.
+• Jeu hors ligne : sans Wi-Fi, parfait dans les transports.
+
+💡 AIDES FACULTATIVES
+Indice, place en plus ou annulation supplémentaire en regardant une pub, seulement si tu veux. Les pubs n’apparaissent qu’aux pauses naturelles, jamais en plein niveau. Deux achats uniques : « Vies infinies » et « Vies infinies + sans pub ».
+
+Prêt à démêler ce bazar de bus ?
+
+---
+
+## 日本語: ja-JP
+
+**タイトル：** Bus Crazy People: バス渋滞パズル
+
+**簡単な説明：**
+バスを動かして駐車場を整理！同じ色の乗客を乗せる、ゆるくて奥深い渋滞パズル
+
+**詳しい説明：**
+
+バス停は大混雑、駐車場はぎっしり渋滞中！正しい順番でバスをタップして、乗客を同じ色のバスに乗せ、街の流れを取り戻そう。サクッと遊べる暇つぶしにも、じっくり考える脳トレにもぴったりの、カラフルなバスパズルです。
+
+🚌 遊び方
+・バスをタップ：前が空いていれば、駐車場からバス停へ向かいます。
+・3つの列が待っています：各列の先頭の乗客が、同じ色のバスに自動で乗ります。
+・満員のバスはクラクションを鳴らして出発し、枠が空きます。
+・注意：色が合わないバスで枠がすべて埋まると、ゲームオーバー！
+
+⭐ 星3つと18の実績
+待たされすぎると、列はイライラ 😟、やがて怒ります 😠。3つの列をすべて笑顔のままクリアして星3つを目指そう！パーフェクト連勝、コンボ、チャレンジ達成で実績が解除されます。
+
+✅ 難しいけど、フェア
+・全300レベルはコンピューターで検証済み。お助けアイテムなしで必ず解けます。
+・難易度はなだらかに上昇。後半のレベルは本格的な戦略が必要です。
+・10レベルごとに挑戦自由のチャレンジステージ。スキップもOK。
+・各レベルで「戻す」1回無料、やり直しはいつでも無料ですぐできます。
+
+🎁 毎日のプレゼントとリオの街
+毎日ログインでヒント・戻す・追加枠がもらえて、7日連続なら宝箱！レベルマップはリオ・デ・ジャネイロの15のエリアを走るバス路線。エリアをクリアするとお助けアイテムがもらえます。
+
+⏱️ 急いでいる乗客
+時計マークの乗客は急いでいます。我慢が切れる前に乗せてあげよう！
+
+🚧 新しい仕掛けがいっぱい
+色が隠れたシート付きのバス、カギとロック、工事中のコーン、バスを送り出すターミナル。新しい仕掛けごとに練習用のレベルがあります。1回のタップで何台も出発させてコンボを決めよう！
+
+♿ みんなで遊べる
+・色覚サポートモード：色ごとに専用のマーク付き。
+・日本語に完全対応（ほか5言語）。
+・オフラインで遊べる：Wi-Fiなしでも、通勤・通学中にどうぞ。
+
+💡 お助けは自由に
+ヒント、追加枠、追加の「戻す」は広告を見てもらえます（使うかどうかは自由）。広告は区切りのいいタイミングだけで、プレイ中には出ません。買い切りアイテムは「ライフ無限」と「ライフ無限 + 広告なし」の2つです。
+
+さあ、バスの大渋滞を解消しよう！
+
+---
+
+## SEO regional (por que estas palavras)
+
+| Idioma | Palavras-chave usadas no título e nas descrições |
+|---|---|
+| de-DE | Bus Puzzle, Bus Jam, Parkplatz, Stau, Farben sortieren, Denkspiel, Logik, offline spielbar, ohne WLAN |
+| fr-FR | jeu de bus, casse-tête, embouteillage, parking, trier les couleurs, jeu de logique, hors ligne, sans Wi-Fi |
+| ja-JP | バス, 渋滞, パズル, 駐車場, 色, 脳トレ, 暇つぶし, オフライン |
+
+A Play indexa o título, a descrição curta e a descrição completa. As palavras aparecem de forma natural (repetir demais é penalizado).
 
 ---
 
@@ -172,6 +334,29 @@ Consigue una pista, una plaza extra o un deshacer extra viendo un anuncio, solo 
 - **pt-BR:** Versão 1.0! Novo mapa de fases: a linha de ônibus atravessa a cidade. Estrelas comemoradas na vitória, aviso opcional quando as vidas voltarem, gráficos mais nítidos e botões novos.
 - **en-US:** Version 1.0! New level map: the bus line crosses the city. Stars celebrated on every win, optional alert when your lives are back, sharper graphics and new buttons.
 - **es-419:** ¡Versión 1.0! Nuevo mapa de niveles: la línea de autobús cruza la ciudad. Estrellas celebradas en cada victoria, aviso opcional cuando vuelvan tus vidas, gráficos más nítidos y botones nuevos.
+
+## Notas da versão 1.1.0
+
+```
+<pt-BR>
+Presente diário com sequência de 7 dias e baú! O mapa agora passa por 15 bairros do Rio, com ajudas a cada bairro concluído. Novos idiomas: alemão, francês e japonês. Passageiros e Seu Tião mais animados.
+</pt-BR>
+<en-US>
+Daily gift with a 7-day streak and a treasure chest! The map now crosses 15 neighborhoods of Rio, with helpers for each one you complete. New languages: German, French and Japanese. Livelier passengers and Tião.
+</en-US>
+<es-419>
+¡Regalo diario con racha de 7 días y cofre! El mapa ahora cruza 15 barrios de Río, con ayudas por cada barrio completado. Nuevos idiomas: alemán, francés y japonés. Pasajeros y Tião más animados.
+</es-419>
+<de-DE>
+Tagesgeschenk mit 7-Tage-Serie und Schatztruhe! Die Karte führt jetzt durch 15 Viertel von Rio – mit Hilfen für jedes geschaffte Viertel. Neu: Deutsch, Französisch und Japanisch. Fröhlichere Fahrgäste und Tião.
+</de-DE>
+<fr-FR>
+Cadeau du jour avec série de 7 jours et coffre ! La carte traverse maintenant 15 quartiers de Rio, avec des aides pour chaque quartier terminé. Nouvelles langues : allemand, français et japonais. Passagers et Tião plus animés.
+</fr-FR>
+<ja-JP>
+7日連続でもらえる毎日のプレゼントと宝箱が登場！マップはリオの15エリアを走る路線に。エリアをクリアするとお助けアイテムがもらえます。ドイツ語・フランス語・日本語に対応。乗客とチアンさんがもっと元気に。
+</ja-JP>
+```
 
 ---
 

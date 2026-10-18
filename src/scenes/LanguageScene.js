@@ -58,24 +58,20 @@ export class LanguageScene extends Phaser.Scene {
       .text(L.cx, my + 92 * u, S.language.title, { fontFamily: DISPLAY, fontSize: `${28 * u}px`, color: C.text, align: 'center' })
       .setOrigin(0.5);
 
-    // opções
-    let y = my + 170 * u;
-    for (const lang of LANGUAGES) {
+    // opções: grade de 2 colunas (6 idiomas)
+    const cw = (bw - 12 * u) / 2;
+    const ch = 60 * u;
+    let y = my + 150 * u;
+    LANGUAGES.forEach((lang, i) => {
       const on = lang.code === this.selected;
+      const x = L.cx + (i % 2 ? 1 : -1) * (cw / 2 + 6 * u);
+      const yy = y + Math.floor(i / 2) * (ch + 14 * u);
       const b = new Button(
         this,
-        L.cx,
-        y,
+        x,
+        yy,
         lang.name,
-        {
-          width: bw,
-          height: 66 * u,
-          fontSize: 22 * u,
-          radius: 20 * u,
-          color: on ? C.button : C.buttonSecondary,
-          icon: `flag_${lang.flag}`,
-          iconSize: 36 * u,
-        },
+        { width: cw, height: ch, fontSize: 18 * u, radius: 18 * u, color: on ? C.button : C.buttonSecondary, icon: `flag_${lang.flag}`, iconSize: 30 * u },
         () => {
           if (lang.code !== this.selected) this.scene.restart({ from: this.from, selected: lang.code });
         },
@@ -83,16 +79,16 @@ export class LanguageScene extends Phaser.Scene {
       if (on) {
         const ring = this.add.graphics();
         ring.lineStyle(3 * u, 0xffffff, 0.9);
-        ring.strokeRoundedRect(L.cx - bw / 2 - 5 * u, y - 33 * u - 5 * u, bw + 10 * u, 66 * u + 10 * u, 24 * u);
+        ring.strokeRoundedRect(x - cw / 2 - 5 * u, yy - ch / 2 - 5 * u, cw + 10 * u, ch + 10 * u, 22 * u);
         const ck = this.add.graphics();
         ck.fillStyle(C.buttonSuccess, 1);
-        ck.fillCircle(L.cx + bw / 2 - 26 * u, y, 15 * u);
-        Icons.check(ck, L.cx + bw / 2 - 26 * u, y + 1 * u, 18 * u, 0xffffff, 0.2);
+        ck.fillCircle(x + cw / 2 - 4 * u, yy - ch / 2 + 4 * u, 12 * u);
+        Icons.check(ck, x + cw / 2 - 4 * u, yy - ch / 2 + 5 * u, 14 * u, 0xffffff, 0.2);
         b.setDepth(1);
         ck.setDepth(2);
       }
-      y += 84 * u;
-    }
+    });
+    y += Math.ceil(LANGUAGES.length / 2) * (ch + 14 * u);
 
     const cont = new Button(
       this,

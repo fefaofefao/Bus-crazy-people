@@ -194,6 +194,34 @@ export const Icons = {
     g.fillRect(x - w / 2, y - h / 4, w, h / 2);
   },
 
+  flag_de(g, x, y, s) {
+    const w = s, h = s * 0.68, r = s * 0.1;
+    g.fillStyle(0xffce00, 1);
+    g.fillRoundedRect(x - w / 2, y - h / 2, w, h, r);
+    g.fillStyle(0x000000, 1);
+    g.fillRoundedRect(x - w / 2, y - h / 2, w, h / 3, { tl: r, tr: r, bl: 0, br: 0 });
+    g.fillStyle(0xdd0000, 1);
+    g.fillRect(x - w / 2, y - h / 6, w, h / 3);
+  },
+
+  flag_fr(g, x, y, s) {
+    const w = s, h = s * 0.68, r = s * 0.1;
+    g.fillStyle(0xffffff, 1);
+    g.fillRoundedRect(x - w / 2, y - h / 2, w, h, r);
+    g.fillStyle(0x0055a4, 1);
+    g.fillRoundedRect(x - w / 2, y - h / 2, w / 3, h, { tl: r, tr: 0, bl: r, br: 0 });
+    g.fillStyle(0xef4135, 1);
+    g.fillRoundedRect(x + w / 6, y - h / 2, w / 3, h, { tl: 0, tr: r, bl: 0, br: r });
+  },
+
+  flag_jp(g, x, y, s) {
+    const w = s, h = s * 0.68, r = s * 0.1;
+    g.fillStyle(0xffffff, 1);
+    g.fillRoundedRect(x - w / 2, y - h / 2, w, h, r);
+    g.fillStyle(0xbc002d, 1);
+    g.fillCircle(x, y, h * 0.3);
+  },
+
   star(g, x, y, s, color) {
     g.fillStyle(color, 1);
     const pts = [];

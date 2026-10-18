@@ -63,7 +63,7 @@ export class AchievementsScene extends Phaser.Scene {
           fontSize: `${12 * u}px`,
           fontStyle: '500',
           color: on ? '#4a5578' : C.textDim,
-          wordWrap: { width: cardW - 90 * u },
+          wordWrap: { width: cardW - 90 * u, useAdvancedWrap: true },
         })
         .setOrigin(0, 0.5);
       // progresso

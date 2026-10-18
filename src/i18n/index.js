@@ -7,12 +7,18 @@
 import ptBR from './pt-BR.js';
 import en from './en.js';
 import es from './es.js';
+import de from './de.js';
+import fr from './fr.js';
+import ja from './ja.js';
 import { Storage } from '../services/Storage.js';
 
 export const LANGUAGES = [
   { code: 'pt-BR', name: 'Português (Brasil)', flag: 'br', strings: ptBR },
   { code: 'en', name: 'English', flag: 'us', strings: en },
   { code: 'es', name: 'Español', flag: 'es', strings: es },
+  { code: 'de', name: 'Deutsch', flag: 'de', strings: de },
+  { code: 'fr', name: 'Français', flag: 'fr', strings: fr },
+  { code: 'ja', name: '日本語', flag: 'jp', strings: ja },
 ];
 export const DEFAULT_LANGUAGE = 'pt-BR';
 const byCode = new Map(LANGUAGES.map((l) => [l.code, l]));
@@ -27,6 +33,9 @@ export function deviceLanguage() {
     if (l.startsWith('pt')) return 'pt-BR';
     if (l.startsWith('es')) return 'es';
     if (l.startsWith('en')) return 'en';
+    if (l.startsWith('de')) return 'de';
+    if (l.startsWith('fr')) return 'fr';
+    if (l.startsWith('ja')) return 'ja';
   }
   return DEFAULT_LANGUAGE;
 }
