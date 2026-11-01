@@ -50,11 +50,13 @@ export const CONFIG = {
       loadTimeoutMs: 8000, // tempo máximo esperando um anúncio carregar
     },
     testAdSeconds: 5, // duração do anúncio de teste (navegador)
+    // Intersticial: só ao CONCLUIR uma fase (ao sair da tela de vitória), nunca no meio
+    // da fase e nunca ao abrir o app.
     interstitial: {
       enabled: true,
-      minLevel: 11, // nenhum intersticial antes de vencer a fase 11
-      everyNWins: 3, // no mínimo 3 fases vencidas entre um e outro
-      minIntervalSeconds: 120, // E no mínimo 120 s (conta também desde a abertura do app)
+      minLevel: 3, // a partir da fase 3
+      everyNWins: 2, // no máximo a cada 2 fases concluídas
+      minIntervalSeconds: 60, // e no mínimo 60 s entre exibições
     },
     // Com "Remover anúncios", os recompensados CONTINUAM disponíveis como opção
     skipRewardedWhenAdsRemoved: false,

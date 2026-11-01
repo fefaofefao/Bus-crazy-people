@@ -34,7 +34,7 @@ await test('todos os eventos do código são válidos no Firebase (snake_case, �
 await test('eventos pedidos estão instrumentados', () => {
   const required = [
     'tutorial_complete', 'level_start', 'level_end', 'life_lost', 'out_of_lives_shown',
-    'rewarded_ad_shown', 'rewarded_ad_watched', 'rewarded_ad_declined', 'interstitial_shown',
+    'ad_inter_shown', 'ad_inter_failed', 'ad_rewarded_offer', 'ad_rewarded_shown', 'ad_rewarded_completed',
     'iap_offer_viewed', 'purchase', 'purchase_failed', 'ads_removed',
   ];
   for (const e of required) assert.ok(used.has(e), `falta o evento ${e}`);

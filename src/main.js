@@ -38,6 +38,10 @@ const fontsReady = Promise.race([
   new Promise((r) => setTimeout(r, 2000)),
 ]).catch(() => {});
 
+// APK de teste de anúncios: joga sozinho (só com VITE_AUTOPLAY=1; fora disso o Vite remove)
+const autoplay = import.meta.env.VITE_AUTOPLAY === '1' ? await import('./debug/autoplay.js') : null;
+autoplay?.prepareSave();
+
 await fontsReady;
 const s = measure();
 setRenderRatio(s.w / s.cssW);
@@ -103,3 +107,4 @@ window.__game = game; // útil para depuração no console
 initDebug(game);
 initBackButton(game);
 Notify.init();
+autoplay?.startAutoplay(game);

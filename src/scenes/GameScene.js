@@ -1198,6 +1198,7 @@ export class GameScene extends Phaser.Scene {
   /** Pergunta antes de abrir um anúncio recompensado; a recompensa só vem no callback. */
   offerRewarded(question, grant, placement) {
     this.modalOpen = true;
+    AdManager.offerRewarded(placement);
     modal({
       title: question,
       buttons: [
@@ -1299,6 +1300,8 @@ export class GameScene extends Phaser.Scene {
     if (this.modalOpen && !afterLoss) return;
     this.modalOpen = true;
     track('out_of_lives_shown', { level: this.levelId });
+    const adReady = AdManager.isRewardedReady();
+    if (adReady) AdManager.offerRewarded('no_lives');
     const info = () => t('lives.info', { t: Lives.format(Lives.get().nextInMs) });
     let timer = null;
     const done = (close, play) => {
@@ -1314,18 +1317,23 @@ export class GameScene extends Phaser.Scene {
       title: t('lives.none'),
       text: info(),
       buttons: [
-        {
-          label: t('lives.ad'),
-          kind: 'ad',
-          onClick: async (close) => {
-            const ok = await AdManager.showRewarded(() => Lives.refill(), 'refill_lives');
-            if (ok) {
-              Sound.reward();
-              toast(t('lives.refilled'));
-              done(close, true);
-            }
-          },
-        },
+        // anúncio recompensado: +1 vida (só se o anúncio estiver carregado), ao lado da compra
+        ...(adReady
+          ? [
+              {
+                label: t('lives.adOne'),
+                kind: 'ad',
+                onClick: async (close) => {
+                  const ok = await AdManager.showRewarded(() => Lives.refund(), 'no_lives');
+                  if (ok) {
+                    Sound.reward();
+                    toast(t('lives.gotOne'));
+                    done(close, true);
+                  }
+                },
+              },
+            ]
+          : []),
         ...(PurchaseManager.isEnabled()
           ? [
               {
@@ -1572,50 +1580,46 @@ export class GameScene extends Phaser.Scene {
         ? `\n\n♥ ∞ ${t('lives.infinite')}`
       : `\n\n♥ ${t('lives.lost', { n: st.lives })}${st.lives === 0 ? ' ' + t('lives.nextShort', { t: Lives.format(st.nextInMs) }) : ''}`;
     const buttons = [];
-    if (this.history.length) {
-      const free = this.undos > 0 || Inventory.count('undo') > 0;
+    const canSlot = slots && this.extraSlots < CONFIG.game.maxExtraSlotsPerLevel;
+    const resume = (fn) => {
+      this.modalOpen = false;
+      this.recoverFromLoss();
+      fn();
+    };
+    // ajudas grátis (desfazer grátis da fase / ajudas guardadas)
+    if (this.history.length && (this.undos > 0 || Inventory.count('undo') > 0)) {
       buttons.push({
-        label: free ? t('lose.undo') : t('lose.undoAd'),
-        kind: free ? '' : 'ad',
-        onClick: async (close) => {
+        label: t('lose.undo'),
+        kind: '',
+        onClick: (close) => {
           close();
-          if (free) {
-            if (this.undos > 0) this.undos--;
-            else Inventory.use('undo');
-            this.modalOpen = false;
-            this.recoverFromLoss();
-            this.doUndo();
-          } else {
-            const ok = await AdManager.showRewarded(() => {
-              this.modalOpen = false;
-              this.recoverFromLoss();
-              this.doUndo();
-            }, 'lose_undo');
-            if (!ok) {
-              this.modalOpen = false;
-              this.showLose();
-            }
-          }
+          if (this.undos > 0) this.undos--;
+          else Inventory.use('undo');
+          resume(() => this.doUndo());
         },
       });
     }
-    if (slots && this.extraSlots < CONFIG.game.maxExtraSlotsPerLevel) {
-      const owned = Inventory.count('slot') > 0;
+    if (canSlot && Inventory.count('slot') > 0) {
       buttons.push({
-        label: owned ? t('lose.slotFree', { n: Inventory.count('slot') }) : t('lose.slotAd'),
-        kind: owned ? '' : 'ad',
+        label: t('lose.slotFree', { n: Inventory.count('slot') }),
+        kind: '',
+        onClick: (close) => {
+          close();
+          if (Inventory.use('slot')) resume(() => this.grantSlot());
+        },
+      });
+    }
+    // anúncio recompensado para CONTINUAR a fase (só aparece se o anúncio estiver carregado):
+    // ponto lotado = +1 vaga; travado/paciência = desfaz a última jogada
+    const adKind = canSlot ? 'slot' : this.history.length ? 'undo' : null;
+    if (adKind && AdManager.isRewardedReady()) {
+      AdManager.offerRewarded('lose_continue');
+      buttons.push({
+        label: adKind === 'slot' ? t('lose.continueSlotAd') : t('lose.continueUndoAd'),
+        kind: 'ad',
         onClick: async (close) => {
           close();
-          if (owned && Inventory.use('slot')) {
-            this.modalOpen = false;
-            this.recoverFromLoss();
-            return this.grantSlot();
-          }
-          const ok = await AdManager.showRewarded(() => {
-            this.modalOpen = false;
-            this.recoverFromLoss();
-            this.grantSlot();
-          }, 'lose_extra_slot');
+          const ok = await AdManager.showRewarded(() => resume(() => (adKind === 'slot' ? this.grantSlot() : this.doUndo())), 'lose_continue');
           if (!ok) {
             this.modalOpen = false;
             this.showLose();

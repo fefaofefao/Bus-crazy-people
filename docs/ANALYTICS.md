@@ -29,12 +29,13 @@ Anônimo: sem login, sem user id, sem dados pessoais. Código em `src/analytics.
 | `challenge_skipped` | `level` | pulou um Desafio |
 | `life_lost` | `level` | derrota gastou 1 vida |
 | `out_of_lives_shown` | `level` | tela "Sem vidas" |
-| `rewarded_ad_shown` | `placement` | o AdMob exibiu o recompensado |
-| `rewarded_ad_watched` | `placement` | callback de recompensa do AdMob |
-| `rewarded_ad_declined` | `placement` | fechou o anúncio antes da recompensa |
-| `rewarded_ad_unavailable` | `placement` | não havia anúncio (sem rede/sem estoque) |
+| `ad_rewarded_offer` | `placement` | o botão/oferta de anúncio recompensado apareceu (só aparece com o anúncio carregado) |
+| `ad_rewarded_shown` | `placement` | o AdMob exibiu o recompensado (onAdShowed) |
+| `ad_rewarded_completed` | `placement` | recompensa confirmada pelo AdMob (onUserEarnedReward) |
+| `ad_rewarded_failed` | `placement`, `reason` | sem anúncio pronto ou falha ao exibir |
 | `rewarded_offer_declined` | `placement` | tocou "Agora não" na oferta |
-| `interstitial_shown` | `level` | intersticial exibido (saída da vitória) |
+| `ad_inter_shown` | `placement` (`level_complete`), `level` | intersticial exibido ao sair da tela de vitória |
+| `ad_inter_failed` | `placement`, `level`, `reason` | a regra permitia, mas não exibiu (ex.: `not_loading`, `failed_to_show`) |
 | `iap_offer_viewed` | `product_id`, `source` (`settings`/`out_of_lives`/`third_loss`) | loja aberta, um por produto à venda (`third_loss`: oferta na 3ª derrota do dia) |
 | `purchase` | `product_id`, `value`, `currency`, `items[]` | compra aprovada (evento padrão do Firebase) |
 | `ads_removed` | `product_id` | comprou o combo sem anúncios |
@@ -46,7 +47,9 @@ Anônimo: sem login, sem user id, sem dados pessoais. Código em `src/analytics.
 | `review_prompt` | – | pediu a avaliação da Play (1 vez, vitória com 3 estrelas a partir da fase 15) |
 | `unlock_achievement` | `achievement_id` | conquista desbloqueada (evento padrão) |
 
-`placement`: `undo`, `hint`, `extra_slot`, `lose_undo`, `lose_extra_slot`, `refill_lives`, `daily_double`.
+`placement` do recompensado: `lose_continue` (derrota: +1 vaga ou desfazer), `no_lives` (+1 vida), `undo`, `hint`, `extra_slot` (botões da fase), `daily_double`.
+
+Logs no APK de debug: `adb logcat | grep "\[Ads\]"` (onAdLoaded, onAdShowed, onAdFailedToShow, onAdDismissed e o motivo de cada intersticial bloqueado).
 
 Observação: o Firebase também registra sozinho `in_app_purchase` (Google Play). Para receita, use **um** dos dois nos relatórios (o nosso `purchase` traz `product_id`).
 

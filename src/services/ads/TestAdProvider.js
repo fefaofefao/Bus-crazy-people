@@ -2,9 +2,10 @@
 // "ANÚNCIO DE TESTE" e contagem regressiva. Não usa rede nem SDK nenhum.
 //
 // Contrato de um "provider" de anúncios (o mesmo que o AdMobProvider deve seguir):
-//   init(): Promise<void>
-//   showInterstitial(): Promise<void>          -> resolve quando o anúncio fecha
-//   showRewarded(): Promise<{ rewarded: boolean }>  -> rewarded=true só se assistiu até o fim
+//   init(opts): Promise<consent|void>
+//   isReady(kind): boolean                    -> no navegador sempre "carregado"
+//   showInterstitial(): Promise<{ shown }>    -> resolve quando o anúncio fecha
+//   showRewarded(): Promise<{ rewarded, shown }>  -> rewarded=true só se assistiu até o fim
 
 import { CONFIG } from '../../config.js';
 import { el, openOverlay, button } from '../../ui/dom.js';
@@ -33,6 +34,8 @@ function countdownOverlay({ title, subtitle, onTick, onDone }) {
 
 export const TestAdProvider = {
   async init() {},
+  isReady: () => true,
+  ensureLoaded() {},
 
   showInterstitial() {
     return new Promise((resolve) => {
@@ -48,7 +51,7 @@ export const TestAdProvider = {
       });
       skip = button(t('testAd.skip'), 'hidden', () => {
         ov.close();
-        resolve();
+        resolve({ shown: true });
       });
       ov.box.appendChild(skip);
     });

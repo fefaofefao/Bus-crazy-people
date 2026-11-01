@@ -1,20 +1,23 @@
 // =============================================================================
 // AdManager – ÚNICO ponto de contato do jogo com anúncios.
 // -----------------------------------------------------------------------------
+//   AdManager.isRewardedReady()             -> mostrar botão de anúncio só se carregado
+//   AdManager.offerRewarded(placement)      -> registra que a oferta apareceu (analytics)
 //   AdManager.showRewarded(onReward, placement): Promise<boolean>
-//       placement = onde o anúncio foi oferecido (analytics): undo, hint, extra_slot,
-//       lose_undo, lose_extra_slot, refill_lives
 //       onReward() é chamado SOMENTE quando o SDK confirma a recompensa.
-//       Falhou/sem internet/fechou antes: mensagem amigável, nada é perdido.
-//   AdManager.registerWin(level)            -> conta vitórias (para o intersticial)
-//   AdManager.maybeShowInterstitial(level)  -> só depois da tela de vitória, se as regras deixarem
+//       placement (analytics): lose_continue, no_lives, undo, hint, extra_slot, daily_double
+//   AdManager.registerWin(level)            -> conta fases concluídas (para o intersticial)
+//   AdManager.maybeShowInterstitial(level)  -> só ao sair da tela de vitória, se as regras deixarem
 //
 // Regras do intersticial (CONFIG.ads.interstitial):
-//   - nunca com "Remover anúncios";
-//   - nenhum antes de vencer a fase `minLevel` (11);
-//   - pelo menos `everyNWins` (3) vitórias E `minIntervalSeconds` (120 s) desde o último
-//     (o intervalo também conta desde a abertura do app);
-//   - nunca no início de fase: o jogo só chama ao SAIR da tela de vitória.
+//   - nunca com "sem anúncios" (o intersticial nem é carregado);
+//   - só ao concluir uma fase a partir da fase `minLevel` (3);
+//   - no máximo a cada `everyNWins` (2) fases concluídas E `minIntervalSeconds` (60 s)
+//     entre exibições;
+//   - nunca no meio da fase nem ao abrir o app: o jogo só chama ao SAIR da tela de vitória.
+//
+// Analytics (Firebase): ad_inter_shown, ad_inter_failed, ad_rewarded_offer,
+// ad_rewarded_shown, ad_rewarded_completed – todos com o parâmetro "placement".
 //
 // Nenhum erro de anúncio pode travar o jogo: tudo é protegido por try/catch e as
 // Promises sempre resolvem.
@@ -33,34 +36,54 @@ import { t } from '../i18n/index.js';
 
 let provider = Capacitor.isNativePlatform() ? AdMobProvider : TestAdProvider;
 
-let lastInterstitialAt = Date.now();
+let lastInterstitialAt = 0; // 60 s contam entre exibições (o 1º só aparece ao concluir uma fase)
 let showing = false;
+const log = (...a) => console.log('[Ads]', ...a);
 // Ao terminar o fluxo de consentimento (UMP) do provider, o analytics decide se liga.
-let ready = Promise.resolve(provider.init())
+let ready = Promise.resolve(provider.init({ shouldLoadInterstitial: () => CONFIG.ads.interstitial.enabled && !PurchaseManager.isAdsRemoved() }))
   .then((consent) => applyConsent(consent ?? {}))
   .catch(() => applyConsent({}));
 
 export const AdManager = {
-  /** Intersticial (uso interno: o jogo chama maybeShowInterstitial). Devolve true se exibiu. */
+  /** Intersticial (uso interno: o jogo chama maybeShowInterstitial). Devolve { shown, reason }. */
   async showInterstitial() {
-    if (PurchaseManager.isAdsRemoved() || showing) return false;
+    if (PurchaseManager.isAdsRemoved()) return { shown: false, reason: 'ads_removed' };
+    if (showing) return { shown: false, reason: 'busy' };
     showing = true;
-    let shown = false;
+    let r = { shown: false, reason: 'error' };
     try {
       await ready;
       Music.pause();
-      shown = (await provider.showInterstitial()) !== false;
-    } catch {
-      shown = false;
+      r = await provider.showInterstitial();
+      if (typeof r === 'boolean' || r == null) r = { shown: r !== false && r != null, reason: r == null ? 'no_result' : undefined };
+    } catch (e) {
+      r = { shown: false, reason: 'exception' };
+      log('interstitial exception', e?.message);
     } finally {
       showing = false;
       Music.resume();
     }
-    if (shown) {
+    if (r.shown) {
       lastInterstitialAt = Date.now();
       Storage.update((d) => (d.winsSinceInterstitial = 0));
     }
-    return shown;
+    return r;
+  },
+
+  /** O recompensado está carregado? (o botão de anúncio só aparece se estiver) */
+  isRewardedReady() {
+    try {
+      const ok = provider.isReady?.('rewarded') ?? true;
+      if (!ok) provider.ensureLoaded?.('rewarded');
+      return ok;
+    } catch {
+      return false;
+    }
+  },
+
+  /** A oferta de anúncio recompensado apareceu para o jogador. */
+  offerRewarded(placement) {
+    track('ad_rewarded_offer', { placement });
   },
 
   /** Recompensado: a recompensa só é entregue no callback de recompensa do SDK. */
@@ -82,11 +105,10 @@ export const AdManager = {
       showing = false;
       Music.resume();
     }
-    // analytics (no resultado do callback do AdMob)
-    if (result?.shown || result?.rewarded) track('rewarded_ad_shown', { placement });
-    if (result?.rewarded) track('rewarded_ad_watched', { placement });
-    else if (result?.shown) track('rewarded_ad_declined', { placement }); // fechou antes de ganhar
-    else if (result?.unavailable) track('rewarded_ad_unavailable', { placement });
+    log('rewarded result', placement, JSON.stringify(result));
+    if (result?.shown || result?.rewarded) track('ad_rewarded_shown', { placement });
+    if (result?.rewarded) track('ad_rewarded_completed', { placement });
+    else if (result?.unavailable) track('ad_rewarded_failed', { placement, reason: result.reason ?? 'unavailable' });
     if (result?.rewarded) {
       try {
         onReward?.();
@@ -99,25 +121,37 @@ export const AdManager = {
     return false;
   },
 
-  /** Chamar ao vencer uma fase (nunca após derrota). */
-  registerWin(level) {
-    if (level >= CONFIG.ads.interstitial.minLevel) Storage.update((d) => d.winsSinceInterstitial++);
+  /** Chamar ao concluir (vencer) uma fase. */
+  registerWin() {
+    Storage.update((d) => d.winsSinceInterstitial++);
+  },
+
+  /** Motivo pelo qual o intersticial NÃO pode aparecer agora (null = pode). */
+  interstitialBlock(level, now = Date.now()) {
+    const r = CONFIG.ads.interstitial;
+    if (!r.enabled) return 'disabled';
+    if (PurchaseManager.isAdsRemoved()) return 'ads_removed';
+    if (level < r.minLevel) return `level<${r.minLevel}`;
+    if (Storage.data.winsSinceInterstitial < r.everyNWins) return `wins ${Storage.data.winsSinceInterstitial}/${r.everyNWins}`;
+    const left = r.minIntervalSeconds * 1000 - (now - lastInterstitialAt);
+    if (left > 0) return `interval ${Math.ceil(left / 1000)}s`;
+    return null;
   },
 
   shouldShowInterstitial(level, now = Date.now()) {
-    const r = CONFIG.ads.interstitial;
-    if (!r.enabled || PurchaseManager.isAdsRemoved()) return false;
-    if (level < r.minLevel) return false;
-    if (Storage.data.winsSinceInterstitial < r.everyNWins) return false;
-    return now - lastInterstitialAt >= r.minIntervalSeconds * 1000;
+    return this.interstitialBlock(level, now) == null;
   },
 
   async maybeShowInterstitial(level) {
     try {
-      if (!this.shouldShowInterstitial(level)) return false;
-      const shown = await this.showInterstitial();
-      if (shown) track('interstitial_shown', { level });
-      return shown;
+      const block = this.interstitialBlock(level);
+      log('interstitial check level', level, block ? `blocked: ${block}` : 'OK -> show');
+      if (block) return false;
+      const r = await this.showInterstitial();
+      if (r.shown) track('ad_inter_shown', { placement: 'level_complete', level });
+      else track('ad_inter_failed', { placement: 'level_complete', level, reason: r.reason ?? 'unknown' });
+      log('interstitial result', JSON.stringify(r));
+      return r.shown;
     } catch {
       return false;
     }

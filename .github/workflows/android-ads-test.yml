@@ -1,0 +1,70 @@
+# Teste REAL dos anúncios num emulador Android, com os IDs de TESTE do Google.
+# O APK de teste joga sozinho (autoplay) e o logcat mostra os eventos do AdMob
+# (onAdLoaded, onAdShowed, onAdFailedToShow, onAdDismissed) e do Firebase.
+# Rodar em: Actions > Android ads test (emulador) > Run workflow.
+name: Android ads test (emulador)
+
+on:
+  workflow_dispatch:
+    inputs:
+      levels:
+        description: 'Fases jogadas automaticamente'
+        default: '8'
+
+jobs:
+  ads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run test:ads
+      - name: Build web com autoplay (IDs de TESTE)
+        env:
+          VITE_AUTOPLAY: '1'
+          VITE_AUTOPLAY_LEVELS: ${{ inputs.levels }}
+        run: npm run build
+      - run: npm run admob:sync
+      - run: npx cap sync android
+      - name: Firebase – google-services.json (do secret, opcional)
+        env:
+          GSJ: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -n "$GSJ" ]; then echo "$GSJ" | base64 -d > android/app/google-services.json; echo "com Firebase"; else echo "sem Firebase"; fi
+      - name: Compilar APK de debug
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - name: Liberar KVM (emulador acelerado)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Emulador + teste dos anúncios
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash scripts/ci/ads-emulator-test.sh
+      - name: Apagar google-services.json
+        if: always()
+        run: rm -f android/app/google-services.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ads-test-logs
+          path: ads-test/
+          retention-days: 30

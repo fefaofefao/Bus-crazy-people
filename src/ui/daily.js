@@ -31,6 +31,8 @@ export function openDailyReward(onDone) {
     toast(`🎁 ${itemsText(got)}`, 3000);
     onDone?.();
   };
+  const adReady = AdManager.isRewardedReady();
+  if (adReady) AdManager.offerRewarded('daily_double');
   modal({
     tone: 'win',
     title: t('daily.title'),
@@ -38,7 +40,8 @@ export function openDailyReward(onDone) {
     html,
     closable: false,
     buttons: [
-      {
+      // "Dobrar" só aparece com o anúncio carregado
+      adReady && {
         label: t('daily.double'),
         kind: 'ad',
         onClick: async (close) => {
@@ -56,7 +59,7 @@ export function openDailyReward(onDone) {
           else close();
         },
       },
-    ],
+    ].filter(Boolean),
   });
   return true;
 }

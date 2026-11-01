@@ -66,7 +66,7 @@ await test('simulação de 400 vitórias: todos os intersticiais respeitam as re
   for (; lv <= 400; lv++) {
     now += (20 + ((lv * 37) % 90)) * 1000; // 20–110 s por fase
     AdManager.registerWin(lv);
-    if (lv >= R.minLevel) winsSince++;
+    winsSince++;
     const shown = await AdManager.maybeShowInterstitial(lv);
     if (shown) {
       assert.ok(lv >= R.minLevel, `fase ${lv} < mínimo`);
@@ -86,6 +86,44 @@ await test('"Remover anúncios" desliga o intersticial', async () => {
   for (let k = 0; k < 10; k++) AdManager.registerWin(50);
   assert.equal(await AdManager.maybeShowInterstitial(50), false);
   assert.equal(p.shows, 0);
+});
+
+await test('intersticial: a partir da fase 3, a cada 2 fases e 60 s (regra pedida)', async () => {
+  assert.equal(R.minLevel, 3);
+  assert.equal(R.everyNWins, 2);
+  assert.equal(R.minIntervalSeconds, 60);
+  const p = provider();
+  AdManager._setProvider(p, { lastAt: 0 });
+  const shownAt = [];
+  for (let lv = 1; lv <= 12; lv++) {
+    now += 70 * 1000; // 70 s por fase
+    AdManager.registerWin(lv);
+    if (await AdManager.maybeShowInterstitial(lv)) shownAt.push(lv);
+  }
+  assert.deepEqual(shownAt, [3, 5, 7, 9, 11]);
+  // fases rápidas (20 s): o intervalo de 60 s segura
+  const p2 = provider();
+  AdManager._setProvider(p2, { lastAt: now });
+  const quick = [];
+  for (let lv = 20; lv <= 31; lv++) {
+    now += 20 * 1000;
+    AdManager.registerWin(lv);
+    if (await AdManager.maybeShowInterstitial(lv)) quick.push(lv);
+  }
+  for (let k = 1; k < quick.length; k++) assert.ok(quick[k] - quick[k - 1] >= 3, `intervalo curto entre ${quick[k - 1]} e ${quick[k]}`);
+});
+
+await test('intersticial não carregado: não exibe e não trava (motivo registrado)', async () => {
+  AdManager._setProvider(provider({ showInterstitial: async () => ({ shown: false, reason: 'not_loading' }) }), { lastAt: 0 });
+  for (let k = 0; k < 3; k++) AdManager.registerWin(10);
+  assert.equal(await AdManager.maybeShowInterstitial(10), false);
+});
+
+await test('recompensado: botão só com anúncio carregado', async () => {
+  AdManager._setProvider(provider({ isReady: () => false, ensureLoaded: () => {} }));
+  assert.equal(AdManager.isRewardedReady(), false);
+  AdManager._setProvider(provider({ isReady: () => true }));
+  assert.equal(AdManager.isRewardedReady(), true);
 });
 
 await test('erro no SDK do intersticial não trava o jogo', async () => {
