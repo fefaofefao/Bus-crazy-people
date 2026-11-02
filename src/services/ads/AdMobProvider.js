@@ -131,7 +131,7 @@ const withTimeout = (p, ms, value) => Promise.race([p, new Promise((r) => setTim
 export const AdMobProvider = {
   async init({ shouldLoadInterstitial } = {}) {
     if (shouldLoadInterstitial) wantInterstitial = shouldLoadInterstitial;
-    log('init', testing ? 'TEST ads' : 'REAL ads', ids);
+    log('init', testing ? 'TEST ads' : 'REAL ads', JSON.stringify(ids));
     await AdMob.initialize({ initializeForTesting: testing, testingDevices: A.testDevices });
     listen();
     // Consentimento (UMP) ANTES de qualquer pedido de anúncio; o formulário só

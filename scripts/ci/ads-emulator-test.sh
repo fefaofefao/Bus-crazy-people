@@ -23,6 +23,34 @@ LOGPID=$!
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 echo "app iniciado"
 
+# Fecha o anúncio na tela tocando no botão de fechar (o "voltar" não fecha o
+# intersticial de teste): procura pelo uiautomator; sem achar, toca nos cantos.
+close_ad() {
+  local kind=$1
+  for k in $(seq 1 25); do
+    grep -q "\[Ads\] $kind onAdDismissed" "$OUT/logcat-full.txt" && return 0
+    adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+    local b
+    b=$(adb shell cat /sdcard/ui.xml 2>/dev/null | tr '>' '\n' | grep -iE 'content-desc="[^"]*(close|fechar|skip)[^"]*"|resource-id="[^"]*close[^"]*"' | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | head -1)
+    if [ -n "$b" ]; then
+      read x1 y1 x2 y2 <<<"$(echo "$b" | grep -oE '[0-9]+' | tr '\n' ' ')"
+      echo "   toque no fechar ($b)"
+      adb shell input tap $(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 ))
+    else
+      W=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1 | cut -dx -f1)
+      adb shell input tap 30 60; sleep 1
+      adb shell input tap $((W - 30)) 60
+    fi
+    sleep 3
+    # se o toque abriu o navegador (clique no anúncio), volta para o app
+    if ! adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" | grep -q "$PKG"; then
+      echo "   saiu do app: voltando"
+      adb shell input keyevent KEYCODE_BACK; sleep 2
+    fi
+  done
+  adb shell input keyevent KEYCODE_BACK
+}
+
 shot=0
 seen_inter=0
 seen_rew=0
@@ -35,8 +63,9 @@ for i in $(seq 1 300); do   # até ~10 min
     seen_inter=$n_inter
     sleep 4
     shot=$((shot+1)); adb exec-out screencap -p > "$OUT/$(printf %02d $shot)-interstitial.png"
-    echo ">> intersticial na tela (#$seen_inter): print + voltar"
-    adb shell input keyevent KEYCODE_BACK
+    echo ">> intersticial na tela (#$seen_inter): print + fechar"
+    sleep 4
+    close_ad interstitial
   fi
   if [ "$n_rew" -gt "$seen_rew" ]; then
     seen_rew=$n_rew
@@ -48,10 +77,7 @@ for i in $(seq 1 300); do   # até ~10 min
       grep -q "onUserEarnedReward" "$L" && break
     done
     sleep 2
-    for k in $(seq 1 8); do
-      grep -q "\[Ads\] rewarded onAdDismissed" "$L" && break
-      adb shell input keyevent KEYCODE_BACK; sleep 2
-    done
+    close_ad rewarded
   fi
   if grep -q "\[Auto\] done" "$L"; then echo "autoplay terminou"; sleep 3; break; fi
 done
