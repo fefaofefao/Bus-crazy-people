@@ -44,6 +44,7 @@ export function startAutoplay(game) {
           if (next) click(next, `win level ${lastWinLevel} -> next (intersticial pode aparecer aqui)`);
           return;
         }
+        if (phase === 'rewarded' && rewardedAsked) return; // anúncio na tela: não mexe na janela
         if (phase === 'rewarded' && !rewardedAsked) {
           const ad = btns.find((b) => b.classList.contains('ad'));
           if (ad) {
